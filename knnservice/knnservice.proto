@@ -1,0 +1,78 @@
+syntax = "proto3";
+package knnservice;
+
+// protoc -I knnservice/ knnservice/knnservice.proto --go_out=plugins=grpc:knnservice
+// The Customer service definition.
+service KnnService {
+  // Get all Customers with filter - A server-to-client streaming RPC.
+  // rpc GetCustomers(CustomerFilter) returns (stream CustomerRequest) {}
+  // Create a new Customer - A simple RPC
+  rpc GetKnn(KnnRequest) returns (KnnResponse) {}
+  rpc Insert(InsertionRequest) returns (InsertionResponse) {}
+  rpc Join(JoinRequest) returns (JoinResponse) {}
+  rpc ExchangeServices(ServiceMessage) returns (ServiceMessage) {}
+  rpc ExchangePeers(PeerMessage) returns (PeerMessage) {}
+}
+
+// Request message for creating a new customer
+message KnnRequest {
+  string id = 1;  // Unique ID number for a Request.
+  int64 timestamp = 2;
+  int64 timeout = 3;
+  int32 k = 4;
+  repeated double feature = 5;
+}
+
+message Feature {
+  repeated double feature = 1;
+  int64 timestamp = 2;
+  string label = 3;
+  string grouplabel = 4;
+}
+
+message KnnResponse {
+  string id = 1;
+  repeated Feature features = 2;
+}
+
+message InsertionRequest {
+  int64 timestamp = 2;
+  string label = 3;
+  string grouplabel = 4;
+  repeated double feature = 5;
+}
+
+message InsertionResponse {
+  int32 code = 2;
+}
+
+message ServiceMessage {
+  repeated string services = 1;
+}
+
+message Peer {
+  string address = 1;
+  int64 timestamp = 2;
+  string version = 3;
+  repeated double avg = 4;
+  repeated double hist = 5;
+  int64 n = 6;
+}
+
+message PeerMessage {
+  repeated Peer peers = 1;
+}
+
+message JoinRequest {
+  string address = 1; // known address
+  int32 port = 2;
+  repeated double avg = 3; // known avg
+  string version = 4;
+  repeated double hist = 5; // extra features
+  int64 n = 6;
+  int64 timestamp = 7;
+}
+
+message JoinResponse {
+  string address = 1; // received address
+}
