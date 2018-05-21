@@ -18,7 +18,7 @@ Veri is meant to be scale. Each Veri instance tries to synchronise its data with
 
 ## What does statistically identical mean?
 
-Veri keeps the average (Center) and a histogram of distribution of data to the distance to the center.
+Veri keeps the average (Center) and a histogram of distribution of data with the distance to the center (Euclidean Distance).
 Every instance continue, exchanging data as long as their average and histogram are not close enough.
 
 ## Knn querying
