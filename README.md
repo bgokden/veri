@@ -1,6 +1,6 @@
 # veri
 
-Probabilistically scaling vector spaces
+Probabilistically Scaling Vector Spaces
 
 Veri as a cluster can hold a Vector Space with fixed dimension and allows easy querying of k nearest neighbour search queries and also querying a sample space to be used in a machine learning algorithm.
 
@@ -36,3 +36,12 @@ and return.
 if a search comes with the same id received, query is rejected to avoid infinite recursions. This behaviour will be replaced with cached results and checking timeout.
 
 Every knn query has a timeout and timeout defines the precision of the result. User can trade the precision for time. In production users usually want a predictable response time. Since every Veri instance keeps a statistically identical in most classification case you will get the same result.
+
+TODO:
+- Add Dump data function to allow machine learning algorithms to get a Sample Space.
+- Add Query Caching and Return Cached Result instead of rejecting result.
+- Add Internal classification endpoint.
+- Authentication.
+- Documentation.
+
+Contact me for any questions: berkgokden@gmail.com
