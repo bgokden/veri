@@ -4,6 +4,8 @@ Probabilistically scaling vector spaces
 
 Veri as a cluster can hold a Vector Space with fixed dimension and allows easy querying of k nearest neighbour search queries and also querying a sample space to be used in a machine learning algorithm.
 
+Veri is currently in Alpha Stage
+
 *Veri means data in Turkish.*
 
 Veri is not a regular database, instead it is purely designed to be used in machine learning. It does not give any guarantee of responding with the same result every time.
