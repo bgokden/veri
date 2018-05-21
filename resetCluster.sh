@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+docker network create -d bridge mynetwork
+
 docker rm -f service1
 docker run -d -p 8000:8000 --network=mynetwork --name=service1 berkgokden/veri
 sleep 5
