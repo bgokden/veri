@@ -23,7 +23,7 @@ Every instance continue, exchanging data as long as their average and histogram 
 
 ## Knn querying
 
-Veri internally has a kd-tree, put it also query its neighbours and merge the result. It is very similar to map-reduce process done on the fly without planning.
+Veri internally has a kd-tree, but it also query its neighbours and merge the result. It is very similar to map-reduce process done on the fly without planning.
 
 When a knn query is stated, veri creates a unique id,
 Starts a timer,
@@ -36,6 +36,16 @@ and return.
 if a search comes with the same id received, query is rejected to avoid infinite recursions. This behaviour will be replaced with cached results and checking timeout.
 
 Every knn query has a timeout and timeout defines the precision of the result. User can trade the precision for time. In production users usually want a predictable response time. Since every Veri instance keeps a statistically identical in most classification case you will get the same result.
+
+## High Availability
+
+Veri has a different way of approaching high availability.
+Veri as a cluster try to use all the memory it is allowed to use.
+If there is enough memory, all the data is replicated to every instance.
+If there is not enough memory, data is split within instances using histogram balancing.
+If memory is nearly full, Veri will reject insertion requests.
+So if you want more high availability, use more instances.
+Currently, it is recommended to use another database for long term storage. Usually vector spaces, change over time and only the original data is kept. So I didn't implement a direct backend into it. Instead, you can regularly insert new data and evict old data. So you will keep your vector space up to date. Veri can respond queries while data being inserted or deleted, unlike most knn search systems.
 
 TODO:
 - Add Dump data function to allow machine learning algorithms to get a Sample Space.
