@@ -33,7 +33,7 @@ Merges results into a map,
 Waits for timeout and then do a refine process on the result map,
 and return.
 
-if a search comes with the same id received, query is rejected to avoid infinite recursions. This behaviour will be replaced with cached results and checking timeout.
+if a search with the same id received, query is rejected to avoid infinite recursions. This behaviour will be replaced with cached results and checking timeout.
 
 Every knn query has a timeout and timeout defines the precision of the result. User can trade the precision for time. In production users usually want a predictable response time. Since every Veri instance keeps a statistically identical in most classification case you will get the same result.
 
