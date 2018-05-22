@@ -23,7 +23,7 @@ Every instance continue, exchanging data as long as their average and histogram 
 
 ## Knn querying
 
-Veri internally has a kd-tree, but it also query its neighbours and merge the result. It is very similar to map-reduce process done on the fly without planning.
+Veri internally has a kd-tree, but it also queries its neighbours and merges the result. It is very similar to map-reduce process done on the fly without planning.
 
 When a knn query is stated, veri creates a unique id,
 Starts a timer,
