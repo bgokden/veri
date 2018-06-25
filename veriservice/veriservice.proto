@@ -1,9 +1,9 @@
 syntax = "proto3";
-package knnservice;
+package veriservice;
 
-// protoc -I knnservice/ knnservice/knnservice.proto --go_out=plugins=grpc:knnservice
+// protoc -I veriservice/ veriservice/veriservice.proto --go_out=plugins=grpc:veriservice
 // The Customer service definition.
-service KnnService {
+service VeriService {
   // Get all Customers with filter - A server-to-client streaming RPC.
   // rpc GetCustomers(CustomerFilter) returns (stream CustomerRequest) {}
   // Create a new Customer - A simple RPC

@@ -22,7 +22,7 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/testdata"
 
-	pb "github.com/bgokden/veri/knnservice"
+	pb "github.com/bgokden/veri/veriservice"
 	"github.com/segmentio/ksuid"
 
 	"github.com/gorilla/mux"
@@ -48,7 +48,7 @@ type Peer struct {
 	timestamp int64
 }
 
-type knnServiceServer struct {
+type veriServiceServer struct {
 	k                     int64
 	avg                   []float64
 	n                     int64
@@ -214,7 +214,7 @@ func calculateAverage(avg []float64, p kdtree.Point, n float64) []float64 {
 	return avg
 }
 
-func (s *knnServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featuresChannel chan<- pb.Feature) {
+func (s *veriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featuresChannel chan<- pb.Feature) {
 	log.Printf("GetKnnFromPeer %s", peer.address)
 	client, conn := s.getClient(peer.address)
 	resp, err := (*client).GetKnn(context.Background(), in)
@@ -234,7 +234,7 @@ func (s *knnServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, feature
 	conn.Close()
 }
 
-func (s *knnServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel chan<- pb.Feature) {
+func (s *veriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel chan<- pb.Feature) {
 	timeout := int64(float64(in.GetTimeout()) / 2.0)
 	request := &pb.KnnRequest{
 		Feature:   in.GetFeature(),
@@ -255,7 +255,7 @@ func (s *knnServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel ch
 	})
 }
 
-func (s *knnServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel chan<- pb.Feature) {
+func (s *veriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel chan<- pb.Feature) {
 	log.Printf("GetKnnFromLocal")
 	point := NewEuclideanPointArr(in.GetFeature())
 	if s.tree != nil {
@@ -276,7 +276,7 @@ func (s *knnServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel ch
 }
 
 // CreateCustomer creates a new Customer
-func (s *knnServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.KnnResponse, error) {
+func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.KnnResponse, error) {
 	request := *in
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
@@ -343,7 +343,7 @@ func (s *knnServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.K
 	return &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, nil
 }
 
-func (s *knnServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest) (*pb.InsertionResponse, error) {
+func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest) (*pb.InsertionResponse, error) {
 	if s.state > 1 {
 		return &pb.InsertionResponse{Code: 1}, nil
 	}
@@ -362,7 +362,7 @@ func (s *knnServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest) 
 	return &pb.InsertionResponse{Code: 0}, nil
 }
 
-func (s *knnServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
+func (s *veriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
 	// log.Printf("Join request received %v", *in)
 	p, _ := peer.FromContext(ctx)
 	address := strings.Split(p.Addr.String(), ":")[0] + ":" + strconv.FormatInt(int64(in.GetPort()), 10)
@@ -379,7 +379,7 @@ func (s *knnServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.Jo
 	return &pb.JoinResponse{Address: address}, nil
 }
 
-func (s *knnServiceServer) ExchangeServices(ctx context.Context, in *pb.ServiceMessage) (*pb.ServiceMessage, error) {
+func (s *veriServiceServer) ExchangeServices(ctx context.Context, in *pb.ServiceMessage) (*pb.ServiceMessage, error) {
 	inputServiceList := in.GetServices()
 	for i := 0; i < len(inputServiceList); i++ {
 		s.services.Store(inputServiceList[i], true)
@@ -393,7 +393,7 @@ func (s *knnServiceServer) ExchangeServices(ctx context.Context, in *pb.ServiceM
 	return &pb.ServiceMessage{Services: outputServiceList}, nil
 }
 
-func (s *knnServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessage) (*pb.PeerMessage, error) {
+func (s *veriServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessage) (*pb.PeerMessage, error) {
 	inputPeerList := in.GetPeers()
 	for i := 0; i < len(inputPeerList); i++ {
 		insert := true
@@ -434,16 +434,16 @@ func (s *knnServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessage
 	return &pb.PeerMessage{Peers: outputPeerList}, nil
 }
 
-func (s *knnServiceServer) getClient(address string) (*pb.KnnServiceClient, *grpc.ClientConn) {
+func (s *veriServiceServer) getClient(address string) (*pb.VeriServiceClient, *grpc.ClientConn) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
-	client := pb.NewKnnServiceClient(conn)
+	client := pb.NewVeriServiceClient(conn)
 	return &client, conn
 }
 
-func (s *knnServiceServer) callJoin(client *pb.KnnServiceClient) {
+func (s *veriServiceServer) callJoin(client *pb.VeriServiceClient) {
 	request := &pb.JoinRequest{
 		Address:   s.address,
 		Avg:       s.avg,
@@ -464,7 +464,7 @@ func (s *knnServiceServer) callJoin(client *pb.KnnServiceClient) {
 	}
 }
 
-func (s *knnServiceServer) callExchangeServices(client *pb.KnnServiceClient) {
+func (s *veriServiceServer) callExchangeServices(client *pb.VeriServiceClient) {
 	outputServiceList := make([]string, 0)
 	s.services.Range(func(key, value interface{}) bool {
 		serviceName := key.(string)
@@ -486,7 +486,7 @@ func (s *knnServiceServer) callExchangeServices(client *pb.KnnServiceClient) {
 	// log.Printf("Services exhanged")
 }
 
-func (s *knnServiceServer) callExchangeData(client *pb.KnnServiceClient, peer *Peer) {
+func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer *Peer) {
 	// need to check avg and hist differences ...
 	// chose datum
 	// log.Printf("s.n: %d   peer.n: %d", s.n, peer.n)
@@ -557,7 +557,7 @@ func (s *knnServiceServer) callExchangeData(client *pb.KnnServiceClient, peer *P
 	}
 }
 
-func (s *knnServiceServer) callExchangePeers(client *pb.KnnServiceClient) {
+func (s *veriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
 	// log.Printf("callExchangePeers")
 	outputPeerList := make([]*pb.Peer, 0)
 	s.peers.Range(func(key, value interface{}) bool {
@@ -607,7 +607,7 @@ func (s *knnServiceServer) callExchangePeers(client *pb.KnnServiceClient) {
 	// log.Printf("Peers exhanged")
 }
 
-func (s *knnServiceServer) SyncJoin() {
+func (s *veriServiceServer) SyncJoin() {
 	// log.Printf("Sync Join")
 	s.services.Range(func(key, value interface{}) bool {
 		serviceName := key.(string)
@@ -637,7 +637,7 @@ func (s *knnServiceServer) SyncJoin() {
 	// log.Printf("Peer loop Ended")
 }
 
-func (s *knnServiceServer) syncMapToTree() {
+func (s *veriServiceServer) syncMapToTree() {
 	// sum := make([]float64, 0)
 	// count := 0
 	if s.dirty {
@@ -695,8 +695,8 @@ func (s *knnServiceServer) syncMapToTree() {
 	s.timestamp = getCurrentTime() // update always
 }
 
-func newServer() *knnServiceServer {
-	s := &knnServiceServer{}
+func newServer() *veriServiceServer {
+	s := &veriServiceServer{}
 	log.Printf("services %s", *services)
 	serviceList := strings.Split(*services, ",")
 	for _, service := range serviceList {
@@ -709,7 +709,7 @@ func newServer() *knnServiceServer {
 	return s
 }
 
-func (s *knnServiceServer) check() {
+func (s *veriServiceServer) check() {
 	nextSyncJoinTime := getCurrentTime()
 	nextSyncMapTime := getCurrentTime()
 	for {
@@ -770,7 +770,7 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-func (s *knnServiceServer) PostInsert(w http.ResponseWriter, r *http.Request) {
+func (s *veriServiceServer) PostInsert(w http.ResponseWriter, r *http.Request) {
 	if s.state > 1 {
 		respondWithError(w, http.StatusTooManyRequests, "Too many requests")
 		return
@@ -797,7 +797,7 @@ func (s *knnServiceServer) PostInsert(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, ResponseJson{Result: "Ok"})
 }
 
-func (s *knnServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
+func (s *veriServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
 	var in SearchJson
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&in); err != nil {
@@ -870,7 +870,7 @@ func (s *knnServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, http.StatusOK, SearchResultJson{Points: responseFeatures})
 }
 
-func (s *knnServiceServer) restApi() {
+func (s *veriServiceServer) restApi() {
 	log.Println("Rest api stared")
 	router := mux.NewRouter()
 	router.HandleFunc("/", GetHeath).Methods("GET")
@@ -902,7 +902,7 @@ func main() {
 	}
 	grpcServer := grpc.NewServer(opts...)
 	s := newServer()
-	pb.RegisterKnnServiceServer(grpcServer, s)
+	pb.RegisterVeriServiceServer(grpcServer, s)
 	go s.check()
 	go s.restApi()
 	log.Println("Server started .")
