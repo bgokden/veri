@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/bgokden/go-kdtree"
+	"github.com/istio/istio/pkg/cache"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/testdata"
@@ -37,6 +38,7 @@ var (
 	services   = flag.String("services", "", "Comma separated list of services")
 )
 
+// This is set in compile time for optimization
 const k = 300
 
 type Peer struct {
@@ -64,11 +66,11 @@ type veriServiceServer struct {
 	pointsMap             sync.Map
 	services              sync.Map
 	peers                 sync.Map
-	knnQueryId            sync.Map
+	knnQueryId            cache.Cache
 	pointsMu              sync.RWMutex // protects points
-	// points                []kdtree.Point // read-only after initialized
-	treeMu sync.RWMutex // protects KDTree
-	tree   *kdtree.KDTree
+	treeMu                sync.RWMutex // protects KDTree
+	tree                  *kdtree.KDTree
+	cache                 cache.Cache
 }
 
 type EuclideanPoint struct {
@@ -275,15 +277,23 @@ func (s *veriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 	}
 }
 
-// CreateCustomer creates a new Customer
+// Do a distributed Knn search
 func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.KnnResponse, error) {
 	request := *in
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
+		s.knnQueryId.Set(request.Id, true)
 	} else {
-		_, loaded := s.knnQueryId.LoadOrStore(request.GetId(), getCurrentTime())
+		_, loaded := s.knnQueryId.Get(request.GetId())
 		if loaded {
-			return &pb.KnnResponse{Id: in.Id, Features: nil}, nil
+			cachedResult, isCached := s.cache.Get(request.GetFeature())
+			if isCached {
+				return cachedResult.(*pb.KnnResponse), nil
+			} else {
+				return &pb.KnnResponse{Id: in.Id, Features: nil}, nil
+			}
+		} else {
+			s.knnQueryId.Set(request.GetId(), getCurrentTime())
 		}
 	}
 	featuresChannel := make(chan pb.Feature, in.GetK())
@@ -340,6 +350,8 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 			responseFeatures = append(responseFeatures, featureJson)
 		}
 	}
+	s.knnQueryId.Set(request.GetId(), true)
+	s.cache.Set(request.GetId(), &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
 	return &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, nil
 }
 
@@ -706,6 +718,8 @@ func newServer() *veriServiceServer {
 	}
 	s.maxMemoryMiB = 1024
 	s.timestamp = getCurrentTime()
+	s.cache = cache.NewLRU(5*time.Minute, 5*time.Minute, 1000)
+	s.knnQueryId = cache.NewLRU(5*time.Minute, 5*time.Minute, 1000)
 	return s
 }
 
@@ -806,7 +820,7 @@ func (s *veriServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 	id := ksuid.New().String()
-	s.knnQueryId.Store(id, getCurrentTime())
+	s.knnQueryId.Set(id, getCurrentTime())
 	request := &pb.KnnRequest{
 		Id:        id,
 		Timestamp: in.Timestamp,
