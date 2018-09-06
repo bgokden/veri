@@ -1,6 +1,7 @@
 import grpc
-import veriservice.veriservice_pb2 as pb
-import veriservice.veriservice_pb2_grpc as pb_grpc
+
+from veriservice import veriservice_pb2 as pb
+from veriservice import veriservice_pb2_grpc as pb_grpc
 
 class VeriClient:
     def __init__(self, service):
@@ -22,3 +23,31 @@ class VeriClient:
         request = pb.GetRequest(label = label)
         response = self.stub.Get(request)
         return response
+
+class DemoVeriClientWithData:
+    def __init__(self, service):
+        self.client = VeriClient(service) # eg.: 'localhost:50051'
+        self.data = [
+            {
+                'label': 'a',
+                'feature': [0.5, 0.1, 0.2]
+            },
+            {
+                'label': 'b',
+                'feature': [0.5, 0.1, 0.3]
+            },
+            {
+                'label': 'c',
+                'feature': [0.5, 0.1, 1.4]
+            },
+             ]
+
+    def runExample(self):
+        print('inserting data')
+        for d in self.data:
+            self.client.insert(d['feature'], d['label'], d['label'], 0)
+        print('get back data')
+        for d in self.data:
+            print(self.client.get(d['label']).feature[:3])
+        print('do a knn search')
+        print(self.client.getKnn([0.1, 0.1, 0.1]))
