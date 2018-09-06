@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='veriservice.proto',
   package='veriservice',
   syntax='proto3',
-  serialized_pb=_b('\n\x11veriservice.proto\x12\x0bveriservice\"X\n\nKnnRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\x12\t\n\x01k\x18\x04 \x01(\x05\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"P\n\x07\x46\x65\x61ture\x12\x0f\n\x07\x66\x65\x61ture\x18\x01 \x03(\x01\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\r\n\x05label\x18\x03 \x01(\t\x12\x12\n\ngrouplabel\x18\x04 \x01(\t\"A\n\x0bKnnResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12&\n\x08\x66\x65\x61tures\x18\x02 \x03(\x0b\x32\x14.veriservice.Feature\"Y\n\x10InsertionRequest\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\r\n\x05label\x18\x03 \x01(\t\x12\x12\n\ngrouplabel\x18\x04 \x01(\t\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"!\n\x11InsertionResponse\x12\x0c\n\x04\x63ode\x18\x02 \x01(\x05\"\"\n\x0eServiceMessage\x12\x10\n\x08services\x18\x01 \x03(\t\"a\n\x04Peer\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x0b\n\x03\x61vg\x18\x04 \x03(\x01\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\"/\n\x0bPeerMessage\x12 \n\x05peers\x18\x01 \x03(\x0b\x32\x11.veriservice.Peer\"v\n\x0bJoinRequest\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\x0b\n\x03\x61vg\x18\x03 \x03(\x01\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\x12\x11\n\ttimestamp\x18\x07 \x01(\x03\"\x1f\n\x0cJoinResponse\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t2\xed\x02\n\x0bVeriService\x12=\n\x06GetKnn\x12\x17.veriservice.KnnRequest\x1a\x18.veriservice.KnnResponse\"\x00\x12I\n\x06Insert\x12\x1d.veriservice.InsertionRequest\x1a\x1e.veriservice.InsertionResponse\"\x00\x12=\n\x04Join\x12\x18.veriservice.JoinRequest\x1a\x19.veriservice.JoinResponse\"\x00\x12N\n\x10\x45xchangeServices\x12\x1b.veriservice.ServiceMessage\x1a\x1b.veriservice.ServiceMessage\"\x00\x12\x45\n\rExchangePeers\x12\x18.veriservice.PeerMessage\x1a\x18.veriservice.PeerMessage\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x11veriservice.proto\x12\x0bveriservice\"X\n\nKnnRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\x12\t\n\x01k\x18\x04 \x01(\x05\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"P\n\x07\x46\x65\x61ture\x12\x0f\n\x07\x66\x65\x61ture\x18\x01 \x03(\x01\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\r\n\x05label\x18\x03 \x01(\t\x12\x12\n\ngrouplabel\x18\x04 \x01(\t\"A\n\x0bKnnResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12&\n\x08\x66\x65\x61tures\x18\x02 \x03(\x0b\x32\x14.veriservice.Feature\"Y\n\x10InsertionRequest\x12\x11\n\ttimestamp\x18\x01 \x01(\x03\x12\r\n\x05label\x18\x02 \x01(\t\x12\x12\n\ngrouplabel\x18\x03 \x01(\t\x12\x0f\n\x07\x66\x65\x61ture\x18\x04 \x03(\x01\"!\n\x11InsertionResponse\x12\x0c\n\x04\x63ode\x18\x02 \x01(\x05\"\x1b\n\nGetRequest\x12\r\n\x05label\x18\x02 \x01(\t\",\n\x0bGetResponse\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"\"\n\x0eServiceMessage\x12\x10\n\x08services\x18\x01 \x03(\t\"a\n\x04Peer\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x0b\n\x03\x61vg\x18\x04 \x03(\x01\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\"/\n\x0bPeerMessage\x12 \n\x05peers\x18\x01 \x03(\x0b\x32\x11.veriservice.Peer\"v\n\x0bJoinRequest\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\x0b\n\x03\x61vg\x18\x03 \x03(\x01\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\x12\x11\n\ttimestamp\x18\x07 \x01(\x03\"\x1f\n\x0cJoinResponse\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t2\xa9\x03\n\x0bVeriService\x12=\n\x06GetKnn\x12\x17.veriservice.KnnRequest\x1a\x18.veriservice.KnnResponse\"\x00\x12I\n\x06Insert\x12\x1d.veriservice.InsertionRequest\x1a\x1e.veriservice.InsertionResponse\"\x00\x12:\n\x03Get\x12\x17.veriservice.GetRequest\x1a\x18.veriservice.GetResponse\"\x00\x12=\n\x04Join\x12\x18.veriservice.JoinRequest\x1a\x19.veriservice.JoinResponse\"\x00\x12N\n\x10\x45xchangeServices\x12\x1b.veriservice.ServiceMessage\x1a\x1b.veriservice.ServiceMessage\"\x00\x12\x45\n\rExchangePeers\x12\x18.veriservice.PeerMessage\x1a\x18.veriservice.PeerMessage\"\x00\x62\x06proto3')
 )
 
 
@@ -183,28 +183,28 @@ _INSERTIONREQUEST = _descriptor.Descriptor(
   fields=[
     _descriptor.FieldDescriptor(
       name='timestamp', full_name='veriservice.InsertionRequest.timestamp', index=0,
-      number=2, type=3, cpp_type=2, label=1,
+      number=1, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='label', full_name='veriservice.InsertionRequest.label', index=1,
-      number=3, type=9, cpp_type=9, label=1,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='grouplabel', full_name='veriservice.InsertionRequest.grouplabel', index=2,
-      number=4, type=9, cpp_type=9, label=1,
+      number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='feature', full_name='veriservice.InsertionRequest.feature', index=3,
-      number=5, type=1, cpp_type=5, label=3,
+      number=4, type=1, cpp_type=5, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -257,6 +257,75 @@ _INSERTIONRESPONSE = _descriptor.Descriptor(
 )
 
 
+_GETREQUEST = _descriptor.Descriptor(
+  name='GetRequest',
+  full_name='veriservice.GetRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='label', full_name='veriservice.GetRequest.label', index=0,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=399,
+  serialized_end=426,
+)
+
+
+_GETRESPONSE = _descriptor.Descriptor(
+  name='GetResponse',
+  full_name='veriservice.GetResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='code', full_name='veriservice.GetResponse.code', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='feature', full_name='veriservice.GetResponse.feature', index=1,
+      number=5, type=1, cpp_type=5, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=428,
+  serialized_end=472,
+)
+
+
 _SERVICEMESSAGE = _descriptor.Descriptor(
   name='ServiceMessage',
   full_name='veriservice.ServiceMessage',
@@ -283,8 +352,8 @@ _SERVICEMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=399,
-  serialized_end=433,
+  serialized_start=474,
+  serialized_end=508,
 )
 
 
@@ -349,8 +418,8 @@ _PEER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=435,
-  serialized_end=532,
+  serialized_start=510,
+  serialized_end=607,
 )
 
 
@@ -380,8 +449,8 @@ _PEERMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=534,
-  serialized_end=581,
+  serialized_start=609,
+  serialized_end=656,
 )
 
 
@@ -453,8 +522,8 @@ _JOINREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=583,
-  serialized_end=701,
+  serialized_start=658,
+  serialized_end=776,
 )
 
 
@@ -484,8 +553,8 @@ _JOINRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=703,
-  serialized_end=734,
+  serialized_start=778,
+  serialized_end=809,
 )
 
 _KNNRESPONSE.fields_by_name['features'].message_type = _FEATURE
@@ -495,6 +564,8 @@ DESCRIPTOR.message_types_by_name['Feature'] = _FEATURE
 DESCRIPTOR.message_types_by_name['KnnResponse'] = _KNNRESPONSE
 DESCRIPTOR.message_types_by_name['InsertionRequest'] = _INSERTIONREQUEST
 DESCRIPTOR.message_types_by_name['InsertionResponse'] = _INSERTIONRESPONSE
+DESCRIPTOR.message_types_by_name['GetRequest'] = _GETREQUEST
+DESCRIPTOR.message_types_by_name['GetResponse'] = _GETRESPONSE
 DESCRIPTOR.message_types_by_name['ServiceMessage'] = _SERVICEMESSAGE
 DESCRIPTOR.message_types_by_name['Peer'] = _PEER
 DESCRIPTOR.message_types_by_name['PeerMessage'] = _PEERMESSAGE
@@ -536,6 +607,20 @@ InsertionResponse = _reflection.GeneratedProtocolMessageType('InsertionResponse'
   # @@protoc_insertion_point(class_scope:veriservice.InsertionResponse)
   ))
 _sym_db.RegisterMessage(InsertionResponse)
+
+GetRequest = _reflection.GeneratedProtocolMessageType('GetRequest', (_message.Message,), dict(
+  DESCRIPTOR = _GETREQUEST,
+  __module__ = 'veriservice_pb2'
+  # @@protoc_insertion_point(class_scope:veriservice.GetRequest)
+  ))
+_sym_db.RegisterMessage(GetRequest)
+
+GetResponse = _reflection.GeneratedProtocolMessageType('GetResponse', (_message.Message,), dict(
+  DESCRIPTOR = _GETRESPONSE,
+  __module__ = 'veriservice_pb2'
+  # @@protoc_insertion_point(class_scope:veriservice.GetResponse)
+  ))
+_sym_db.RegisterMessage(GetResponse)
 
 ServiceMessage = _reflection.GeneratedProtocolMessageType('ServiceMessage', (_message.Message,), dict(
   DESCRIPTOR = _SERVICEMESSAGE,
@@ -580,8 +665,8 @@ _VERISERVICE = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=737,
-  serialized_end=1102,
+  serialized_start=812,
+  serialized_end=1237,
   methods=[
   _descriptor.MethodDescriptor(
     name='GetKnn',
@@ -602,9 +687,18 @@ _VERISERVICE = _descriptor.ServiceDescriptor(
     options=None,
   ),
   _descriptor.MethodDescriptor(
+    name='Get',
+    full_name='veriservice.VeriService.Get',
+    index=2,
+    containing_service=None,
+    input_type=_GETREQUEST,
+    output_type=_GETRESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
     name='Join',
     full_name='veriservice.VeriService.Join',
-    index=2,
+    index=3,
     containing_service=None,
     input_type=_JOINREQUEST,
     output_type=_JOINRESPONSE,
@@ -613,7 +707,7 @@ _VERISERVICE = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='ExchangeServices',
     full_name='veriservice.VeriService.ExchangeServices',
-    index=3,
+    index=4,
     containing_service=None,
     input_type=_SERVICEMESSAGE,
     output_type=_SERVICEMESSAGE,
@@ -622,7 +716,7 @@ _VERISERVICE = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='ExchangePeers',
     full_name='veriservice.VeriService.ExchangePeers',
-    index=4,
+    index=5,
     containing_service=None,
     input_type=_PEERMESSAGE,
     output_type=_PEERMESSAGE,

@@ -64,6 +64,7 @@ type veriServiceServer struct {
 	state                 int
 	maxMemoryMiB          uint64
 	pointsMap             sync.Map
+	kvMap                 sync.Map
 	services              sync.Map
 	peers                 sync.Map
 	knnQueryId            cache.Cache
@@ -374,6 +375,15 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 	return &pb.InsertionResponse{Code: 0}, nil
 }
 
+func (s *veriServiceServer) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
+	feature, ok := s.kvMap.Load(in.GetLabel())
+	if ok {
+		protoFeature := feature.([k]float64)
+		return &pb.GetResponse{Code: 0, Feature: protoFeature[:]}, nil
+	}
+	return &pb.GetResponse{Code: 1}, nil
+}
+
 func (s *veriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
 	// log.Printf("Join request received %v", *in)
 	p, _ := peer.FromContext(ctx)
@@ -662,6 +672,7 @@ func (s *veriServiceServer) syncMapToTree() {
 		hist := make([]float64, 64)
 		nFloat := float64(s.n)
 		histUnit := 1 / nFloat
+		var tempkvMap sync.Map
 		s.pointsMap.Range(func(key, value interface{}) bool {
 			euclideanPointKey := key.(EuclideanPointKey)
 			euclideanPointValue := value.(EuclideanPointValue)
@@ -671,6 +682,7 @@ func (s *veriServiceServer) syncMapToTree() {
 				euclideanPointValue.label,
 				euclideanPointValue.groupLabel)
 			points = append(points, point)
+			tempkvMap.Store(euclideanPointValue.label, euclideanPointKey.feature)
 			n++
 			avg = calculateAverage(avg, point, nFloat)
 			distance = euclideanDistance(s.avg, point.GetValues())
@@ -691,6 +703,7 @@ func (s *veriServiceServer) syncMapToTree() {
 		// log.Print(hist)
 		// log.Printf("avg")
 		// log.Print(avg)
+		s.kvMap = tempkvMap
 		s.avg = avg
 		s.hist = hist
 		s.maxDistance = maxDistance

@@ -17,3 +17,8 @@ class VeriClient:
         request = pb.KnnRequest(id=id, timestamp=timestamp, timeout=timeout, k=k, feature=feature)
         response = self.stub.GetKnn(request)
         return response
+
+    def get(self, label):
+        request = pb.GetRequest(label = label)
+        response = self.stub.Get(request)
+        return response
