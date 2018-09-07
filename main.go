@@ -380,8 +380,34 @@ func (s *veriServiceServer) Get(ctx context.Context, in *pb.GetRequest) (*pb.Get
 	if ok {
 		protoFeature := feature.([k]float64)
 		return &pb.GetResponse{Code: 0, Feature: protoFeature[:]}, nil
+	} else {
+		return s.GetFromPeers(ctx, in)
 	}
 	return &pb.GetResponse{Code: 1}, nil
+}
+
+func (s *veriServiceServer) GetFromPeers(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
+	log.Printf("GetFromPeers")
+	response := &pb.GetResponse{Code: 2}
+	s.peers.Range(func(key, value interface{}) bool {
+		peerAddress := key.(string)
+		log.Printf("Peer %s", peerAddress)
+		if len(peerAddress) > 0 && peerAddress != s.address {
+			peerValue := value.(Peer)
+			client, conn := s.getClient(peerValue.address)
+			resp, err := (*client).Get(context.Background(), in)
+			if err != nil {
+				log.Printf("There is an error: %v", err)
+				conn.Close()
+			}
+			if resp.GetCode() == 0 {
+				response = resp
+			}
+			conn.Close()
+		}
+		return true
+	})
+	return response, nil
 }
 
 func (s *veriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
@@ -515,6 +541,7 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 	if peer.timestamp+360 < getCurrentTime() {
 		log.Printf("Peer data is too old, maybe peer is dead: %s, peer timestamp: %d, current time: %d", peer.address, peer.timestamp, getCurrentTime())
 		// Maybe remove the peer here
+		s.peers.Delete(peer.address)
 		return
 	}
 	if peer.timestamp+30 < getCurrentTime() && s.state == 0 {
