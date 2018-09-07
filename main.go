@@ -281,13 +281,15 @@ func (s *veriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 // Do a distributed Knn search
 func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.KnnResponse, error) {
 	request := *in
+	var featureHash [k]float64
+	copy(featureHash[:], request.GetFeature()[:])
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
 		s.knnQueryId.Set(request.Id, true)
 	} else {
 		_, loaded := s.knnQueryId.Get(request.GetId())
 		if loaded {
-			cachedResult, isCached := s.cache.Get(request.GetFeature())
+			cachedResult, isCached := s.cache.Get(featureHash)
 			if isCached {
 				return cachedResult.(*pb.KnnResponse), nil
 			} else {
@@ -352,7 +354,7 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		}
 	}
 	s.knnQueryId.Set(request.GetId(), true)
-	s.cache.Set(request.GetId(), &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
+	s.cache.Set(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
 	return &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, nil
 }
 
