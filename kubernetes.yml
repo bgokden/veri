@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: veri
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: veriservice
+ namespace: veri
+spec:
+ selector:
+   app: veri
+ ports:
+ - port: 10000
+   targetPort: 10000
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: veri
+  name: veri
+  namespace: veri
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: veri
+  template:
+    metadata:
+      labels:
+        app: veri
+    spec:
+      containers:
+        - name: veri
+          image: berkgokden/veri:0.0.9
+          args: ["-services=veriservice:10000"]
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 10000
+              protocol: TCP

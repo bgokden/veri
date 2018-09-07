@@ -416,7 +416,7 @@ func (s *veriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.J
 	// log.Printf("Join request received %v", *in)
 	p, _ := peer.FromContext(ctx)
 	address := strings.Split(p.Addr.String(), ":")[0] + ":" + strconv.FormatInt(int64(in.GetPort()), 10)
-	// log.Printf("Peer Addr: %s", address)
+	log.Printf("Peer with Addr: %s called Join", address)
 	peer := Peer{
 		address:   address,
 		avg:       in.GetAvg(),
@@ -450,7 +450,7 @@ func (s *veriServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessag
 		temp, ok := s.peers.Load(inputPeerList[i].GetAddress())
 		if ok {
 			peerOld := temp.(Peer)
-			if peerOld.timestamp > inputPeerList[i].GetTimestamp() {
+			if peerOld.timestamp > inputPeerList[i].GetTimestamp() || inputPeerList[i].GetTimestamp()+300 < getCurrentTime() {
 				insert = false
 			}
 		}
@@ -470,15 +470,17 @@ func (s *veriServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessag
 	s.peers.Range(func(key, value interface{}) bool {
 		// address := key.(string)
 		peer := value.(Peer)
-		peerProto := &pb.Peer{
-			Address:   peer.address,
-			Version:   peer.version,
-			Avg:       peer.avg,
-			Hist:      peer.hist,
-			N:         peer.n,
-			Timestamp: peer.timestamp,
+		if peer.timestamp+300 > getCurrentTime() {
+			peerProto := &pb.Peer{
+				Address:   peer.address,
+				Version:   peer.version,
+				Avg:       peer.avg,
+				Hist:      peer.hist,
+				N:         peer.n,
+				Timestamp: peer.timestamp,
+			}
+			outputPeerList = append(outputPeerList, peerProto)
 		}
-		outputPeerList = append(outputPeerList, peerProto)
 		return true
 	})
 	return &pb.PeerMessage{Peers: outputPeerList}, nil
@@ -526,7 +528,7 @@ func (s *veriServiceServer) callExchangeServices(client *pb.VeriServiceClient) {
 	}
 	resp, err := (*client).ExchangeServices(context.Background(), request)
 	if err != nil {
-		log.Printf("There is an error %v", err)
+		log.Printf("(callExchangeServices) There is an error %v", err)
 		return
 	}
 	inputServiceList := resp.GetServices()
@@ -539,7 +541,7 @@ func (s *veriServiceServer) callExchangeServices(client *pb.VeriServiceClient) {
 func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer *Peer) {
 	// need to check avg and hist differences ...
 	// chose datum
-	// log.Printf("s.n: %d   peer.n: %d", s.n, peer.n)
+	log.Printf("For peer: %v s.n: %d peer.n: %d peer timestamp: %v currentTime: %v", peer.address, s.n, peer.n, peer.timestamp, getCurrentTime())
 	if peer.timestamp+360 < getCurrentTime() {
 		log.Printf("Peer data is too old, maybe peer is dead: %s, peer timestamp: %d, current time: %d", peer.address, peer.timestamp, getCurrentTime())
 		// Maybe remove the peer here
@@ -630,7 +632,7 @@ func (s *veriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
 	}
 	resp, err := (*client).ExchangePeers(context.Background(), request)
 	if err != nil {
-		log.Printf("There is an error %v", err)
+		log.Printf("(callExchangePeers) There is an error %v", err)
 		return
 	}
 	inputPeerList := resp.GetPeers()
