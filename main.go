@@ -39,7 +39,7 @@ var (
 )
 
 // This is set in compile time for optimization
-const k = 300
+const k = 15000 // 300 * 50
 
 type Peer struct {
 	address   string
@@ -52,6 +52,7 @@ type Peer struct {
 
 type veriServiceServer struct {
 	k                     int64
+	d                     int64
 	avg                   []float64
 	n                     int64
 	maxDistance           float64
@@ -179,9 +180,9 @@ func NewEuclideanPointArr(vals []float64) *EuclideanPoint {
 	return ret
 }
 
-func NewEuclideanPointArrWithLabel(vals [k]float64, timestamp int64, label string, groupLabel string) *EuclideanPoint {
-	slice := make([]float64, k)
-	copy(slice, vals[:])
+func NewEuclideanPointArrWithLabel(vals [k]float64, timestamp int64, label string, groupLabel string, d int64) *EuclideanPoint {
+	slice := make([]float64, len(vals))
+	copy(slice[:d], vals[:d])
 	ret := &EuclideanPoint{
 		PointBase:  kdtree.NewPointBase(slice),
 		timestamp:  timestamp,
@@ -267,7 +268,7 @@ func (s *veriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 		s.treeMu.RUnlock()
 		for i := 0; i < len(ans); i++ {
 			feature := &pb.Feature{
-				Feature:    ans[i].GetValues(),
+				Feature:    ans[i].GetValues()[:s.d],
 				Timestamp:  ans[i].GetTimestamp(),
 				Label:      ans[i].GetLabel(),
 				Grouplabel: ans[i].GetGroupLabel(),
@@ -281,8 +282,9 @@ func (s *veriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 // Do a distributed Knn search
 func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.KnnResponse, error) {
 	request := *in
+	d := int64(len(request.GetFeature()))
 	var featureHash [k]float64
-	copy(featureHash[:], request.GetFeature()[:])
+	copy(featureHash[:d], request.GetFeature()[:])
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
 		s.knnQueryId.Set(request.Id, true)
@@ -314,7 +316,7 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 			key := EuclideanPointKey{
 				timestamp: feature.Timestamp,
 			}
-			copy(key.feature[:], feature.Feature)
+			copy(key.feature[:len(feature.Feature)], feature.Feature)
 			value := EuclideanPointValue{
 				timestamp:  feature.Timestamp,
 				label:      feature.Label,
@@ -335,7 +337,8 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 				euclideanPointKey.feature,
 				euclideanPointKey.timestamp,
 				euclideanPointValue.label,
-				euclideanPointValue.groupLabel)
+				euclideanPointValue.groupLabel,
+				s.d)
 			points = append(points, point)
 		}
 		tree := kdtree.NewKDTree(points)
@@ -344,7 +347,7 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		ans := tree.KNN(point, int(in.K))
 		for i := 0; i < len(ans); i++ {
 			featureJson := &pb.Feature{
-				Feature:    ans[i].GetValues(),
+				Feature:    ans[i].GetValues()[:s.d],
 				Timestamp:  ans[i].GetTimestamp(),
 				Label:      ans[i].GetLabel(),
 				Grouplabel: ans[i].GetGroupLabel(),
@@ -365,7 +368,12 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 	key := EuclideanPointKey{
 		timestamp: in.GetTimestamp(),
 	}
-	copy(key.feature[:], in.GetFeature())
+	d := int64(len(in.GetFeature()))
+	if s.d <= d {
+		log.Printf("Updating current dimention to: %v", d)
+		s.d = d // Maybe we can use max of
+	}
+	copy(key.feature[:d], in.GetFeature())
 	value := EuclideanPointValue{
 		timestamp:  in.GetTimestamp(),
 		label:      in.GetLabel(),
@@ -578,7 +586,8 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			euclideanPointKey.feature,
 			euclideanPointKey.timestamp,
 			euclideanPointValue.label,
-			euclideanPointValue.groupLabel)
+			euclideanPointValue.groupLabel,
+			s.d)
 		if count <= limit {
 			points = append(points, point)
 		}
@@ -591,7 +600,7 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			Timestamp:  point.GetTimestamp(),
 			Label:      point.GetLabel(),
 			Grouplabel: point.GetGroupLabel(),
-			Feature:    point.GetValues(),
+			Feature:    point.GetValues()[:s.d],
 		}
 		resp, err := (*client).Insert(context.Background(), request)
 		if err != nil {
@@ -602,7 +611,7 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 				key := EuclideanPointKey{
 					timestamp: point.GetTimestamp(),
 				}
-				copy(key.feature[:], point.GetValues())
+				copy(key.feature[:len(point.GetValues())], point.GetValues())
 				s.pointsMap.Delete(key)
 				s.dirty = true
 			}
@@ -711,7 +720,8 @@ func (s *veriServiceServer) syncMapToTree() {
 				euclideanPointKey.feature,
 				euclideanPointKey.timestamp,
 				euclideanPointValue.label,
-				euclideanPointValue.groupLabel)
+				euclideanPointValue.groupLabel,
+				s.d)
 			points = append(points, point)
 			tempkvMap.Store(euclideanPointValue.label, euclideanPointKey.feature)
 			n++
@@ -843,7 +853,7 @@ func (s *veriServiceServer) PostInsert(w http.ResponseWriter, r *http.Request) {
 	key := EuclideanPointKey{
 		timestamp: in.Timestamp,
 	}
-	copy(key.feature[:], in.Feature)
+	copy(key.feature[:len(in.Feature)], in.Feature)
 	value := EuclideanPointValue{
 		timestamp:  in.Timestamp,
 		label:      in.Label,
@@ -887,7 +897,7 @@ func (s *veriServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
 			key := EuclideanPointKey{
 				timestamp: feature.Timestamp,
 			}
-			copy(key.feature[:], feature.Feature)
+			copy(key.feature[:len(feature.Feature)], feature.Feature)
 			value := EuclideanPointValue{
 				timestamp:  feature.Timestamp,
 				label:      feature.Label,
@@ -908,7 +918,8 @@ func (s *veriServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
 				euclideanPointKey.feature,
 				euclideanPointKey.timestamp,
 				euclideanPointValue.label,
-				euclideanPointValue.groupLabel)
+				euclideanPointValue.groupLabel,
+				s.d)
 			points = append(points, point)
 		}
 		tree := kdtree.NewKDTree(points)
