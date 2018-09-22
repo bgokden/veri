@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='veriservice.proto',
   package='veriservice',
   syntax='proto3',
-  serialized_pb=_b('\n\x11veriservice.proto\x12\x0bveriservice\"X\n\nKnnRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\x12\t\n\x01k\x18\x04 \x01(\x05\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"P\n\x07\x46\x65\x61ture\x12\x0f\n\x07\x66\x65\x61ture\x18\x01 \x03(\x01\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\r\n\x05label\x18\x03 \x01(\t\x12\x12\n\ngrouplabel\x18\x04 \x01(\t\"A\n\x0bKnnResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12&\n\x08\x66\x65\x61tures\x18\x02 \x03(\x0b\x32\x14.veriservice.Feature\"Y\n\x10InsertionRequest\x12\x11\n\ttimestamp\x18\x01 \x01(\x03\x12\r\n\x05label\x18\x02 \x01(\t\x12\x12\n\ngrouplabel\x18\x03 \x01(\t\x12\x0f\n\x07\x66\x65\x61ture\x18\x04 \x03(\x01\"!\n\x11InsertionResponse\x12\x0c\n\x04\x63ode\x18\x02 \x01(\x05\"\x1b\n\nGetRequest\x12\r\n\x05label\x18\x02 \x01(\t\",\n\x0bGetResponse\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"\"\n\x0eServiceMessage\x12\x10\n\x08services\x18\x01 \x03(\t\"a\n\x04Peer\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x0b\n\x03\x61vg\x18\x04 \x03(\x01\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\"/\n\x0bPeerMessage\x12 \n\x05peers\x18\x01 \x03(\x0b\x32\x11.veriservice.Peer\"v\n\x0bJoinRequest\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\x0b\n\x03\x61vg\x18\x03 \x03(\x01\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\x12\x11\n\ttimestamp\x18\x07 \x01(\x03\"\x1f\n\x0cJoinResponse\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t2\xa9\x03\n\x0bVeriService\x12=\n\x06GetKnn\x12\x17.veriservice.KnnRequest\x1a\x18.veriservice.KnnResponse\"\x00\x12I\n\x06Insert\x12\x1d.veriservice.InsertionRequest\x1a\x1e.veriservice.InsertionResponse\"\x00\x12:\n\x03Get\x12\x17.veriservice.GetRequest\x1a\x18.veriservice.GetResponse\"\x00\x12=\n\x04Join\x12\x18.veriservice.JoinRequest\x1a\x19.veriservice.JoinResponse\"\x00\x12N\n\x10\x45xchangeServices\x12\x1b.veriservice.ServiceMessage\x1a\x1b.veriservice.ServiceMessage\"\x00\x12\x45\n\rExchangePeers\x12\x18.veriservice.PeerMessage\x1a\x18.veriservice.PeerMessage\"\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x11veriservice.proto\x12\x0bveriservice\"X\n\nKnnRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\x12\t\n\x01k\x18\x04 \x01(\x05\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"\x15\n\x13GetLocalDataRequest\"P\n\x07\x46\x65\x61ture\x12\x0f\n\x07\x66\x65\x61ture\x18\x01 \x03(\x01\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\r\n\x05label\x18\x03 \x01(\t\x12\x12\n\ngrouplabel\x18\x04 \x01(\t\"A\n\x0bKnnResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12&\n\x08\x66\x65\x61tures\x18\x02 \x03(\x0b\x32\x14.veriservice.Feature\"Y\n\x10InsertionRequest\x12\x11\n\ttimestamp\x18\x01 \x01(\x03\x12\r\n\x05label\x18\x02 \x01(\t\x12\x12\n\ngrouplabel\x18\x03 \x01(\t\x12\x0f\n\x07\x66\x65\x61ture\x18\x04 \x03(\x01\"!\n\x11InsertionResponse\x12\x0c\n\x04\x63ode\x18\x02 \x01(\x05\"\x1b\n\nGetRequest\x12\r\n\x05label\x18\x02 \x01(\t\",\n\x0bGetResponse\x12\x0c\n\x04\x63ode\x18\x01 \x01(\x05\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"\"\n\x0eServiceMessage\x12\x10\n\x08services\x18\x01 \x03(\t\"a\n\x04Peer\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x0b\n\x03\x61vg\x18\x04 \x03(\x01\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\"/\n\x0bPeerMessage\x12 \n\x05peers\x18\x01 \x03(\x0b\x32\x11.veriservice.Peer\"v\n\x0bJoinRequest\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\x0b\n\x03\x61vg\x18\x03 \x03(\x01\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\x12\x11\n\ttimestamp\x18\x07 \x01(\x03\"\x1f\n\x0cJoinResponse\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t2\xf5\x03\n\x0bVeriService\x12=\n\x06GetKnn\x12\x17.veriservice.KnnRequest\x1a\x18.veriservice.KnnResponse\"\x00\x12I\n\x06Insert\x12\x1d.veriservice.InsertionRequest\x1a\x1e.veriservice.InsertionResponse\"\x00\x12:\n\x03Get\x12\x17.veriservice.GetRequest\x1a\x18.veriservice.GetResponse\"\x00\x12=\n\x04Join\x12\x18.veriservice.JoinRequest\x1a\x19.veriservice.JoinResponse\"\x00\x12N\n\x10\x45xchangeServices\x12\x1b.veriservice.ServiceMessage\x1a\x1b.veriservice.ServiceMessage\"\x00\x12\x45\n\rExchangePeers\x12\x18.veriservice.PeerMessage\x1a\x18.veriservice.PeerMessage\"\x00\x12J\n\x0cGetLocalData\x12 .veriservice.GetLocalDataRequest\x1a\x14.veriservice.Feature\"\x00\x30\x01\x62\x06proto3')
 )
 
 
@@ -84,6 +84,30 @@ _KNNREQUEST = _descriptor.Descriptor(
 )
 
 
+_GETLOCALDATAREQUEST = _descriptor.Descriptor(
+  name='GetLocalDataRequest',
+  full_name='veriservice.GetLocalDataRequest',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=124,
+  serialized_end=145,
+)
+
+
 _FEATURE = _descriptor.Descriptor(
   name='Feature',
   full_name='veriservice.Feature',
@@ -131,8 +155,8 @@ _FEATURE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=124,
-  serialized_end=204,
+  serialized_start=147,
+  serialized_end=227,
 )
 
 
@@ -169,8 +193,8 @@ _KNNRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=206,
-  serialized_end=271,
+  serialized_start=229,
+  serialized_end=294,
 )
 
 
@@ -221,8 +245,8 @@ _INSERTIONREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=273,
-  serialized_end=362,
+  serialized_start=296,
+  serialized_end=385,
 )
 
 
@@ -252,8 +276,8 @@ _INSERTIONRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=364,
-  serialized_end=397,
+  serialized_start=387,
+  serialized_end=420,
 )
 
 
@@ -283,8 +307,8 @@ _GETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=399,
-  serialized_end=426,
+  serialized_start=422,
+  serialized_end=449,
 )
 
 
@@ -321,8 +345,8 @@ _GETRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=428,
-  serialized_end=472,
+  serialized_start=451,
+  serialized_end=495,
 )
 
 
@@ -352,8 +376,8 @@ _SERVICEMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=474,
-  serialized_end=508,
+  serialized_start=497,
+  serialized_end=531,
 )
 
 
@@ -418,8 +442,8 @@ _PEER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=510,
-  serialized_end=607,
+  serialized_start=533,
+  serialized_end=630,
 )
 
 
@@ -449,8 +473,8 @@ _PEERMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=609,
-  serialized_end=656,
+  serialized_start=632,
+  serialized_end=679,
 )
 
 
@@ -522,8 +546,8 @@ _JOINREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=658,
-  serialized_end=776,
+  serialized_start=681,
+  serialized_end=799,
 )
 
 
@@ -553,13 +577,14 @@ _JOINRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=778,
-  serialized_end=809,
+  serialized_start=801,
+  serialized_end=832,
 )
 
 _KNNRESPONSE.fields_by_name['features'].message_type = _FEATURE
 _PEERMESSAGE.fields_by_name['peers'].message_type = _PEER
 DESCRIPTOR.message_types_by_name['KnnRequest'] = _KNNREQUEST
+DESCRIPTOR.message_types_by_name['GetLocalDataRequest'] = _GETLOCALDATAREQUEST
 DESCRIPTOR.message_types_by_name['Feature'] = _FEATURE
 DESCRIPTOR.message_types_by_name['KnnResponse'] = _KNNRESPONSE
 DESCRIPTOR.message_types_by_name['InsertionRequest'] = _INSERTIONREQUEST
@@ -579,6 +604,13 @@ KnnRequest = _reflection.GeneratedProtocolMessageType('KnnRequest', (_message.Me
   # @@protoc_insertion_point(class_scope:veriservice.KnnRequest)
   ))
 _sym_db.RegisterMessage(KnnRequest)
+
+GetLocalDataRequest = _reflection.GeneratedProtocolMessageType('GetLocalDataRequest', (_message.Message,), dict(
+  DESCRIPTOR = _GETLOCALDATAREQUEST,
+  __module__ = 'veriservice_pb2'
+  # @@protoc_insertion_point(class_scope:veriservice.GetLocalDataRequest)
+  ))
+_sym_db.RegisterMessage(GetLocalDataRequest)
 
 Feature = _reflection.GeneratedProtocolMessageType('Feature', (_message.Message,), dict(
   DESCRIPTOR = _FEATURE,
@@ -665,8 +697,8 @@ _VERISERVICE = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=812,
-  serialized_end=1237,
+  serialized_start=835,
+  serialized_end=1336,
   methods=[
   _descriptor.MethodDescriptor(
     name='GetKnn',
@@ -720,6 +752,15 @@ _VERISERVICE = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=_PEERMESSAGE,
     output_type=_PEERMESSAGE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='GetLocalData',
+    full_name='veriservice.VeriService.GetLocalData',
+    index=6,
+    containing_service=None,
+    input_type=_GETLOCALDATAREQUEST,
+    output_type=_FEATURE,
     options=None,
   ),
 ])

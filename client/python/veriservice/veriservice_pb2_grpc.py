@@ -45,6 +45,11 @@ class VeriServiceStub(object):
         request_serializer=veriservice__pb2.PeerMessage.SerializeToString,
         response_deserializer=veriservice__pb2.PeerMessage.FromString,
         )
+    self.GetLocalData = channel.unary_stream(
+        '/veriservice.VeriService/GetLocalData',
+        request_serializer=veriservice__pb2.GetLocalDataRequest.SerializeToString,
+        response_deserializer=veriservice__pb2.Feature.FromString,
+        )
 
 
 class VeriServiceServicer(object):
@@ -96,6 +101,13 @@ class VeriServiceServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def GetLocalData(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_VeriServiceServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -128,6 +140,11 @@ def add_VeriServiceServicer_to_server(servicer, server):
           servicer.ExchangePeers,
           request_deserializer=veriservice__pb2.PeerMessage.FromString,
           response_serializer=veriservice__pb2.PeerMessage.SerializeToString,
+      ),
+      'GetLocalData': grpc.unary_stream_rpc_method_handler(
+          servicer.GetLocalData,
+          request_deserializer=veriservice__pb2.GetLocalDataRequest.FromString,
+          response_serializer=veriservice__pb2.Feature.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

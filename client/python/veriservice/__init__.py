@@ -24,6 +24,11 @@ class VeriClient:
         response = self.stub.Get(request)
         return response
 
+    def getLocalData(self):
+        request = pb.GetLocalDataRequest()
+        response = self.stub.GetLocalData(request)
+        return response
+
 class DemoVeriClientWithData:
     def __init__(self, service):
         self.client = VeriClient(service) # eg.: 'localhost:50051'
