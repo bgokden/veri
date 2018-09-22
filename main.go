@@ -218,6 +218,26 @@ func calculateAverage(avg []float64, p kdtree.Point, n float64) []float64 {
 	return avg
 }
 
+func (s *veriServiceServer) GetLocalData(rect *pb.GetLocalDataRequest, stream pb.VeriService_GetLocalDataServer) error {
+	s.pointsMap.Range(func(key, value interface{}) bool {
+		euclideanPointKey := key.(EuclideanPointKey)
+		euclideanPointValue := value.(EuclideanPointValue)
+		feature := &pb.Feature{
+			Feature:    euclideanPointKey.feature[:s.d],
+			Timestamp:  euclideanPointKey.timestamp,
+			Label:      euclideanPointValue.label,
+			Grouplabel: euclideanPointValue.groupLabel,
+		}
+		if err := stream.Send(feature); err != nil {
+			// return err pass err someway
+			return false
+		}
+		return true
+	})
+
+	return nil
+}
+
 func (s *veriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featuresChannel chan<- pb.Feature) {
 	log.Printf("GetKnnFromPeer %s", peer.address)
 	client, conn := s.getClient(peer.address)

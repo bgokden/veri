@@ -13,6 +13,7 @@ service VeriService {
   rpc Join(JoinRequest) returns (JoinResponse) {}
   rpc ExchangeServices(ServiceMessage) returns (ServiceMessage) {}
   rpc ExchangePeers(PeerMessage) returns (PeerMessage) {}
+  rpc GetLocalData(GetLocalDataRequest) returns (stream Feature) {}
 }
 
 // Request message for creating a new customer
@@ -22,6 +23,9 @@ message KnnRequest {
   int64 timeout = 3;
   int32 k = 4;
   repeated double feature = 5;
+}
+
+message GetLocalDataRequest {
 }
 
 message Feature {
