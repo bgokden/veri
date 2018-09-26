@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"runtime"
@@ -389,11 +390,14 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 		timestamp: in.GetTimestamp(),
 	}
 	d := int64(len(in.GetFeature()))
-	if s.d <= d {
+	if s.d < d {
+		if d > 15000 {
+			d = 15000 // d can not be larger than maximum capacity
+		}
 		log.Printf("Updating current dimention to: %v", d)
 		s.d = d // Maybe we can use max of
 	}
-	copy(key.feature[:d], in.GetFeature())
+	copy(key.feature[:d], in.GetFeature()[:d])
 	value := EuclideanPointValue{
 		timestamp:  in.GetTimestamp(),
 		label:      in.GetLabel(),
@@ -444,7 +448,7 @@ func (s *veriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.J
 	// log.Printf("Join request received %v", *in)
 	p, _ := peer.FromContext(ctx)
 	address := strings.Split(p.Addr.String(), ":")[0] + ":" + strconv.FormatInt(int64(in.GetPort()), 10)
-	log.Printf("Peer with Addr: %s called Join", address)
+	// log.Printf("Peer with Addr: %s called Join", address)
 	peer := Peer{
 		address:   address,
 		avg:       in.GetAvg(),
@@ -608,10 +612,17 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			euclideanPointValue.label,
 			euclideanPointValue.groupLabel,
 			s.d)
-		if count <= limit {
-			points = append(points, point)
+		if rand.Float64() < 0.5 {
+			if count <= limit {
+				points = append(points, point)
+				count++
+				if count <= limit {
+					return true
+				} else {
+					return false
+				}
+			}
 		}
-		count++
 		return true
 	})
 
@@ -627,7 +638,7 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			log.Printf("There is an error: %v", err)
 		} else {
 			// log.Printf("A new Response has been received for %d. with code: %d", i, resp.GetCode())
-			if resp.GetCode() == 0 && s.state > 0 {
+			if resp.GetCode() == 0 && s.state > 0 && rand.Float64() < (0.3*float64(s.state)) {
 				key := EuclideanPointKey{
 					timestamp: point.GetTimestamp(),
 				}
@@ -764,6 +775,7 @@ func (s *veriServiceServer) syncMapToTree() {
 		// log.Print(hist)
 		// log.Printf("avg")
 		// log.Print(avg)
+		log.Printf("N=%v, state=%v", n, s.state)
 		s.kvMap = tempkvMap
 		s.avg = avg
 		s.hist = hist
