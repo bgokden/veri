@@ -37,6 +37,7 @@ var (
 	jsonDBFile = flag.String("json_db_file", "testdata/route_guide_db.json", "A json file containing a list of features")
 	port       = flag.Int("port", 10000, "The server port")
 	services   = flag.String("services", "", "Comma separated list of services")
+	evictable  = flag.Bool("evictable", true, "Data is evicted by time if it is true")
 )
 
 // This is set in compile time for optimization
@@ -65,6 +66,7 @@ type veriServiceServer struct {
 	latestNumberOfInserts int
 	state                 int
 	maxMemoryMiB          uint64
+	averageTimestamp      int64
 	pointsMap             sync.Map
 	kvMap                 sync.Map
 	services              sync.Map
@@ -84,8 +86,8 @@ type EuclideanPoint struct {
 }
 
 type EuclideanPointKey struct {
-	feature   [k]float64
-	timestamp int64
+	feature    [k]float64
+	groupLabel string
 }
 
 type EuclideanPointValue struct {
@@ -225,7 +227,7 @@ func (s *veriServiceServer) GetLocalData(rect *pb.GetLocalDataRequest, stream pb
 		euclideanPointValue := value.(EuclideanPointValue)
 		feature := &pb.Feature{
 			Feature:    euclideanPointKey.feature[:s.d],
-			Timestamp:  euclideanPointKey.timestamp,
+			Timestamp:  euclideanPointValue.timestamp,
 			Label:      euclideanPointValue.label,
 			Grouplabel: euclideanPointValue.groupLabel,
 		}
@@ -335,7 +337,7 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		select {
 		case feature := <-featuresChannel:
 			key := EuclideanPointKey{
-				timestamp: feature.Timestamp,
+				groupLabel: feature.GetGrouplabel(),
 			}
 			copy(key.feature[:len(feature.Feature)], feature.Feature)
 			value := EuclideanPointValue{
@@ -356,7 +358,7 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 			log.Printf("Received Feature (Get KNN): %v", euclideanPointValue.label)
 			point := NewEuclideanPointArrWithLabel(
 				euclideanPointKey.feature,
-				euclideanPointKey.timestamp,
+				euclideanPointValue.timestamp,
 				euclideanPointValue.label,
 				euclideanPointValue.groupLabel,
 				s.d)
@@ -387,7 +389,7 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 		return &pb.InsertionResponse{Code: 1}, nil
 	}
 	key := EuclideanPointKey{
-		timestamp: in.GetTimestamp(),
+		groupLabel: in.GetGrouplabel(),
 	}
 	d := int64(len(in.GetFeature()))
 	if s.d < d {
@@ -608,7 +610,7 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 		euclideanPointValue := value.(EuclideanPointValue)
 		point := NewEuclideanPointArrWithLabel(
 			euclideanPointKey.feature,
-			euclideanPointKey.timestamp,
+			euclideanPointValue.timestamp,
 			euclideanPointValue.label,
 			euclideanPointValue.groupLabel,
 			s.d)
@@ -640,7 +642,7 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			// log.Printf("A new Response has been received for %d. with code: %d", i, resp.GetCode())
 			if resp.GetCode() == 0 && s.state > 0 && rand.Float64() < (0.3*float64(s.state)) {
 				key := EuclideanPointKey{
-					timestamp: point.GetTimestamp(),
+					groupLabel: point.GetGroupLabel(),
 				}
 				copy(key.feature[:len(point.GetValues())], point.GetValues())
 				s.pointsMap.Delete(key)
@@ -733,7 +735,7 @@ func (s *veriServiceServer) SyncJoin() {
 func (s *veriServiceServer) syncMapToTree() {
 	// sum := make([]float64, 0)
 	// count := 0
-	if s.dirty {
+	if s.dirty || (s.state >= 1 && *evictable) {
 		s.dirty = false
 		points := make([]kdtree.Point, 0)
 		n := int64(0)
@@ -743,13 +745,18 @@ func (s *veriServiceServer) syncMapToTree() {
 		hist := make([]float64, 64)
 		nFloat := float64(s.n)
 		histUnit := 1 / nFloat
+		averageTimeStamp := 0.0
 		var tempkvMap sync.Map
 		s.pointsMap.Range(func(key, value interface{}) bool {
 			euclideanPointKey := key.(EuclideanPointKey)
 			euclideanPointValue := value.(EuclideanPointValue)
+			// In eviction mode, if a point timestamp is older than average timestamp, delete data randomly.
+			if s.state >= 1 && *evictable && s.averageTimestamp != 0 && euclideanPointValue.timestamp > s.averageTimestamp && rand.Float32() < 0.2 {
+				return true // evict this data point
+			}
 			point := NewEuclideanPointArrWithLabel(
 				euclideanPointKey.feature,
-				euclideanPointKey.timestamp,
+				euclideanPointValue.timestamp,
 				euclideanPointValue.label,
 				euclideanPointValue.groupLabel,
 				s.d)
@@ -757,6 +764,7 @@ func (s *veriServiceServer) syncMapToTree() {
 			tempkvMap.Store(euclideanPointValue.label, euclideanPointKey.feature)
 			n++
 			avg = calculateAverage(avg, point, nFloat)
+			averageTimeStamp = averageTimeStamp + float64(euclideanPointValue.timestamp)/nFloat
 			distance = euclideanDistance(s.avg, point.GetValues())
 			if distance > maxDistance {
 				maxDistance = distance
@@ -778,6 +786,7 @@ func (s *veriServiceServer) syncMapToTree() {
 		log.Printf("N=%v, state=%v", n, s.state)
 		s.kvMap = tempkvMap
 		s.avg = avg
+		s.averageTimestamp = int64(averageTimeStamp)
 		s.hist = hist
 		s.maxDistance = maxDistance
 		s.n = n
@@ -825,7 +834,7 @@ func (s *veriServiceServer) check() {
 			s.state = 0 // Accept insert, don't delete while sending data
 		} else if currentMemory < maxMemory*0.85 {
 			s.state = 1 // Accept insert, delete while sending data
-		} else {
+		} else if currentMemory < maxMemory*0.95 {
 			s.state = 2 // Don't accept insert, delete while sending data
 		}
 		// log.Printf("Current Memory = %f MiB => current State %d", currentMemory, s.state)
@@ -883,7 +892,7 @@ func (s *veriServiceServer) PostInsert(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 	key := EuclideanPointKey{
-		timestamp: in.Timestamp,
+		groupLabel: in.GroupLabel,
 	}
 	copy(key.feature[:len(in.Feature)], in.Feature)
 	value := EuclideanPointValue{
@@ -927,7 +936,7 @@ func (s *veriServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
 		select {
 		case feature := <-featuresChannel:
 			key := EuclideanPointKey{
-				timestamp: feature.Timestamp,
+				groupLabel: feature.GetGrouplabel(),
 			}
 			copy(key.feature[:len(feature.Feature)], feature.Feature)
 			value := EuclideanPointValue{
@@ -948,7 +957,7 @@ func (s *veriServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Received Feature (PostSearch): %v", euclideanPointValue.label)
 			point := NewEuclideanPointArrWithLabel(
 				euclideanPointKey.feature,
-				euclideanPointKey.timestamp,
+				euclideanPointValue.timestamp,
 				euclideanPointValue.label,
 				euclideanPointValue.groupLabel,
 				s.d)
