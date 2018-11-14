@@ -99,30 +99,6 @@ type EuclideanPointValue struct {
 	groupLabel string
 }
 
-type EuclideanPointJson struct {
-	Feature           []float64 `json:"feature"`
-	Timestamp         int64     `json:"timestamp"`
-	Label             string    `json:"label"`
-	GroupLabel        string    `json:"grouplabel"`
-	sequenceEndingOne int64     `json:"sequenceEndingOne"`
-	sequenceEndingTwo int64     `json:"sequenceEndingTwo"`
-}
-
-type ResponseJson struct {
-	Result string `json:"result"`
-}
-
-type SearchJson struct {
-	Feature   []float64 `json:"feature"`
-	K         int64     `json:"k"`
-	Timestamp int64     `json:"timestamp"`
-	Timeout   int64     `json:"timeout"`
-}
-
-type SearchResultJson struct {
-	Points []EuclideanPointJson `json:"points"`
-}
-
 // Return the label
 func (p *EuclideanPoint) GetLabel() string {
 	return p.label
@@ -136,6 +112,16 @@ func (p *EuclideanPoint) GetGroupLabel() string {
 // Return the timestamp
 func (p *EuclideanPoint) GetTimestamp() int64 {
 	return p.timestamp
+}
+
+// Return the sequenceEndingOne
+func (p *EuclideanPoint) GetSequenceEndingOne() int64 {
+	return p.GetSequenceEndingOne()
+}
+
+// Return the sequenceEndingTwo
+func (p *EuclideanPoint) GetSequenceEndingTwo() int64 {
+	return p.GetSequenceEndingTwo()
 }
 
 func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
@@ -874,116 +860,11 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-func (s *veriServiceServer) PostInsert(w http.ResponseWriter, r *http.Request) {
-	if s.state > 2 {
-		respondWithError(w, http.StatusTooManyRequests, "Too many requests")
-		return
-	}
-	var in EuclideanPointJson
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&in); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
-	defer r.Body.Close()
-	key := EuclideanPointKey{
-		groupLabel: in.GroupLabel,
-	}
-	copy(key.feature[:len(in.Feature)], in.Feature)
-	value := EuclideanPointValue{
-		timestamp:  in.Timestamp,
-		label:      in.Label,
-		groupLabel: in.GroupLabel,
-	}
-	s.pointsMap.Store(key, value)
-	s.dirty = true
-	s.latestNumberOfInserts++
-	respondWithJSON(w, http.StatusOK, ResponseJson{Result: "Ok"})
-}
-
-func (s *veriServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
-	var in SearchJson
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&in); err != nil {
-		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
-	defer r.Body.Close()
-	id := ksuid.New().String()
-	s.knnQueryId.Set(id, getCurrentTime())
-	request := &pb.KnnRequest{
-		Id:        id,
-		Timestamp: in.Timestamp,
-		Timeout:   in.Timeout,
-		K:         int32(in.K),
-		Feature:   in.Feature,
-	}
-	featuresChannel := make(chan pb.Feature, 100) // in.K
-	go s.GetKnnFromPeers(request, featuresChannel)
-	go s.GetKnnFromLocal(request, featuresChannel)
-	// time.Sleep(1 * time.Second)
-	// close(featuresChannel)
-	responseFeatures := make([]EuclideanPointJson, 0)
-	dataAvailable := true
-	timeLimit := time.After(time.Duration(in.Timeout) * time.Millisecond)
-	reduceMap := make(map[EuclideanPointKey]EuclideanPointValue)
-	for dataAvailable {
-		select {
-		case feature := <-featuresChannel:
-			key := EuclideanPointKey{
-				groupLabel: feature.GetGrouplabel(),
-			}
-			copy(key.feature[:len(feature.Feature)], feature.Feature)
-			value := EuclideanPointValue{
-				timestamp:  feature.Timestamp,
-				label:      feature.Label,
-				groupLabel: feature.Grouplabel,
-			}
-			reduceMap[key] = value
-		case <-timeLimit:
-			log.Printf("timeout PostSearch")
-			dataAvailable = false
-			break
-		}
-	}
-	if len(reduceMap) > 0 {
-		points := make([]kdtree.Point, 0)
-		for euclideanPointKey, euclideanPointValue := range reduceMap {
-			log.Printf("Received Feature (PostSearch): %v", euclideanPointValue.label)
-			point := NewEuclideanPointArrWithLabel(
-				euclideanPointKey.feature,
-				euclideanPointValue.timestamp,
-				euclideanPointValue.label,
-				euclideanPointValue.groupLabel,
-				s.d,
-				euclideanPointKey.sequenceEndingOne,
-				euclideanPointKey.sequenceEndingTwo)
-			points = append(points, point)
-		}
-		tree := kdtree.NewKDTree(points)
-		point := NewEuclideanPointArr(in.Feature)
-		ans := tree.KNN(point, int(in.K))
-		for i := 0; i < len(ans); i++ {
-			featureJson := EuclideanPointJson{
-				Feature:    ans[i].GetValues(),
-				Timestamp:  ans[i].GetTimestamp(),
-				Label:      ans[i].GetLabel(),
-				GroupLabel: ans[i].GetGroupLabel(),
-			}
-			log.Printf("New Feature (PostSearch): %v", ans[i].GetLabel())
-			responseFeatures = append(responseFeatures, featureJson)
-		}
-	}
-	respondWithJSON(w, http.StatusOK, SearchResultJson{Points: responseFeatures})
-}
-
 func (s *veriServiceServer) restApi() {
 	log.Println("Rest api stared")
 	router := mux.NewRouter()
 	router.HandleFunc("/", GetHeath).Methods("GET")
 	router.HandleFunc("/health", GetHeath).Methods("GET")
-	router.HandleFunc("/v1/insert", s.PostInsert).Methods("POST")
-	router.HandleFunc("/v1/search", s.PostSearch).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
