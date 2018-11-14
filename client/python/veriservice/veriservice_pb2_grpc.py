@@ -25,11 +25,6 @@ class VeriServiceStub(object):
         request_serializer=veriservice__pb2.InsertionRequest.SerializeToString,
         response_deserializer=veriservice__pb2.InsertionResponse.FromString,
         )
-    self.Get = channel.unary_unary(
-        '/veriservice.VeriService/Get',
-        request_serializer=veriservice__pb2.GetRequest.SerializeToString,
-        response_deserializer=veriservice__pb2.GetResponse.FromString,
-        )
     self.Join = channel.unary_unary(
         '/veriservice.VeriService/Join',
         request_serializer=veriservice__pb2.JoinRequest.SerializeToString,
@@ -67,13 +62,6 @@ class VeriServiceServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def Insert(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def Get(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -120,11 +108,6 @@ def add_VeriServiceServicer_to_server(servicer, server):
           servicer.Insert,
           request_deserializer=veriservice__pb2.InsertionRequest.FromString,
           response_serializer=veriservice__pb2.InsertionResponse.SerializeToString,
-      ),
-      'Get': grpc.unary_unary_rpc_method_handler(
-          servicer.Get,
-          request_deserializer=veriservice__pb2.GetRequest.FromString,
-          response_serializer=veriservice__pb2.GetResponse.SerializeToString,
       ),
       'Join': grpc.unary_unary_rpc_method_handler(
           servicer.Join,

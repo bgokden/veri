@@ -1,32 +1,101 @@
 import grpc
+import time
 
 from veriservice import veriservice_pb2 as pb
 from veriservice import veriservice_pb2_grpc as pb_grpc
 
+class GrpcClientWrapper:
+    def __init__(self, service, client):
+        self.service = service
+        self.client = client
+
+    def get_service():
+        return self.client
+
+    def get_client():
+        return self.client
+
 class VeriClient:
-    def __init__(self, service):
-        self.service = service # eg.: 'localhost:50051'
-        self.channel = grpc.insecure_channel(self.service)
-        self.stub = pb_grpc.VeriServiceStub(self.channel)
+    def __init__(self, services):
+        self.services = services.split(",") # eg.: 'localhost:50051, localhost2:50051'
+        self.client_iterator = 0
+        self.clients = {}
 
-    def insert(self, feature, label, grouplabel, timestamp):
-        request = pb.InsertionRequest(timestamp = timestamp, label = label, grouplabel = grouplabel, feature = feature)
-        response = self.stub.Insert(request)
+    def __get_client(self):
+        service = self.services[self.client_iterator]
+        if service in self.clients:
+            return self.clients[service]
+        channel = grpc.insecure_channel(service)
+        self.clients[service] = GrpcClientWrapper(service, pb_grpc.VeriServiceStub(channel))
+        self.client_iterator = ( self.client_iterator + 1 ) % len(self.services)
+        return self.clients[service]
+
+    def __refresh_client(self, service):
+        time.sleep(5)
+        channel = grpc.insecure_channel(service)
+        self.clients[service] = GrpcClientWrapper(service, pb_grpc.VeriServiceStub(channel))
+
+
+    def insert(self, feature, label, grouplabel = '', timestamp = 0, sequenceendingone = -1, sequenceendingtwo = -1, retry = 5):
+        request = pb.InsertionRequest(timestamp = timestamp,
+                                        label = label,
+                                        grouplabel = grouplabel,
+                                        feature = feature,
+                                        sequenceendingone = sequenceendingone,
+                                        sequenceendingtwo = sequenceendingtwo)
+        response = None
+        while retry >= 0:
+            client_wrapper = None
+            try:
+                client_wrapper = self.__get_client()
+                response = client_wrapper.get_client().Insert(request)
+                if response.GetCode == 0
+                    return response
+            except grpc.RpcError as e: # there should be connection problem
+                if client_wrapper is not None:
+                    self.__refresh_client(client_wrapper.get_service())
+            except Exception as e:
+                print(e)
+                time.sleep(5)
+            retry -= 1
         return response
 
-    def getKnn(self, feature, k=10, id='', timestamp=0, timeout=1000):
+    def getKnn(self, feature, k=10, id='', timestamp=0, timeout=1000, rety = 5):
         request = pb.KnnRequest(id=id, timestamp=timestamp, timeout=timeout, k=k, feature=feature)
-        response = self.stub.GetKnn(request)
+        response = None
+        while retry >= 0:
+            client_wrapper = None
+            try:
+                client_wrapper = self.__get_client()
+                response = client_wrapper.get_client().GetKnn(request)
+                if response.GetCode == 0
+                    return response
+            except grpc.RpcError as e: # there should be connection problem
+                if client_wrapper is not None:
+                    self.__refresh_client(client_wrapper.get_service())
+            except Exception as e:
+                print(e)
+                time.sleep(5)
+            retry -= 1
         return response
 
-    def get(self, label):
-        request = pb.GetRequest(label = label)
-        response = self.stub.Get(request)
-        return response
-
-    def getLocalData(self):
+    def getLocalData(self, retry = 5):
         request = pb.GetLocalDataRequest()
-        response = self.stub.GetLocalData(request)
+        response = None
+        while retry >= 0:
+            client_wrapper = None
+            try:
+                client_wrapper = self.__get_client()
+                response = client_wrapper.get_client().GetLocalData(request)
+                if response.GetCode == 0
+                    return response
+            except grpc.RpcError as e: # there should be connection problem
+                if client_wrapper is not None:
+                    self.__refresh_client(client_wrapper.get_service())
+            except Exception as e:
+                print(e)
+                time.sleep(5)
+            retry -= 1
         return response
 
 class DemoVeriClientWithData:
@@ -51,8 +120,5 @@ class DemoVeriClientWithData:
         print('inserting data')
         for d in self.data:
             self.client.insert(d['feature'], d['label'], d['label'], 0)
-        print('get back data')
-        for d in self.data:
-            print(self.client.get(d['label']).feature[:3])
         print('do a knn search')
         print(self.client.getKnn([0.1, 0.1, 0.1]))

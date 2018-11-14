@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -52,6 +53,12 @@ type Peer struct {
 	timestamp int64
 }
 
+type Client struct {
+	address string
+	client  *pb.VeriServiceClient
+	conn    *grpc.ClientConn
+}
+
 type veriServiceServer struct {
 	k                     int64
 	d                     int64
@@ -75,6 +82,7 @@ type veriServiceServer struct {
 	treeMu                sync.RWMutex // protects KDTree
 	tree                  *kdtree.KDTree
 	cache                 cache.Cache
+	clients               sync.Map
 }
 
 type EuclideanPoint struct {
@@ -241,22 +249,27 @@ func (s *veriServiceServer) GetLocalData(rect *pb.GetLocalDataRequest, stream pb
 
 func (s *veriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featuresChannel chan<- pb.Feature) {
 	log.Printf("GetKnnFromPeer %s", peer.address)
-	client, conn := s.getClient(peer.address)
-	resp, err := (*client).GetKnn(context.Background(), in)
-	if err != nil {
-		log.Printf("There is an error: %v", err)
-		conn.Close()
-		return
+	client, err0 := s.get_client(peer.address)
+	if err0 != nil {
+		grpc_client := client.client
+		resp, err := (*grpc_client).GetKnn(context.Background(), in)
+		if err != nil {
+			log.Printf("There is an error: %v", err)
+			// conn.Close()
+			return
+		} else {
+			go s.refresh_client(peer.address)
+		}
+		// if resp.Success {
+		// log.Printf("A new Response has been received with id: %s", resp.Id)
+		features := resp.GetFeatures()
+		for i := 0; i < len(features); i++ {
+			log.Printf("New Feature from Peer (%s) : %v", peer.address, features[i].GetLabel())
+			featuresChannel <- *(features[i])
+			// log.Println(features[i].GetLabel())
+		}
+		// conn.Close()
 	}
-	// if resp.Success {
-	// log.Printf("A new Response has been received with id: %s", resp.Id)
-	features := resp.GetFeatures()
-	for i := 0; i < len(features); i++ {
-		log.Printf("New Feature from Peer (%s) : %v", peer.address, features[i].GetLabel())
-		featuresChannel <- *(features[i])
-		// log.Println(features[i].GetLabel())
-	}
-	conn.Close()
 }
 
 func (s *veriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel chan<- pb.Feature) {
@@ -489,13 +502,54 @@ func (s *veriServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessag
 	return &pb.PeerMessage{Peers: outputPeerList}, nil
 }
 
-func (s *veriServiceServer) getClient(address string) (*pb.VeriServiceClient, *grpc.ClientConn) {
+func (s *veriServiceServer) getClient(address string) (*pb.VeriServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		log.Fatalf("fail to dial: %v", err)
+		log.Printf("fail to dial: %v", err)
+		return nil, nil, err
 	}
 	client := pb.NewVeriServiceClient(conn)
-	return &client, conn
+	return &client, conn, nil
+}
+
+func (s *veriServiceServer) new_client(address string) (*Client, error) {
+	client, conn, err := s.getClient(address)
+	if err != nil {
+		return nil, err
+	}
+	return &Client{
+		address: address,
+		client:  client,
+		conn:    conn,
+	}, nil
+}
+
+/*
+There may be some concurrency problems where unclosed connections can occur
+*/
+func (s *veriServiceServer) get_client(address string) (*Client, error) {
+	client, ok := s.clients.Load(address)
+	if ok {
+		return client.(*Client), nil
+	} else {
+		new_client, err := s.new_client(address)
+		if err != nil {
+			return nil, err
+		} else {
+			s.clients.Store(address, new_client)
+			return new_client, nil
+		}
+	}
+	return &Client{}, errors.New("Can not initilize client")
+}
+
+func (s *veriServiceServer) refresh_client(address string) {
+	new_client, err := s.new_client(address)
+	if err != nil {
+		log.Printf("fail to get a client: %v", err) // this is probably really bad
+	} else {
+		s.clients.Store(address, new_client)
+	}
 }
 
 func (s *veriServiceServer) callJoin(client *pb.VeriServiceClient) {
@@ -681,9 +735,14 @@ func (s *veriServiceServer) SyncJoin() {
 		serviceName := key.(string)
 		// log.Printf("Service %s", serviceName)
 		if len(serviceName) > 0 {
-			client, conn := s.getClient(serviceName)
-			s.callJoin(client)
-			conn.Close()
+			client, err := s.get_client(serviceName)
+			if err != nil {
+				grpc_client := client.client
+				s.callJoin(grpc_client)
+			} else {
+				go s.refresh_client(serviceName)
+			}
+			// conn.Close()
 		}
 		return true
 	})
@@ -693,12 +752,17 @@ func (s *veriServiceServer) SyncJoin() {
 		// log.Printf("Peer %s", peerAddress)
 		if len(peerAddress) > 0 && peerAddress != s.address {
 			peerValue := value.(Peer)
-			client, conn := s.getClient(peerAddress)
-			s.callJoin(client)
-			s.callExchangeServices(client)
-			s.callExchangePeers(client)
-			s.callExchangeData(client, &peerValue)
-			conn.Close()
+			client, err := s.get_client(peerAddress)
+			if err != nil {
+				grpc_client := client.client
+				s.callJoin(grpc_client)
+				s.callExchangeServices(grpc_client)
+				s.callExchangePeers(grpc_client)
+				s.callExchangeData(grpc_client, &peerValue)
+			} else {
+				go s.refresh_client(peerAddress)
+			}
+			// conn.Close()
 		}
 		return true
 	})
