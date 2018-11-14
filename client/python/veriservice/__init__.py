@@ -9,10 +9,10 @@ class GrpcClientWrapper:
         self.service = service
         self.client = client
 
-    def get_service():
-        return self.client
+    def get_service(self):
+        return self.service
 
-    def get_client():
+    def get_client(self):
         return self.client
 
 class VeriClient:

@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='veriservice',
-      version='0.0.7',
+      version='0.0.9',
       description='Python client for Veri',
       long_description=long_description,
       long_description_content_type='text/markdown',
