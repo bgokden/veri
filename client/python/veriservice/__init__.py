@@ -49,7 +49,7 @@ class VeriClient:
             try:
                 client_wrapper = self.__get_client()
                 response = client_wrapper.get_client().Insert(request)
-                if response.GetCode == 0
+                if response.GetCode == 0:
                     return response
             except grpc.RpcError as e: # there should be connection problem
                 if client_wrapper is not None:
@@ -68,7 +68,7 @@ class VeriClient:
             try:
                 client_wrapper = self.__get_client()
                 response = client_wrapper.get_client().GetKnn(request)
-                if response.GetCode == 0
+                if response.GetCode == 0:
                     return response
             except grpc.RpcError as e: # there should be connection problem
                 if client_wrapper is not None:
@@ -87,7 +87,7 @@ class VeriClient:
             try:
                 client_wrapper = self.__get_client()
                 response = client_wrapper.get_client().GetLocalData(request)
-                if response.GetCode == 0
+                if response.GetCode == 0:
                     return response
             except grpc.RpcError as e: # there should be connection problem
                 if client_wrapper is not None:
