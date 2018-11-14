@@ -9,7 +9,6 @@ service VeriService {
   // Create a new Customer - A simple RPC
   rpc GetKnn(KnnRequest) returns (KnnResponse) {}
   rpc Insert(InsertionRequest) returns (InsertionResponse) {}
-  rpc Get(GetRequest) returns (GetResponse) {}
   rpc Join(JoinRequest) returns (JoinResponse) {}
   rpc ExchangeServices(ServiceMessage) returns (ServiceMessage) {}
   rpc ExchangePeers(PeerMessage) returns (PeerMessage) {}
@@ -33,6 +32,8 @@ message Feature {
   int64 timestamp = 2;
   string label = 3;
   string grouplabel = 4;
+  int64 squence_ending_one = 5;
+  int64 squence_ending_two = 6;
 }
 
 message KnnResponse {
@@ -45,19 +46,12 @@ message InsertionRequest {
   string label = 2;
   string grouplabel = 3;
   repeated double feature = 4;
+  int64 squence_ending_one = 5;
+  int64 squence_ending_two = 6;
 }
 
 message InsertionResponse {
   int32 code = 2;
-}
-
-message GetRequest {
-  string label = 2;
-}
-
-message GetResponse {
-  int32 code = 1;
-  repeated double feature = 5;
 }
 
 message ServiceMessage {
