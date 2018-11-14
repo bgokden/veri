@@ -193,18 +193,17 @@ func NewEuclideanPointArrWithLabel(vals [k]float64,
 	label string,
 	groupLabel string,
 	d int64,
-	sequence_ending_one int64,
-	sequence_ending_two int64) *EuclideanPoint {
+	sequenceEndingOne int64,
+	sequenceEndingTwo int64) *EuclideanPoint {
 	slice := make([]float64, len(vals))
 	copy(slice[:d], vals[:d])
 	ret := &EuclideanPoint{
-		PointBase:  kdtree.NewPointBase(slice),
-		timestamp:  timestamp,
-		label:      label,
-		groupLabel: groupLabel,
-    sequenceEndingOne: sequenceEndingOne,
-    sequenceEndingTwo: sequenceEndingTwo
-	}
+		PointBase:         kdtree.NewPointBase(slice),
+		timestamp:         timestamp,
+		label:             label,
+		groupLabel:        groupLabel,
+		sequenceEndingOne: sequenceEndingOne,
+		sequenceEndingTwo: sequenceEndingTwo}
 	return ret
 }
 
@@ -375,8 +374,8 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 				euclideanPointValue.label,
 				euclideanPointValue.groupLabel,
 				s.d,
-        euclideanPointKey.sequenceEndingOne,
-        euclideanPointKey.sequenceEndingTwo)
+				euclideanPointKey.sequenceEndingOne,
+				euclideanPointKey.sequenceEndingTwo)
 			points = append(points, point)
 		}
 		tree := kdtree.NewKDTree(points)
@@ -385,12 +384,12 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		ans := tree.KNN(point, int(in.K))
 		for i := 0; i < len(ans); i++ {
 			featureJson := &pb.Feature{
-				Feature:    ans[i].GetValues()[:s.d],
-				Timestamp:  ans[i].GetTimestamp(),
-				Label:      ans[i].GetLabel(),
-				Grouplabel: ans[i].GetGroupLabel(),
-        SequenceEndingOne: ans[i].GetSequenceEndingOne(),
-        SequenceEndingTwo: ans[i].GetSequenceEndingTwo(),
+				Feature:           ans[i].GetValues()[:s.d],
+				Timestamp:         ans[i].GetTimestamp(),
+				Label:             ans[i].GetLabel(),
+				Grouplabel:        ans[i].GetGroupLabel(),
+				SequenceEndingOne: ans[i].GetSequenceendingone(),
+				SequenceEndingTwo: ans[i].GetSequenceendingtwo(),
 			}
 			log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
 			responseFeatures = append(responseFeatures, featureJson)
@@ -407,8 +406,8 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 	}
 	key := EuclideanPointKey{
 		groupLabel:        in.GetGrouplabel(),
-		sequenceEndingOne: in.GetSequenceEndingOne(),
-		sequenceEndingTwo: in.GetSequenceEndingTwo(),
+		sequenceEndingOne: in.GetSequenceendingone(),
+		sequenceEndingTwo: in.GetSequenceendingtwo(),
 	}
 	d := int64(len(in.GetFeature()))
 	if s.d < d {
@@ -598,8 +597,8 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			euclideanPointValue.label,
 			euclideanPointValue.groupLabel,
 			s.d,
-      euclideanPointKey.sequenceEndingOne,
-      euclideanPointKey.sequenceEndingTwo)
+			euclideanPointKey.sequenceEndingOne,
+			euclideanPointKey.sequenceEndingTwo)
 		if rand.Float64() < 0.5 {
 			if count <= limit {
 				points = append(points, point)
@@ -620,8 +619,8 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			Label:             point.GetLabel(),
 			Grouplabel:        point.GetGroupLabel(),
 			Feature:           point.GetValues()[:s.d],
-			SequenceEndingOne: point.GetSequenceEndingOne(),
-			SequenceEndingTwo: point.GetSequenceEndingTwo(),
+			Sequenceendingone: point.GetSequenceEndingOne(),
+			Sequenceendingtwo: point.GetSequenceEndingTwo(),
 		}
 		resp, err := (*client).Insert(context.Background(), request)
 		if err != nil {
@@ -754,8 +753,8 @@ func (s *veriServiceServer) syncMapToTree() {
 				euclideanPointValue.label,
 				euclideanPointValue.groupLabel,
 				s.d,
-        euclideanPointKey.sequenceEndingOne,
-        euclideanPointKey.sequenceEndingTwo)
+				euclideanPointKey.sequenceEndingOne,
+				euclideanPointKey.sequenceEndingTwo)
 			points = append(points, point)
 			n++
 			avg = calculateAverage(avg, point, nFloat)
@@ -957,8 +956,8 @@ func (s *veriServiceServer) PostSearch(w http.ResponseWriter, r *http.Request) {
 				euclideanPointValue.label,
 				euclideanPointValue.groupLabel,
 				s.d,
-        euclideanPointKey.sequenceEndingOne,
-        euclideanPointKey.sequenceEndingTwo)
+				euclideanPointKey.sequenceEndingOne,
+				euclideanPointKey.sequenceEndingTwo)
 			points = append(points, point)
 		}
 		tree := kdtree.NewKDTree(points)
