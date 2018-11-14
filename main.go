@@ -388,8 +388,8 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 				Timestamp:         ans[i].GetTimestamp(),
 				Label:             ans[i].GetLabel(),
 				Grouplabel:        ans[i].GetGroupLabel(),
-				SequenceEndingOne: ans[i].GetSequenceendingone(),
-				SequenceEndingTwo: ans[i].GetSequenceendingtwo(),
+				Sequenceendingone: ans[i].GetSequenceEndingOne(),
+				Sequenceendingtwo: ans[i].GetSequenceEndingTwo(),
 			}
 			log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
 			responseFeatures = append(responseFeatures, featureJson)
