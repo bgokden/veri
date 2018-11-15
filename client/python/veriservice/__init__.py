@@ -1,8 +1,11 @@
 import grpc
 import time
+import random
 
 from veriservice import veriservice_pb2 as pb
 from veriservice import veriservice_pb2_grpc as pb_grpc
+
+__version__ = "0.0.13"
 
 class GrpcClientWrapper:
     def __init__(self, service, client):
@@ -18,22 +21,20 @@ class GrpcClientWrapper:
 class VeriClient:
     def __init__(self, services):
         self.services = services.split(",") # eg.: 'localhost:50051, localhost2:50051'
-        self.client_iterator = 0
         self.clients = {}
 
     def __get_client(self):
-        service = self.services[self.client_iterator]
+        service = random.choice(self.services)
         if service in self.clients:
             return self.clients[service]
         channel = grpc.insecure_channel(service)
         self.clients[service] = GrpcClientWrapper(service, pb_grpc.VeriServiceStub(channel))
-        self.client_iterator = ( self.client_iterator + 1 ) % len(self.services)
         return self.clients[service]
 
     def __refresh_client(self, service):
-        time.sleep(5)
         channel = grpc.insecure_channel(service)
         self.clients[service] = GrpcClientWrapper(service, pb_grpc.VeriServiceStub(channel))
+        time.sleep(5)
 
 
     def insert(self, feature, label, grouplabel = '', timestamp = 0, sequenceendingone = -1, sequenceendingtwo = -1, retry = 5):
@@ -49,7 +50,7 @@ class VeriClient:
             try:
                 client_wrapper = self.__get_client()
                 response = client_wrapper.get_client().Insert(request)
-                if response.GetCode == 0:
+                if response.code == 0:
                     return response
             except grpc.RpcError as e: # there should be connection problem
                 if client_wrapper is not None:
@@ -68,8 +69,7 @@ class VeriClient:
             try:
                 client_wrapper = self.__get_client()
                 response = client_wrapper.get_client().GetKnn(request)
-                if response.GetCode == 0:
-                    return response
+                return response
             except grpc.RpcError as e: # there should be connection problem
                 if client_wrapper is not None:
                     self.__refresh_client(client_wrapper.get_service())
@@ -87,8 +87,7 @@ class VeriClient:
             try:
                 client_wrapper = self.__get_client()
                 response = client_wrapper.get_client().GetLocalData(request)
-                if response.GetCode == 0:
-                    return response
+                return response
             except grpc.RpcError as e: # there should be connection problem
                 if client_wrapper is not None:
                     self.__refresh_client(client_wrapper.get_service())

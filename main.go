@@ -124,12 +124,12 @@ func (p *EuclideanPoint) GetTimestamp() int64 {
 
 // Return the sequenceEndingOne
 func (p *EuclideanPoint) GetSequenceEndingOne() int64 {
-	return p.GetSequenceEndingOne()
+	return p.sequenceEndingOne
 }
 
 // Return the sequenceEndingTwo
 func (p *EuclideanPoint) GetSequenceEndingTwo() int64 {
-	return p.GetSequenceEndingTwo()
+	return p.sequenceEndingTwo
 }
 
 func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
@@ -258,6 +258,7 @@ func (s *veriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featur
 			// conn.Close()
 			return
 		} else {
+			log.Printf("Get Knn err: %v", err)
 			go s.refresh_client(peer.address)
 		}
 		// if resp.Success {
@@ -515,6 +516,7 @@ func (s *veriServiceServer) getClient(address string) (*pb.VeriServiceClient, *g
 func (s *veriServiceServer) new_client(address string) (*Client, error) {
 	client, conn, err := s.getClient(address)
 	if err != nil {
+		log.Printf("fail to create a client: %v", err)
 		return nil, err
 	}
 	return &Client{
@@ -527,23 +529,24 @@ func (s *veriServiceServer) new_client(address string) (*Client, error) {
 /*
 There may be some concurrency problems where unclosed connections can occur
 */
-func (s *veriServiceServer) get_client(address string) (*Client, error) {
+func (s *veriServiceServer) get_client(address string) (Client, error) {
 	client, ok := s.clients.Load(address)
 	if ok {
-		return client.(*Client), nil
+		return (*(client.(*Client))), nil
 	} else {
 		new_client, err := s.new_client(address)
 		if err != nil {
-			return nil, err
+			return Client{}, err
 		} else {
 			s.clients.Store(address, new_client)
-			return new_client, nil
+			return (*new_client), nil
 		}
 	}
-	return &Client{}, errors.New("Can not initilize client")
+	return Client{}, errors.New("Can not initilize client")
 }
 
 func (s *veriServiceServer) refresh_client(address string) {
+	log.Printf("Renewing client with address %v", address)
 	new_client, err := s.new_client(address)
 	if err != nil {
 		log.Printf("fail to get a client: %v", err) // this is probably really bad
@@ -603,6 +606,7 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 		log.Printf("Peer data is too old, maybe peer is dead: %s, peer timestamp: %d, current time: %d", peer.address, peer.timestamp, getCurrentTime())
 		// Maybe remove the peer here
 		s.peers.Delete(peer.address)
+		s.clients.Delete(peer.address) // maybe try closing before delete
 		return
 	}
 	if peer.timestamp+30 < getCurrentTime() && s.state == 0 {
@@ -736,10 +740,11 @@ func (s *veriServiceServer) SyncJoin() {
 		// log.Printf("Service %s", serviceName)
 		if len(serviceName) > 0 {
 			client, err := s.get_client(serviceName)
-			if err != nil {
+			if err == nil {
 				grpc_client := client.client
 				s.callJoin(grpc_client)
 			} else {
+				log.Printf("SyncJoin err: %v", err)
 				go s.refresh_client(serviceName)
 			}
 			// conn.Close()
@@ -753,13 +758,14 @@ func (s *veriServiceServer) SyncJoin() {
 		if len(peerAddress) > 0 && peerAddress != s.address {
 			peerValue := value.(Peer)
 			client, err := s.get_client(peerAddress)
-			if err != nil {
+			if err == nil {
 				grpc_client := client.client
 				s.callJoin(grpc_client)
 				s.callExchangeServices(grpc_client)
 				s.callExchangePeers(grpc_client)
 				s.callExchangeData(grpc_client, &peerValue)
 			} else {
+				log.Printf("SyncJoin 2 err: %v", err)
 				go s.refresh_client(peerAddress)
 			}
 			// conn.Close()
@@ -891,11 +897,11 @@ func (s *veriServiceServer) check() {
 		// log.Printf("Current Time: %v", currentTime)
 		if nextSyncJoinTime <= getCurrentTime() {
 			s.SyncJoin()
-			nextSyncJoinTime = getCurrentTime() + 1
+			nextSyncJoinTime = getCurrentTime() + 10
 		}
 
 		if nextSyncMapTime <= getCurrentTime() {
-			secondsToSleep := int64((s.latestNumberOfInserts + 1) % 60)
+			secondsToSleep := 3 + int64((s.latestNumberOfInserts+1)%60)
 			s.syncMapToTree()
 			nextSyncMapTime = getCurrentTime() + secondsToSleep
 		}
