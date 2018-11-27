@@ -414,7 +414,7 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 		if d > k {
 			d = k // d can not be larger than maximum capacity
 		}
-		log.Printf("Updating current dimention to: %v", d)
+		log.Printf("Updating current dimension to: %v", d)
 		s.d = d // Maybe we can use max of
 	}
 	copy(key.feature[:d], in.GetFeature()[:d])
