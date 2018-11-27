@@ -42,7 +42,7 @@ var (
 )
 
 // This is set in compile time for optimization
-const k = 15000 // 300 * 50
+const k = 1000 // 100 * 10
 
 type Peer struct {
 	address   string
@@ -411,8 +411,8 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 	}
 	d := int64(len(in.GetFeature()))
 	if s.d < d {
-		if d > 15000 {
-			d = 15000 // d can not be larger than maximum capacity
+		if d > k {
+			d = k // d can not be larger than maximum capacity
 		}
 		log.Printf("Updating current dimention to: %v", d)
 		s.d = d // Maybe we can use max of
@@ -801,6 +801,7 @@ func (s *veriServiceServer) syncMapToTree() {
 			euclideanPointValue := value.(EuclideanPointValue)
 			// In eviction mode, if a point timestamp is older than average timestamp, delete data randomly.
 			if s.isEvictable() && s.averageTimestamp != 0 && euclideanPointValue.timestamp > s.averageTimestamp && rand.Float32() < 0.2 {
+				s.pointsMap.Delete(key)
 				return true // evict this data point
 			}
 			point := NewEuclideanPointArrWithLabel(

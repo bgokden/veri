@@ -14,11 +14,11 @@ docker rm -f service3
 docker run -d --network=mynetwork --name=service3 berkgokden/veri -services=service1:10000
 sleep 5
 
-docker rm -f service4
-docker run -d --network=mynetwork --name=service4 berkgokden/veri -services=service1:10000
-sleep 5
+# docker rm -f service4
+# docker run -d --network=mynetwork --name=service4 berkgokden/veri -services=service1:10000
+# sleep 5
 
-docker rm -f service5
-docker run -d --network=mynetwork --name=service5 berkgokden/veri -services=service1:10000
-sleep 5
+# docker rm -f service5
+# docker run -d --network=mynetwork --name=service5 berkgokden/veri -services=service1:10000
+# sleep 5
 echo "done"
