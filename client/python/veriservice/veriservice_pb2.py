@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='veriservice.proto',
   package='veriservice',
   syntax='proto3',
-  serialized_pb=_b('\n\x11veriservice.proto\x12\x0bveriservice\"X\n\nKnnRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\x12\t\n\x01k\x18\x04 \x01(\x05\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"\x15\n\x13GetLocalDataRequest\"\x86\x01\n\x07\x46\x65\x61ture\x12\x0f\n\x07\x66\x65\x61ture\x18\x01 \x03(\x01\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\r\n\x05label\x18\x03 \x01(\t\x12\x12\n\ngrouplabel\x18\x04 \x01(\t\x12\x19\n\x11sequenceendingone\x18\x05 \x01(\x03\x12\x19\n\x11sequenceendingtwo\x18\x06 \x01(\x03\"A\n\x0bKnnResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12&\n\x08\x66\x65\x61tures\x18\x02 \x03(\x0b\x32\x14.veriservice.Feature\"\x8f\x01\n\x10InsertionRequest\x12\x11\n\ttimestamp\x18\x01 \x01(\x03\x12\r\n\x05label\x18\x02 \x01(\t\x12\x12\n\ngrouplabel\x18\x03 \x01(\t\x12\x0f\n\x07\x66\x65\x61ture\x18\x04 \x03(\x01\x12\x19\n\x11sequenceendingone\x18\x05 \x01(\x03\x12\x19\n\x11sequenceendingtwo\x18\x06 \x01(\x03\"!\n\x11InsertionResponse\x12\x0c\n\x04\x63ode\x18\x02 \x01(\x05\"\"\n\x0eServiceMessage\x12\x10\n\x08services\x18\x01 \x03(\t\"a\n\x04Peer\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x0b\n\x03\x61vg\x18\x04 \x03(\x01\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\"/\n\x0bPeerMessage\x12 \n\x05peers\x18\x01 \x03(\x0b\x32\x11.veriservice.Peer\"v\n\x0bJoinRequest\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\x0b\n\x03\x61vg\x18\x03 \x03(\x01\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\x12\x11\n\ttimestamp\x18\x07 \x01(\x03\"\x1f\n\x0cJoinResponse\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t2\xb9\x03\n\x0bVeriService\x12=\n\x06GetKnn\x12\x17.veriservice.KnnRequest\x1a\x18.veriservice.KnnResponse\"\x00\x12I\n\x06Insert\x12\x1d.veriservice.InsertionRequest\x1a\x1e.veriservice.InsertionResponse\"\x00\x12=\n\x04Join\x12\x18.veriservice.JoinRequest\x1a\x19.veriservice.JoinResponse\"\x00\x12N\n\x10\x45xchangeServices\x12\x1b.veriservice.ServiceMessage\x1a\x1b.veriservice.ServiceMessage\"\x00\x12\x45\n\rExchangePeers\x12\x18.veriservice.PeerMessage\x1a\x18.veriservice.PeerMessage\"\x00\x12J\n\x0cGetLocalData\x12 .veriservice.GetLocalDataRequest\x1a\x14.veriservice.Feature\"\x00\x30\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x11veriservice.proto\x12\x0bveriservice\"X\n\nKnnRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07timeout\x18\x03 \x01(\x03\x12\t\n\x01k\x18\x04 \x01(\x05\x12\x0f\n\x07\x66\x65\x61ture\x18\x05 \x03(\x01\"\x15\n\x13GetLocalDataRequest\"\xb6\x01\n\x07\x46\x65\x61ture\x12\x0f\n\x07\x66\x65\x61ture\x18\x01 \x03(\x01\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\r\n\x05label\x18\x03 \x01(\t\x12\x12\n\ngrouplabel\x18\x04 \x01(\t\x12\x19\n\x11sequencelengthone\x18\x05 \x01(\x03\x12\x19\n\x11sequencelengthtwo\x18\x06 \x01(\x03\x12\x16\n\x0esequencedimone\x18\x07 \x01(\x03\x12\x16\n\x0esequencedimtwo\x18\x08 \x01(\x03\"A\n\x0bKnnResponse\x12\n\n\x02id\x18\x01 \x01(\t\x12&\n\x08\x66\x65\x61tures\x18\x02 \x03(\x0b\x32\x14.veriservice.Feature\"\xbf\x01\n\x10InsertionRequest\x12\x11\n\ttimestamp\x18\x01 \x01(\x03\x12\r\n\x05label\x18\x02 \x01(\t\x12\x12\n\ngrouplabel\x18\x03 \x01(\t\x12\x0f\n\x07\x66\x65\x61ture\x18\x04 \x03(\x01\x12\x19\n\x11sequencelengthone\x18\x05 \x01(\x03\x12\x19\n\x11sequencelengthtwo\x18\x06 \x01(\x03\x12\x16\n\x0esequencedimone\x18\x07 \x01(\x03\x12\x16\n\x0esequencedimtwo\x18\x08 \x01(\x03\"!\n\x11InsertionResponse\x12\x0c\n\x04\x63ode\x18\x02 \x01(\x05\"\"\n\x0eServiceMessage\x12\x10\n\x08services\x18\x01 \x03(\t\"a\n\x04Peer\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x11\n\ttimestamp\x18\x02 \x01(\x03\x12\x0f\n\x07version\x18\x03 \x01(\t\x12\x0b\n\x03\x61vg\x18\x04 \x03(\x01\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\"/\n\x0bPeerMessage\x12 \n\x05peers\x18\x01 \x03(\x0b\x32\x11.veriservice.Peer\"v\n\x0bJoinRequest\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\x0b\n\x03\x61vg\x18\x03 \x03(\x01\x12\x0f\n\x07version\x18\x04 \x01(\t\x12\x0c\n\x04hist\x18\x05 \x03(\x01\x12\t\n\x01n\x18\x06 \x01(\x03\x12\x11\n\ttimestamp\x18\x07 \x01(\x03\"\x1f\n\x0cJoinResponse\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t2\xb9\x03\n\x0bVeriService\x12=\n\x06GetKnn\x12\x17.veriservice.KnnRequest\x1a\x18.veriservice.KnnResponse\"\x00\x12I\n\x06Insert\x12\x1d.veriservice.InsertionRequest\x1a\x1e.veriservice.InsertionResponse\"\x00\x12=\n\x04Join\x12\x18.veriservice.JoinRequest\x1a\x19.veriservice.JoinResponse\"\x00\x12N\n\x10\x45xchangeServices\x12\x1b.veriservice.ServiceMessage\x1a\x1b.veriservice.ServiceMessage\"\x00\x12\x45\n\rExchangePeers\x12\x18.veriservice.PeerMessage\x1a\x18.veriservice.PeerMessage\"\x00\x12J\n\x0cGetLocalData\x12 .veriservice.GetLocalDataRequest\x1a\x14.veriservice.Feature\"\x00\x30\x01\x62\x06proto3')
 )
 
 
@@ -144,15 +144,29 @@ _FEATURE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='sequenceendingone', full_name='veriservice.Feature.sequenceendingone', index=4,
+      name='sequencelengthone', full_name='veriservice.Feature.sequencelengthone', index=4,
       number=5, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='sequenceendingtwo', full_name='veriservice.Feature.sequenceendingtwo', index=5,
+      name='sequencelengthtwo', full_name='veriservice.Feature.sequencelengthtwo', index=5,
       number=6, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='sequencedimone', full_name='veriservice.Feature.sequencedimone', index=6,
+      number=7, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='sequencedimtwo', full_name='veriservice.Feature.sequencedimtwo', index=7,
+      number=8, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -170,7 +184,7 @@ _FEATURE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=148,
-  serialized_end=282,
+  serialized_end=330,
 )
 
 
@@ -207,8 +221,8 @@ _KNNRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=284,
-  serialized_end=349,
+  serialized_start=332,
+  serialized_end=397,
 )
 
 
@@ -248,15 +262,29 @@ _INSERTIONREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='sequenceendingone', full_name='veriservice.InsertionRequest.sequenceendingone', index=4,
+      name='sequencelengthone', full_name='veriservice.InsertionRequest.sequencelengthone', index=4,
       number=5, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='sequenceendingtwo', full_name='veriservice.InsertionRequest.sequenceendingtwo', index=5,
+      name='sequencelengthtwo', full_name='veriservice.InsertionRequest.sequencelengthtwo', index=5,
       number=6, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='sequencedimone', full_name='veriservice.InsertionRequest.sequencedimone', index=6,
+      number=7, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='sequencedimtwo', full_name='veriservice.InsertionRequest.sequencedimtwo', index=7,
+      number=8, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -273,8 +301,8 @@ _INSERTIONREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=352,
-  serialized_end=495,
+  serialized_start=400,
+  serialized_end=591,
 )
 
 
@@ -304,8 +332,8 @@ _INSERTIONRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=497,
-  serialized_end=530,
+  serialized_start=593,
+  serialized_end=626,
 )
 
 
@@ -335,8 +363,8 @@ _SERVICEMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=532,
-  serialized_end=566,
+  serialized_start=628,
+  serialized_end=662,
 )
 
 
@@ -401,8 +429,8 @@ _PEER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=568,
-  serialized_end=665,
+  serialized_start=664,
+  serialized_end=761,
 )
 
 
@@ -432,8 +460,8 @@ _PEERMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=667,
-  serialized_end=714,
+  serialized_start=763,
+  serialized_end=810,
 )
 
 
@@ -505,8 +533,8 @@ _JOINREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=716,
-  serialized_end=834,
+  serialized_start=812,
+  serialized_end=930,
 )
 
 
@@ -536,8 +564,8 @@ _JOINRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=836,
-  serialized_end=867,
+  serialized_start=932,
+  serialized_end=963,
 )
 
 _KNNRESPONSE.fields_by_name['features'].message_type = _FEATURE
@@ -640,8 +668,8 @@ _VERISERVICE = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=870,
-  serialized_end=1311,
+  serialized_start=966,
+  serialized_end=1407,
   methods=[
   _descriptor.MethodDescriptor(
     name='GetKnn',

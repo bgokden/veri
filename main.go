@@ -408,8 +408,10 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 				Timestamp:         ans[i].GetTimestamp(),
 				Label:             ans[i].GetLabel(),
 				Grouplabel:        ans[i].GetGroupLabel(),
-				Sequenceendingone: ans[i].GetSequenceEndingOne(),
-				Sequenceendingtwo: ans[i].GetSequenceEndingTwo(),
+				Sequencelengthone: ans[i].GetSequenceLengthOne(),
+				Sequencelengthtwo: ans[i].GetSequenceLengthTwo(),
+				Sequencedimone:    ans[i].GetSequenceDimOne(),
+				Sequencedimtwo:    ans[i].GetSequenceDimTwo(),
 			}
 			log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
 			responseFeatures = append(responseFeatures, featureJson)
@@ -428,6 +430,8 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 		groupLabel:        in.GetGrouplabel(),
 		sequenceLengthOne: in.GetSequencelengthone(),
 		sequenceLengthTwo: in.GetSequencelengthtwo(),
+		sequenceDimOne:    in.GetSequencedimone(),
+		sequenceDimTwo:    in.GetSequencedimtwo(),
 	}
 	d := int64(len(in.GetFeature()))
 	if s.d < d {
@@ -661,8 +665,10 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			euclideanPointValue.label,
 			euclideanPointValue.groupLabel,
 			s.d,
-			euclideanPointKey.sequenceEndingOne,
-			euclideanPointKey.sequenceEndingTwo)
+			euclideanPointKey.sequenceLengthOne,
+			euclideanPointKey.sequenceLengthTwo,
+			euclideanPointKey.sequenceDimOne,
+			euclideanPointKey.sequenceDimTwo)
 		if rand.Float64() < 0.5 {
 			if count <= limit {
 				points = append(points, point)
@@ -683,8 +689,10 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			Label:             point.GetLabel(),
 			Grouplabel:        point.GetGroupLabel(),
 			Feature:           point.GetValues()[:s.d],
-			Sequenceendingone: point.GetSequenceEndingOne(),
-			Sequenceendingtwo: point.GetSequenceEndingTwo(),
+			Sequencelengthone: point.GetSequenceLengthOne(),
+			Sequencelengthtwo: point.GetSequenceLengthTwo(),
+			Sequencedimone:    point.GetSequenceDimOne(),
+			Sequencedimtwo:    point.GetSequenceDimTwo(),
 		}
 		resp, err := (*client).Insert(context.Background(), request)
 		if err != nil {
@@ -830,8 +838,10 @@ func (s *veriServiceServer) syncMapToTree() {
 				euclideanPointValue.label,
 				euclideanPointValue.groupLabel,
 				s.d,
-				euclideanPointKey.sequenceEndingOne,
-				euclideanPointKey.sequenceEndingTwo)
+				euclideanPointKey.sequenceLengthOne,
+				euclideanPointKey.sequenceLengthTwo,
+				euclideanPointKey.sequenceDimOne,
+				euclideanPointKey.sequenceDimTwo)
 			points = append(points, point)
 			n++
 			avg = calculateAverage(avg, point, nFloat)
