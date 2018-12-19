@@ -32,8 +32,10 @@ message Feature {
   int64 timestamp = 2;
   string label = 3;
   string grouplabel = 4;
-  int64 sequenceendingone = 5;
-  int64 sequenceendingtwo = 6;
+  int64 sequencelengthone = 5;
+  int64 sequencelengthtwo = 6;
+  int64 sequencedimone = 7;
+  int64 sequencedimtwo = 8;
 }
 
 message KnnResponse {
@@ -48,6 +50,8 @@ message InsertionRequest {
   repeated double feature = 4;
   int64 sequenceendingone = 5;
   int64 sequenceendingtwo = 6;
+  int64 sequencedimone = 7;
+  int64 sequencedimtwo = 8;
 }
 
 message InsertionResponse {

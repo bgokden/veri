@@ -90,15 +90,19 @@ type EuclideanPoint struct {
 	timestamp         int64
 	label             string
 	groupLabel        string
-	sequenceEndingOne int64
-	sequenceEndingTwo int64
+	sequenceLengthOne int64
+	sequenceLengthTwo int64
+	sequenceDimOne    int64
+	sequenceDimTwo    int64
 }
 
 type EuclideanPointKey struct {
 	feature           [k]float64
 	groupLabel        string
-	sequenceEndingOne int64
-	sequenceEndingTwo int64
+	sequenceLengthOne int64
+	sequenceLengthTwo int64
+	sequenceDimOne    int64
+	sequenceDimTwo    int64
 }
 
 type EuclideanPointValue struct {
@@ -122,14 +126,24 @@ func (p *EuclideanPoint) GetTimestamp() int64 {
 	return p.timestamp
 }
 
-// Return the sequenceEndingOne
-func (p *EuclideanPoint) GetSequenceEndingOne() int64 {
-	return p.sequenceEndingOne
+// Return the sequenceLengthOne
+func (p *EuclideanPoint) GetSequenceLengthOne() int64 {
+	return p.sequenceLengthOne
 }
 
-// Return the sequenceEndingTwo
-func (p *EuclideanPoint) GetSequenceEndingTwo() int64 {
-	return p.sequenceEndingTwo
+// Return the sequenceLengthTwo
+func (p *EuclideanPoint) GetSequenceLengthTwo() int64 {
+	return p.sequenceLengthTwo
+}
+
+// Return the sequenceDimOne
+func (p *EuclideanPoint) GetSequenceDimOne() int64 {
+	return p.sequenceDimOne
+}
+
+// Return the sequenceDimTwo
+func (p *EuclideanPoint) GetSequenceDimTwo() int64 {
+	return p.sequenceDimTwo
 }
 
 func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
@@ -187,8 +201,10 @@ func NewEuclideanPointArrWithLabel(vals [k]float64,
 	label string,
 	groupLabel string,
 	d int64,
-	sequenceEndingOne int64,
-	sequenceEndingTwo int64) *EuclideanPoint {
+	sequenceLengthOne int64,
+	sequenceLengthTwo int64,
+	sequenceDimOne int64,
+	sequenceDimTwo int64) *EuclideanPoint {
 	slice := make([]float64, len(vals))
 	copy(slice[:d], vals[:d])
 	ret := &EuclideanPoint{
@@ -196,8 +212,10 @@ func NewEuclideanPointArrWithLabel(vals [k]float64,
 		timestamp:         timestamp,
 		label:             label,
 		groupLabel:        groupLabel,
-		sequenceEndingOne: sequenceEndingOne,
-		sequenceEndingTwo: sequenceEndingTwo}
+		sequenceLengthOne: sequenceLengthOne,
+		sequenceLengthTwo: sequenceLengthTwo,
+		sequenceDimOne:    sequenceDimOne,
+		sequenceDimTwo:    sequenceDimTwo}
 	return ret
 }
 
@@ -374,8 +392,10 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 				euclideanPointValue.label,
 				euclideanPointValue.groupLabel,
 				s.d,
-				euclideanPointKey.sequenceEndingOne,
-				euclideanPointKey.sequenceEndingTwo)
+				euclideanPointKey.sequenceLengthOne,
+				euclideanPointKey.sequenceLengthTwo,
+				euclideanPointKey.sequenceDimOne,
+				euclideanPointKey.sequenceDimOne)
 			points = append(points, point)
 		}
 		tree := kdtree.NewKDTree(points)
@@ -406,8 +426,8 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 	}
 	key := EuclideanPointKey{
 		groupLabel:        in.GetGrouplabel(),
-		sequenceEndingOne: in.GetSequenceendingone(),
-		sequenceEndingTwo: in.GetSequenceendingtwo(),
+		sequenceLengthOne: in.GetSequencelengthone(),
+		sequenceLengthTwo: in.GetSequencelengthtwo(),
 	}
 	d := int64(len(in.GetFeature()))
 	if s.d < d {
