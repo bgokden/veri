@@ -42,7 +42,7 @@ var (
 )
 
 // This is set in compile time for optimization
-const k = 1000 // 100 * 10
+const k = 1024 // 1024
 
 type Peer struct {
 	address   string
