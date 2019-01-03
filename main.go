@@ -292,7 +292,7 @@ func (s *veriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featur
 }
 
 func (s *veriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel chan<- pb.Feature) {
-	timeout := int64(float64(in.GetTimeout()) / 2.0)
+	timeout := int64(float64(in.GetTimeout()) * 0.9)
 	request := &pb.KnnRequest{
 		Feature:   in.GetFeature(),
 		Id:        in.GetId(),
