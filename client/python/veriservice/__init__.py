@@ -5,7 +5,7 @@ import random
 from veriservice import veriservice_pb2 as pb
 from veriservice import veriservice_pb2_grpc as pb_grpc
 
-__version__ = "0.0.16"
+__version__ = "0.0.17"
 
 class GrpcClientWrapper:
     def __init__(self, service, client):
@@ -72,7 +72,7 @@ class VeriClient:
             retry -= 1
         return response
 
-    def getKnn(self, feature, k=10, id='', timestamp=0, timeout=1000, rety = 5):
+    def getKnn(self, feature, k=10, id='', timestamp=0, timeout=1000, retry = 5):
         request = pb.KnnRequest(id=id, timestamp=timestamp, timeout=timeout, k=k, feature=feature)
         response = None
         while retry >= 0:
