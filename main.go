@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"math/rand"
 	"net"
 	"net/http"
@@ -28,6 +29,7 @@ import (
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/segmentio/ksuid"
 
+	"github.com/gaspiman/cosine_similarity"
 	"github.com/gorilla/mux"
 )
 
@@ -43,6 +45,8 @@ var (
 
 // This is set in compile time for optimization
 const k = 1024 // 1024
+
+const distance_mode = 1 // consine distance
 
 type Peer struct {
 	address   string
@@ -149,7 +153,33 @@ func (p *EuclideanPoint) GetSequenceDimTwo() int64 {
 func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
 	if len(arr1) != len(arr2) {
 		// log.Printf("Something is very wrong")
-		return 0
+		return math.MaxFloat64
+	}
+	var ret float64
+	for i := 0; i < len(arr1); i++ {
+		tmp := arr1[i] - arr2[i]
+		ret += tmp * tmp
+	}
+	return ret
+}
+
+func cosineDistance(arr1 []float64, arr2 []float64) float64 {
+	if len(arr1) != len(arr2) {
+		// log.Printf("Something is very wrong")
+		return math.MaxFloat64
+	}
+
+	ret, err := cosine_similarity.Cosine(arr1, arr2)
+	if err != nil {
+		return math.MaxFloat64
+	}
+	return ret
+}
+
+func vectorDistance(arr1 []float64, arr2 []float64) float64 {
+	if len(arr1) != len(arr2) {
+		// log.Printf("Something is very wrong")
+		return math.MaxFloat64
 	}
 	var ret float64
 	for i := 0; i < len(arr1); i++ {
@@ -160,12 +190,7 @@ func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
 }
 
 func (p *EuclideanPoint) Distance(other kdtree.Point) float64 {
-	var ret float64
-	for i := 0; i < p.Dim(); i++ {
-		tmp := p.GetValue(i) - other.GetValue(i)
-		ret += tmp * tmp
-	}
-	return ret
+	return vectorDistance(p.GetValues(), other.GetValues())
 }
 
 func (p *EuclideanPoint) PlaneDistance(val float64, dim int) float64 {
@@ -642,8 +667,8 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 		// log.Printf("Other peer should initiate exchange data %s", peer.address)
 		return
 	}
-	distanceAvg := euclideanDistance(s.avg, peer.avg)
-	distanceHist := euclideanDistance(s.hist, peer.hist)
+	distanceAvg := vectorDistance(s.avg, peer.avg)
+	distanceHist := vectorDistance(s.hist, peer.hist)
 	// log.Printf("%s => distanceAvg %f, distanceHist: %f", peer.address, distanceAvg, distanceHist)
 	limit := int(((s.n - peer.n) / 10) % 1000)
 	nRatio := 0.0
@@ -846,7 +871,7 @@ func (s *veriServiceServer) syncMapToTree() {
 			n++
 			avg = calculateAverage(avg, point, nFloat)
 			averageTimeStamp = averageTimeStamp + float64(euclideanPointValue.timestamp)/nFloat
-			distance = euclideanDistance(s.avg, point.GetValues())
+			distance = vectorDistance(s.avg, point.GetValues())
 			if distance > maxDistance {
 				maxDistance = distance
 			}
