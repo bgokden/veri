@@ -151,10 +151,6 @@ func (p *EuclideanPoint) GetSequenceDimTwo() int64 {
 }
 
 func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
-	if len(arr1) != len(arr2) {
-		// log.Printf("Something is very wrong")
-		return math.MaxFloat64
-	}
 	var ret float64
 	for i := 0; i < len(arr1); i++ {
 		tmp := arr1[i] - arr2[i]
@@ -164,16 +160,11 @@ func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
 }
 
 func cosineDistance(arr1 []float64, arr2 []float64) float64 {
-	if len(arr1) != len(arr2) {
-		// log.Printf("Something is very wrong")
-		return math.MaxFloat64
-	}
-
 	ret, err := cosine_similarity.Cosine(arr1, arr2)
 	if err != nil {
 		return math.MaxFloat64
 	}
-	return ret
+	return 1 - ret
 }
 
 func vectorDistance(arr1 []float64, arr2 []float64) float64 {
@@ -181,12 +172,11 @@ func vectorDistance(arr1 []float64, arr2 []float64) float64 {
 		// log.Printf("Something is very wrong")
 		return math.MaxFloat64
 	}
-	var ret float64
-	for i := 0; i < len(arr1); i++ {
-		tmp := arr1[i] - arr2[i]
-		ret += tmp * tmp
+	if distance_mode == 1 {
+		return cosineDistance(arr1, arr2)
+	} else {
+		return euclideanDistance(arr1, arr2)
 	}
-	return ret
 }
 
 func (p *EuclideanPoint) Distance(other kdtree.Point) float64 {
