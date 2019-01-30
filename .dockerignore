@@ -1,7 +1,6 @@
 Dockerfile
 .git
 README.md
-data
 veri
 build.sh
 resetCluster.sh

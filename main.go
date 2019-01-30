@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"math/rand"
 	"net"
 	"net/http"
@@ -26,10 +25,10 @@ import (
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/testdata"
 
+	"github.com/bgokden/veri/data"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/segmentio/ksuid"
 
-	"github.com/gaspiman/cosine_similarity"
 	"github.com/gorilla/mux"
 )
 
@@ -66,220 +65,38 @@ type Client struct {
 }
 
 type veriServiceServer struct {
-	k                     int64
-	d                     int64
-	avg                   []float64
-	n                     int64
-	maxDistance           float64
-	hist                  []float64
-	address               string
-	version               string
-	timestamp             int64
-	dirty                 bool
-	latestNumberOfInserts int
-	state                 int
-	maxMemoryMiB          uint64
-	averageTimestamp      int64
-	pointsMap             sync.Map
-	services              sync.Map
-	peers                 sync.Map
-	knnQueryId            cache.Cache
-	pointsMu              sync.RWMutex // protects points
-	treeMu                sync.RWMutex // protects KDTree
-	tree                  *kdtree.KDTree
-	cache                 cache.Cache
-	clients               sync.Map
-}
-
-type EuclideanPoint struct {
-	kdtree.PointBase
-	timestamp         int64
-	label             string
-	groupLabel        string
-	sequenceLengthOne int64
-	sequenceLengthTwo int64
-	sequenceDimOne    int64
-	sequenceDimTwo    int64
-}
-
-type EuclideanPointKey struct {
-	feature           [k]float64
-	groupLabel        string
-	sequenceLengthOne int64
-	sequenceLengthTwo int64
-	sequenceDimOne    int64
-	sequenceDimTwo    int64
-}
-
-type EuclideanPointValue struct {
-	timestamp  int64
-	label      string
-	groupLabel string
-}
-
-// Return the label
-func (p *EuclideanPoint) GetLabel() string {
-	return p.label
-}
-
-// Return the grouplabel
-func (p *EuclideanPoint) GetGroupLabel() string {
-	return p.groupLabel
-}
-
-// Return the timestamp
-func (p *EuclideanPoint) GetTimestamp() int64 {
-	return p.timestamp
-}
-
-// Return the sequenceLengthOne
-func (p *EuclideanPoint) GetSequenceLengthOne() int64 {
-	return p.sequenceLengthOne
-}
-
-// Return the sequenceLengthTwo
-func (p *EuclideanPoint) GetSequenceLengthTwo() int64 {
-	return p.sequenceLengthTwo
-}
-
-// Return the sequenceDimOne
-func (p *EuclideanPoint) GetSequenceDimOne() int64 {
-	return p.sequenceDimOne
-}
-
-// Return the sequenceDimTwo
-func (p *EuclideanPoint) GetSequenceDimTwo() int64 {
-	return p.sequenceDimTwo
-}
-
-func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
-	var ret float64
-	for i := 0; i < len(arr1); i++ {
-		tmp := arr1[i] - arr2[i]
-		ret += tmp * tmp
-	}
-	return ret
-}
-
-func cosineDistance(arr1 []float64, arr2 []float64) float64 {
-	ret, err := cosine_similarity.Cosine(arr1, arr2)
-	if err != nil {
-		return math.MaxFloat64
-	}
-	return 1 - ret
-}
-
-func vectorDistance(arr1 []float64, arr2 []float64) float64 {
-	if len(arr1) != len(arr2) {
-		// log.Printf("Something is very wrong")
-		return math.MaxFloat64
-	}
-	if distance_mode == 1 {
-		return cosineDistance(arr1, arr2)
-	} else {
-		return euclideanDistance(arr1, arr2)
-	}
-}
-
-func (p *EuclideanPoint) Distance(other kdtree.Point) float64 {
-	return vectorDistance(p.GetValues(), other.GetValues())
-}
-
-func (p *EuclideanPoint) PlaneDistance(val float64, dim int) float64 {
-	tmp := p.GetValue(dim) - val
-	return tmp * tmp
-}
-
-func NewEuclideanPoint(vals ...float64) *EuclideanPoint {
-	ret := &EuclideanPoint{
-		PointBase: kdtree.NewPointBase(vals),
-	}
-	return ret
-}
-
-func NewEuclideanPointWithLabel(timestamp int64, label string, vals ...float64) *EuclideanPoint {
-	ret := &EuclideanPoint{
-		PointBase: kdtree.NewPointBase(vals),
-		timestamp: timestamp,
-		label:     label,
-	}
-	return ret
-}
-
-func NewEuclideanPointArr(vals []float64) *EuclideanPoint {
-	ret := &EuclideanPoint{
-		PointBase: kdtree.NewPointBase(vals),
-	}
-	return ret
-}
-
-func NewEuclideanPointArrWithLabel(vals [k]float64,
-	timestamp int64,
-	label string,
-	groupLabel string,
-	d int64,
-	sequenceLengthOne int64,
-	sequenceLengthTwo int64,
-	sequenceDimOne int64,
-	sequenceDimTwo int64) *EuclideanPoint {
-	slice := make([]float64, len(vals))
-	copy(slice[:d], vals[:d])
-	ret := &EuclideanPoint{
-		PointBase:         kdtree.NewPointBase(slice),
-		timestamp:         timestamp,
-		label:             label,
-		groupLabel:        groupLabel,
-		sequenceLengthOne: sequenceLengthOne,
-		sequenceLengthTwo: sequenceLengthTwo,
-		sequenceDimOne:    sequenceDimOne,
-		sequenceDimTwo:    sequenceDimTwo}
-	return ret
-}
-
-func equal(p1 kdtree.Point, p2 kdtree.Point) bool {
-	for i := 0; i < p1.Dim(); i++ {
-		if p1.GetValue(i) != p2.GetValue(i) {
-			return false
-		}
-	}
-	return true
+	k int64
+	// d           int64
+	// avg         []float64
+	// n           int64
+	// maxDistance float64
+	// hist        []float64
+	address   string
+	version   string
+	timestamp int64
+	// dirty                 bool
+	// latestNumberOfInserts int
+	state        int
+	maxMemoryMiB uint64
+	// averageTimestamp int64
+	// pointsMap             sync.Map
+	services   sync.Map
+	peers      sync.Map
+	knnQueryId cache.Cache
+	// pointsMu              sync.RWMutex // protects points
+	// treeMu                sync.RWMutex // protects KDTree
+	// tree                  *kdtree.KDTree
+	cache   cache.Cache
+	clients sync.Map
+	dt      *data.Data
 }
 
 func getCurrentTime() int64 {
 	return time.Now().Unix()
 }
 
-func calculateAverage(avg []float64, p kdtree.Point, n float64) []float64 {
-	if n == 0 {
-		return p.GetValues()
-	}
-	if len(avg) < p.Dim() {
-		avg = make([]float64, p.Dim())
-	}
-	for i := 0; i < p.Dim(); i++ {
-		avg[i] += p.GetValue(i) / n
-	}
-	return avg
-}
-
 func (s *veriServiceServer) GetLocalData(rect *pb.GetLocalDataRequest, stream pb.VeriService_GetLocalDataServer) error {
-	s.pointsMap.Range(func(key, value interface{}) bool {
-		euclideanPointKey := key.(EuclideanPointKey)
-		euclideanPointValue := value.(EuclideanPointValue)
-		feature := &pb.Feature{
-			Feature:    euclideanPointKey.feature[:s.d],
-			Timestamp:  euclideanPointValue.timestamp,
-			Label:      euclideanPointValue.label,
-			Grouplabel: euclideanPointValue.groupLabel,
-		}
-		if err := stream.Send(feature); err != nil {
-			// return err pass err someway
-			return false
-		}
-		return true
-	})
-
-	return nil
+	return s.dt.GetAll(stream)
 }
 
 func (s *veriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featuresChannel chan<- pb.Feature) {
@@ -331,14 +148,12 @@ func (s *veriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel c
 
 func (s *veriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel chan<- pb.Feature) {
 	log.Printf("GetKnnFromLocal")
-	point := NewEuclideanPointArr(in.GetFeature())
-	if s.tree != nil {
-		s.treeMu.RLock()
-		ans := s.tree.KNN(point, int(in.GetK()))
-		s.treeMu.RUnlock()
+	point := data.NewEuclideanPointArr(in.GetFeature())
+	ans, err := s.dt.GetKnn(int64(in.GetK()), point)
+	if err != nil {
 		for i := 0; i < len(ans); i++ {
 			feature := &pb.Feature{
-				Feature:    ans[i].GetValues()[:s.d],
+				Feature:    ans[i].GetValues(),
 				Timestamp:  ans[i].GetTimestamp(),
 				Label:      ans[i].GetLabel(),
 				Grouplabel: ans[i].GetGroupLabel(),
@@ -379,18 +194,18 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 	responseFeatures := make([]*pb.Feature, 0)
 	dataAvailable := true
 	timeLimit := time.After(time.Duration(in.GetTimeout()) * time.Millisecond)
-	reduceMap := make(map[EuclideanPointKey]EuclideanPointValue)
+	reduceMap := make(map[data.EuclideanPointKey]data.EuclideanPointValue)
 	for dataAvailable {
 		select {
 		case feature := <-featuresChannel:
-			key := EuclideanPointKey{
-				groupLabel: feature.GetGrouplabel(),
+			key := data.EuclideanPointKey{
+				GroupLabel: feature.GetGrouplabel(),
 			}
-			copy(key.feature[:len(feature.Feature)], feature.Feature)
-			value := EuclideanPointValue{
-				timestamp:  feature.Timestamp,
-				label:      feature.Label,
-				groupLabel: feature.Grouplabel,
+			copy(key.Feature[:len(feature.Feature)], feature.Feature)
+			value := data.EuclideanPointValue{
+				Timestamp:  feature.Timestamp,
+				Label:      feature.Label,
+				GroupLabel: feature.Grouplabel,
 			}
 			reduceMap[key] = value
 		case <-timeLimit:
@@ -402,21 +217,21 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 	if len(reduceMap) > 0 {
 		points := make([]kdtree.Point, 0)
 		for euclideanPointKey, euclideanPointValue := range reduceMap {
-			log.Printf("Received Feature (Get KNN): %v", euclideanPointValue.label)
-			point := NewEuclideanPointArrWithLabel(
-				euclideanPointKey.feature,
-				euclideanPointValue.timestamp,
-				euclideanPointValue.label,
-				euclideanPointValue.groupLabel,
+			log.Printf("Received Feature (Get KNN): %v", euclideanPointValue.Label)
+			point := data.NewEuclideanPointArrWithLabel(
+				euclideanPointKey.Feature,
+				euclideanPointValue.Timestamp,
+				euclideanPointValue.Label,
+				euclideanPointValue.GroupLabel,
 				s.d,
-				euclideanPointKey.sequenceLengthOne,
-				euclideanPointKey.sequenceLengthTwo,
-				euclideanPointKey.sequenceDimOne,
-				euclideanPointKey.sequenceDimOne)
+				euclideanPointKey.SequenceLengthOne,
+				euclideanPointKey.SequenceLengthTwo,
+				euclideanPointKey.SequenceDimOne,
+				euclideanPointKey.SequenceDimTwo)
 			points = append(points, point)
 		}
 		tree := kdtree.NewKDTree(points)
-		point := NewEuclideanPointArr(in.Feature)
+		point := data.NewEuclideanPointArr(in.Feature)
 		// log.Printf("len(points): %d, in.K:%d", len(points), int(in.K))
 		ans := tree.KNN(point, int(in.K))
 		for i := 0; i < len(ans); i++ {
@@ -443,30 +258,21 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 	if s.state > 2 {
 		return &pb.InsertionResponse{Code: 1}, nil
 	}
-	key := EuclideanPointKey{
-		groupLabel:        in.GetGrouplabel(),
-		sequenceLengthOne: in.GetSequencelengthone(),
-		sequenceLengthTwo: in.GetSequencelengthtwo(),
-		sequenceDimOne:    in.GetSequencedimone(),
-		sequenceDimTwo:    in.GetSequencedimtwo(),
+	key := data.EuclideanPointKey{
+		GroupLabel:        in.GetGrouplabel(),
+		SequenceLengthOne: in.GetSequencelengthone(),
+		SequenceLengthTwo: in.GetSequencelengthtwo(),
+		SequenceDimOne:    in.GetSequencedimone(),
+		SequenceDimTwo:    in.GetSequencedimtwo(),
 	}
 	d := int64(len(in.GetFeature()))
-	if s.d < d {
-		if d > k {
-			d = k // d can not be larger than maximum capacity
-		}
-		log.Printf("Updating current dimension to: %v", d)
-		s.d = d // Maybe we can use max of
+	copy(key.Feature[:d], in.GetFeature()[:d])
+	value := data.EuclideanPointValue{
+		Timestamp:  in.GetTimestamp(),
+		Label:      in.GetLabel(),
+		GroupLabel: in.GetGrouplabel(),
 	}
-	copy(key.feature[:d], in.GetFeature()[:d])
-	value := EuclideanPointValue{
-		timestamp:  in.GetTimestamp(),
-		label:      in.GetLabel(),
-		groupLabel: in.GetGrouplabel(),
-	}
-	s.pointsMap.Store(key, value)
-	s.dirty = true
-	s.latestNumberOfInserts++
+	s.dt.Insert(key, value)
 	return &pb.InsertionResponse{Code: 0}, nil
 }
 
@@ -659,8 +465,8 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 		// log.Printf("Other peer should initiate exchange data %s", peer.address)
 		return
 	}
-	distanceAvg := vectorDistance(s.avg, peer.avg)
-	distanceHist := vectorDistance(s.hist, peer.hist)
+	distanceAvg := data.VectorDistance(s.avg, peer.avg)
+	distanceHist := data.VectorDistance(s.hist, peer.hist)
 	// log.Printf("%s => distanceAvg %f, distanceHist: %f", peer.address, distanceAvg, distanceHist)
 	limit := int(((s.n - peer.n) / 10) % 1000)
 	nRatio := 0.0
@@ -671,34 +477,7 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 		// log.Printf("Decrease number of changes to 1 since stats are close enough %s", peer.address)
 		limit = 1 // no change can be risky
 	}
-	count := 0
-	points := make([]kdtree.Point, 0)
-	s.pointsMap.Range(func(key, value interface{}) bool {
-		euclideanPointKey := key.(EuclideanPointKey)
-		euclideanPointValue := value.(EuclideanPointValue)
-		point := NewEuclideanPointArrWithLabel(
-			euclideanPointKey.feature,
-			euclideanPointValue.timestamp,
-			euclideanPointValue.label,
-			euclideanPointValue.groupLabel,
-			s.d,
-			euclideanPointKey.sequenceLengthOne,
-			euclideanPointKey.sequenceLengthTwo,
-			euclideanPointKey.sequenceDimOne,
-			euclideanPointKey.sequenceDimTwo)
-		if rand.Float64() < 0.5 {
-			if count <= limit {
-				points = append(points, point)
-				count++
-				if count <= limit {
-					return true
-				} else {
-					return false
-				}
-			}
-		}
-		return true
-	})
+	points := s.dt.GetRandomPoints(limit)
 
 	for _, point := range points {
 		request := &pb.InsertionRequest{
@@ -717,12 +496,11 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 		} else {
 			// log.Printf("A new Response has been received for %d. with code: %d", i, resp.GetCode())
 			if resp.GetCode() == 0 && s.state > 0 && rand.Float64() < (0.3*float64(s.state)) {
-				key := EuclideanPointKey{
-					groupLabel: point.GetGroupLabel(),
+				key := data.EuclideanPointKey{
+					GroupLabel: point.GetGroupLabel(),
 				}
-				copy(key.feature[:len(point.GetValues())], point.GetValues())
-				s.pointsMap.Delete(key)
-				s.dirty = true
+				copy(key.Feature[:len(point.GetValues())], point.GetValues())
+				s.dt.Delete(key)
 			}
 		}
 	}
@@ -827,80 +605,9 @@ func (s *veriServiceServer) isEvictable() bool {
 	return false
 }
 
-func (s *veriServiceServer) syncMapToTree() {
-	// sum := make([]float64, 0)
-	// count := 0
-	if s.dirty || s.isEvictable() {
-		s.dirty = false
-		points := make([]kdtree.Point, 0)
-		n := int64(0)
-		distance := 0.0
-		maxDistance := 0.0
-		avg := make([]float64, 0)
-		hist := make([]float64, 64)
-		nFloat := float64(s.n)
-		histUnit := 1 / nFloat
-		averageTimeStamp := 0.0
-		s.pointsMap.Range(func(key, value interface{}) bool {
-			euclideanPointKey := key.(EuclideanPointKey)
-			euclideanPointValue := value.(EuclideanPointValue)
-			// In eviction mode, if a point timestamp is older than average timestamp, delete data randomly.
-			if s.isEvictable() && s.averageTimestamp != 0 && euclideanPointValue.timestamp > s.averageTimestamp && rand.Float32() < 0.2 {
-				s.pointsMap.Delete(key)
-				return true // evict this data point
-			}
-			point := NewEuclideanPointArrWithLabel(
-				euclideanPointKey.feature,
-				euclideanPointValue.timestamp,
-				euclideanPointValue.label,
-				euclideanPointValue.groupLabel,
-				s.d,
-				euclideanPointKey.sequenceLengthOne,
-				euclideanPointKey.sequenceLengthTwo,
-				euclideanPointKey.sequenceDimOne,
-				euclideanPointKey.sequenceDimTwo)
-			points = append(points, point)
-			n++
-			avg = calculateAverage(avg, point, nFloat)
-			averageTimeStamp = averageTimeStamp + float64(euclideanPointValue.timestamp)/nFloat
-			distance = vectorDistance(s.avg, point.GetValues())
-			if distance > maxDistance {
-				maxDistance = distance
-			}
-			if s.maxDistance != 0 {
-				index := int((distance / s.maxDistance) * 64)
-				if index >= 64 {
-					index = 63
-				}
-				hist[index] += histUnit
-			}
-			return true
-		})
-		// log.Printf("Max Distance %f", maxDistance)
-		// log.Printf("hist")
-		// log.Print(hist)
-		// log.Printf("avg")
-		// log.Print(avg)
-		log.Printf("N=%v, state=%v", n, s.state)
-		s.avg = avg
-		s.averageTimestamp = int64(averageTimeStamp)
-		s.hist = hist
-		s.maxDistance = maxDistance
-		s.n = n
-		s.timestamp = getCurrentTime()
-		s.latestNumberOfInserts = 0
-		if len(points) > 0 {
-			tree := kdtree.NewKDTree(points)
-			s.treeMu.Lock()
-			s.tree = tree
-			s.treeMu.Unlock()
-		}
-	}
-	s.timestamp = getCurrentTime() // update always
-}
-
 func newServer() *veriServiceServer {
 	s := &veriServiceServer{}
+	s.dt = data.NewData()
 	log.Printf("services %s", *services)
 	serviceList := strings.Split(*services, ",")
 	for _, service := range serviceList {
@@ -917,7 +624,6 @@ func newServer() *veriServiceServer {
 
 func (s *veriServiceServer) check() {
 	nextSyncJoinTime := getCurrentTime()
-	nextSyncMapTime := getCurrentTime()
 	for {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
@@ -948,11 +654,6 @@ func (s *veriServiceServer) check() {
 			nextSyncJoinTime = getCurrentTime() + 10
 		}
 
-		if nextSyncMapTime <= getCurrentTime() {
-			secondsToSleep := 3 + int64((s.latestNumberOfInserts+1)%60)
-			s.syncMapToTree()
-			nextSyncMapTime = getCurrentTime() + secondsToSleep
-		}
 		time.Sleep(time.Duration(1000) * time.Millisecond) // always wait one second
 	}
 }

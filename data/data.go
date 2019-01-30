@@ -1,6 +1,7 @@
 package data
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	kdtree "github.com/bgokden/go-kdtree"
+	pb "github.com/bgokden/veri/veriservice"
 	"github.com/gaspiman/cosine_similarity"
 )
 
@@ -63,12 +65,21 @@ type EuclideanPointKey struct {
 	SequenceLengthTwo int64
 	SequenceDimOne    int64
 	SequenceDimTwo    int64
+	GroupLabel        string
 }
 
 type EuclideanPointValue struct {
 	Timestamp  int64
 	Label      string
 	GroupLabel string
+}
+
+// Return the label
+func (p *EuclideanPoint) GetValue(dim int) float64 {
+	if dim < p.Dim() {
+		return p.Vec[dim]
+	}
+	return 0
 }
 
 // Return the label
@@ -244,6 +255,7 @@ func (dt *Data) InsertBasic(label string, vals ...float64) {
 		SequenceLengthTwo: 0,
 		SequenceDimOne:    d,
 		SequenceDimTwo:    0,
+		GroupLabel:        label,
 	}
 	copy(key.Feature[:d], vals[:d])
 	value := EuclideanPointValue{
@@ -260,37 +272,38 @@ func (dt *Data) Delete(key EuclideanPointKey) {
 	dt.latestNumberOfChanges++
 }
 
-func (dt *Data) GetKnn(vals ...float64) {
-}
-
-func (dt *Data) GetKnnBasic(k int64, vals ...float64) {
-	point := NewEuclideanPointArr(vals)
-	size := len(vals)
-	fmt.Printf("Input Feature: %v\n", point.GetValues()[:size])
+func (dt *Data) GetKnn(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, error) {
 	if dt.tree != nil {
 		dt.treeMu.RLock()
-		ans := dt.tree.KNN(point, int(k))
+		ans := dt.tree.KNN(point, int(queryK))
 		dt.treeMu.RUnlock()
-		fmt.Printf("Len ans: %v\n", len(ans))
+		// fmt.Printf("Len ans: %v\n", len(ans))
+		ret := make([]*EuclideanPoint, len(ans))
 		for i := 0; i < len(ans); i++ {
-			fmt.Printf("Label: %v distance: %v\n", ans[i].GetLabel(), VectorDistance(point.GetValues()[:size], ans[i].GetValues()[:size]))
-			fmt.Printf("Feature: %v\n", ans[i].GetValues()[:size])
-			/*
-				feature := &pb.Feature{
-					Feature:    ans[i].GetValues()[:s.d],
-					Timestamp:  ans[i].GetTimestamp(),
-					Label:      ans[i].GetLabel(),
-					Grouplabel: ans[i].GetGroupLabel(),
-				}
-				log.Printf("New Feature from Local: %v", feature.GetLabel())
-				// featuresChannel <- *feature
-			*/
+			// fmt.Printf("Label: %v distance: %v\n", ans[i].GetLabel(), VectorDistance(point.GetValues()[:size], ans[i].GetValues()[:size]))
+			// fmt.Printf("Feature: %v\n", ans[i].GetValues()[:size])
+			ret[i] = &EuclideanPoint{
+				PointBase:         kdtree.NewPointBase(ans[i].GetValues()[:dt.d]),
+				timestamp:         ans[i].GetTimestamp(),
+				label:             ans[i].GetLabel(),
+				groupLabel:        ans[i].GetGroupLabel(),
+				sequenceLengthOne: ans[i].GetSequenceLengthOne(),
+				sequenceLengthTwo: ans[i].GetSequenceLengthTwo(),
+				sequenceDimOne:    ans[i].GetSequenceDimOne(),
+				sequenceDimTwo:    ans[i].GetSequenceDimTwo()}
 		}
+		return ret, nil
 	}
+	return []*EuclideanPoint{}, errors.New("Points not initialized yet")
 }
 
-func (dt *Data) Process() (Stats, error) {
-	if dt.dirty || dt.isEvictable || dt.latestNumberOfChanges > 0 {
+func (dt *Data) GetKnnBasic(queryK int64, vals ...float64) ([]*EuclideanPoint, error) {
+	point := NewEuclideanPointArr(vals)
+	return dt.GetKnn(queryK, point)
+}
+
+func (dt *Data) Process(force bool) error {
+	if dt.dirty || dt.isEvictable || dt.latestNumberOfChanges > 0 || force {
 		fmt.Printf("Running Process\n")
 		tempLatestNumberOfChanges := dt.latestNumberOfChanges
 		dt.dirty = false
@@ -338,12 +351,6 @@ func (dt *Data) Process() (Stats, error) {
 			}
 			return true
 		})
-		// log.Printf("Max Distance %f", maxDistance)
-		// log.Printf("hist")
-		// log.Print(hist)
-		// log.Printf("avg")
-		// log.Print(avg)
-		// log.Printf("N=%v, state=%v", n, dt.state)
 		dt.avg = avg
 		dt.averageTimestamp = int64(averageTimeStamp)
 		dt.hist = hist
@@ -360,7 +367,7 @@ func (dt *Data) Process() (Stats, error) {
 	}
 	dt.timestamp = getCurrentTime() // update always
 
-	return Stats{}, nil
+	return nil
 }
 
 func (dt *Data) Run() error {
@@ -368,10 +375,62 @@ func (dt *Data) Run() error {
 	for {
 		if nextTime <= getCurrentTime() {
 			secondsToSleep := 3 + int64((dt.latestNumberOfChanges+1)%60)
-			dt.Process()
+			dt.Process(false)
 			nextTime = getCurrentTime() + secondsToSleep
 		}
 		time.Sleep(time.Duration(1000) * time.Millisecond)
 	}
 	return nil
+}
+
+func (dt *Data) GetAll(stream pb.VeriService_GetLocalDataServer) error {
+	dt.pointsMap.Range(func(key, value interface{}) bool {
+		euclideanPointKey := key.(EuclideanPointKey)
+		euclideanPointValue := value.(EuclideanPointValue)
+		feature := &pb.Feature{
+			Feature:    euclideanPointKey.Feature[:dt.d],
+			Timestamp:  euclideanPointValue.Timestamp,
+			Label:      euclideanPointValue.Label,
+			Grouplabel: euclideanPointValue.GroupLabel,
+		}
+		if err := stream.Send(feature); err != nil {
+			// return err pass err someway
+			return false
+		}
+		return true
+	})
+
+	return nil
+}
+
+func (dt *Data) GetRandomPoints(limit int) []kdtree.Point {
+	count := 0
+	points := make([]kdtree.Point, 0)
+	dt.pointsMap.Range(func(key, value interface{}) bool {
+		euclideanPointKey := key.(EuclideanPointKey)
+		euclideanPointValue := value.(EuclideanPointValue)
+		point := NewEuclideanPointArrWithLabel(
+			euclideanPointKey.Feature,
+			euclideanPointValue.Timestamp,
+			euclideanPointValue.Label,
+			euclideanPointValue.GroupLabel,
+			dt.d,
+			euclideanPointKey.SequenceLengthOne,
+			euclideanPointKey.SequenceLengthTwo,
+			euclideanPointKey.SequenceDimOne,
+			euclideanPointKey.SequenceDimTwo)
+		if rand.Float64() < 0.5 { // TODO: improve randomness
+			if count <= limit {
+				points = append(points, point)
+				count++
+				if count <= limit {
+					return true
+				} else {
+					return false
+				}
+			}
+		}
+		return true
+	})
+	return points
 }

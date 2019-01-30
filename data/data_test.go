@@ -1,11 +1,10 @@
 package data_test
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	data "github.com/bgokden/veri/data"
+	"github.com/stretchr/testify/assert"
 )
 
 /*
@@ -28,17 +27,22 @@ func TestData(t *testing.T) {
 
 func TestDataBasic(t *testing.T) {
 	dt := data.NewData()
-	dt.InsertBasic("1", 0.1, 0.2, 0.3) //
+	dt.InsertBasic("1", 0.1, 0.2, 0.3)
 	dt.InsertBasic("2", 0.0, 0.0, 0.0)
-	dt.InsertBasic("3", 0.0, 0.0, 1.0) //
-	dt.InsertBasic("4", 0.0, 1.0, 0.0) //
-	dt.InsertBasic("5", 1.0, 0.0, 0.0) //
-	dt.InsertBasic("6", 0.0, 0.0, 0.0) //
-	dt.InsertBasic("7", 0.0, 0.0, 0.1) //
-	dt.InsertBasic("8", 1.0, 1.0, 1.0) //
-	time.Sleep(time.Duration(5000) * time.Millisecond)
-	dt.GetKnnBasic(3, 0.0, 0.0, 1.0)
-	t.Logf("Run")
+	dt.InsertBasic("3", 0.0, 0.0, 1.0)
+	dt.InsertBasic("4", 0.0, 1.0, 0.0)
+	dt.InsertBasic("5", 1.0, 0.0, 0.0)
+	dt.InsertBasic("6", 0.0, 0.0, 0.0)
+	dt.InsertBasic("7", 0.0, 0.0, 0.1)
+	dt.InsertBasic("8", 1.0, 1.0, 1.0)
+	dt.Process(true)
+	result, err := dt.GetKnnBasic(3, 0.0, 0.0, 1.0)
+
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 3)
+	assert.Equal(t, "3", result[0].GetLabel())
+	assert.Equal(t, "1", result[1].GetLabel())
+	assert.Equal(t, "7", result[2].GetLabel())
 }
 
 func TestCalculateAverage(t *testing.T) {
@@ -46,5 +50,4 @@ func TestCalculateAverage(t *testing.T) {
 	p1 := []float64{1.0, 1.0, 1.0}
 	avg = data.CalculateAverage(avg, p1, 2)
 	t.Logf("Avg %v\n", avg)
-	fmt.Printf("Avg %v\n", avg)
 }
