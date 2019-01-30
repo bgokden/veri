@@ -13,7 +13,6 @@
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
 
-data/
 veri
 
 # Byte-compiled / optimized / DLL files

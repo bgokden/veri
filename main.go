@@ -46,7 +46,9 @@ var (
 // This is set in compile time for optimization
 const k = 1024 // 1024
 
-const distance_mode = 1 // consine distance
+// 0 => euclidean distance
+// 1 => consine distance
+const distance_mode = 0
 
 type Peer struct {
 	address   string
