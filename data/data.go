@@ -220,6 +220,157 @@ func NewEuclideanPointArrWithLabel(vals [k]float64,
 	return ret
 }
 
+func NewEuclideanPointFromFeature(feature *pb.Feature) *EuclideanPoint {
+	ret := &EuclideanPoint{
+		PointBase:         kdtree.NewPointBase(feature.Feature),
+		timestamp:         feature.Timestamp,
+		label:             feature.Label,
+		groupLabel:        feature.Grouplabel,
+		sequenceLengthOne: feature.Sequencelengthone,
+		sequenceLengthTwo: feature.Sequencelengthtwo,
+		sequenceDimOne:    feature.Sequencedimone,
+		sequenceDimTwo:    feature.Sequencedimtwo}
+	return ret
+}
+
+func NewFeatureFromEuclideanPoint(point *EuclideanPoint) *pb.Feature {
+	ret := &pb.Feature{
+		Feature:           point.GetValues(),
+		Timestamp:         point.GetTimestamp(),
+		Label:             point.GetLabel(),
+		Grouplabel:        point.GetGroupLabel(),
+		Sequencelengthone: point.GetSequenceLengthOne(),
+		Sequencelengthtwo: point.GetSequenceLengthTwo(),
+		Sequencedimone:    point.GetSequenceDimOne(),
+		Sequencedimtwo:    point.GetSequenceDimTwo(),
+	}
+	return ret
+}
+
+func NewFeatureFromPoint(point kdtree.Point) *pb.Feature {
+	ret := &pb.Feature{
+		Feature:           point.GetValues(),
+		Timestamp:         point.GetTimestamp(),
+		Label:             point.GetLabel(),
+		Grouplabel:        point.GetGroupLabel(),
+		Sequencelengthone: point.GetSequenceLengthOne(),
+		Sequencelengthtwo: point.GetSequenceLengthTwo(),
+		Sequencedimone:    point.GetSequenceDimOne(),
+		Sequencedimtwo:    point.GetSequenceDimTwo(),
+	}
+	return ret
+}
+
+func NewInsertionRequestFromPoint(point kdtree.Point) *pb.InsertionRequest {
+	ret := &pb.InsertionRequest{
+		Timestamp:         point.GetTimestamp(),
+		Label:             point.GetLabel(),
+		Grouplabel:        point.GetGroupLabel(),
+		Feature:           point.GetValues(),
+		Sequencelengthone: point.GetSequenceLengthOne(),
+		Sequencelengthtwo: point.GetSequenceLengthTwo(),
+		Sequencedimone:    point.GetSequenceDimOne(),
+		Sequencedimtwo:    point.GetSequenceDimTwo(),
+	}
+	return ret
+}
+
+func FeatureToEuclideanPointKeyValue(feature *pb.Feature) (*EuclideanPointKey, *EuclideanPointValue) {
+	key := &EuclideanPointKey{
+		GroupLabel:        feature.GetGrouplabel(),
+		SequenceLengthOne: feature.GetSequencelengthone(),
+		SequenceLengthTwo: feature.GetSequencelengthtwo(),
+		SequenceDimOne:    feature.GetSequencedimone(),
+		SequenceDimTwo:    feature.GetSequencedimtwo(),
+	}
+	if len(feature.Feature) == 0 {
+		log.Printf("len(feature.Feature) is 0 !!!")
+	}
+	copy(key.Feature[:len(feature.Feature)], feature.Feature)
+	value := &EuclideanPointValue{
+		Timestamp:  feature.Timestamp,
+		Label:      feature.Label,
+		GroupLabel: feature.Grouplabel,
+	}
+	return key, value
+}
+
+func InsertionRequestToEuclideanPointKeyValue(in *pb.InsertionRequest) (*EuclideanPointKey, *EuclideanPointValue) {
+	key := &EuclideanPointKey{
+		GroupLabel:        in.GetGrouplabel(),
+		SequenceLengthOne: in.GetSequencelengthone(),
+		SequenceLengthTwo: in.GetSequencelengthtwo(),
+		SequenceDimOne:    in.GetSequencedimone(),
+		SequenceDimTwo:    in.GetSequencedimtwo(),
+	}
+	d := int64(len(in.GetFeature()))
+	fmt.Printf("Insert len: %v\n", d)
+	copy(key.Feature[:d], in.GetFeature()[:d])
+	// fmt.Printf("Inserted arr: %v\n", key.Feature[:d])
+	value := &EuclideanPointValue{
+		Timestamp:  in.GetTimestamp(),
+		Label:      in.GetLabel(),
+		GroupLabel: in.GetGrouplabel(),
+	}
+	return key, value
+}
+
+func NewEuclideanPointFromKeyValue(key *EuclideanPointKey, value *EuclideanPointValue) *EuclideanPoint {
+	ret := NewEuclideanPointArrWithLabel(
+		key.Feature,
+		value.Timestamp,
+		value.Label,
+		value.GroupLabel,
+		key.SequenceLengthOne,
+		key.SequenceLengthTwo,
+		key.SequenceDimOne,
+		key.SequenceDimTwo)
+	return ret
+}
+
+func FeatureFromEuclideanKeyValue(key *EuclideanPointKey, value *EuclideanPointValue) *pb.Feature {
+	d := (key.SequenceLengthOne * key.SequenceDimOne) + (key.SequenceLengthTwo * key.SequenceDimTwo)
+	if d == 0 {
+		fmt.Printf("FeatureFromEuclideanKeyValue: D is 0 !!!!!!!!!!\n")
+	}
+	ret := &pb.Feature{
+		Feature:           key.Feature[:d],
+		Timestamp:         value.Timestamp,
+		Label:             value.Label,
+		Grouplabel:        value.GroupLabel,
+		Sequencelengthone: key.SequenceLengthOne,
+		Sequencelengthtwo: key.SequenceLengthTwo,
+		Sequencedimone:    key.SequenceDimOne,
+		Sequencedimtwo:    key.SequenceDimTwo,
+	}
+	return ret
+}
+
+func NewEuclideanPointKeyFromPoint(point kdtree.Point) *EuclideanPointKey {
+	key := &EuclideanPointKey{
+		GroupLabel:        point.GetGroupLabel(),
+		SequenceLengthOne: point.GetSequenceLengthOne(),
+		SequenceLengthTwo: point.GetSequenceLengthTwo(),
+		SequenceDimOne:    point.GetSequenceDimOne(),
+		SequenceDimTwo:    point.GetSequenceDimTwo(),
+	}
+	copy(key.Feature[:len(point.GetValues())], point.GetValues())
+	return key
+}
+
+func NewEuclideanPointFromPoint(point kdtree.Point) *EuclideanPoint {
+	ret := &EuclideanPoint{
+		PointBase:         kdtree.NewPointBase(point.GetValues()),
+		timestamp:         point.GetTimestamp(),
+		label:             point.GetLabel(),
+		groupLabel:        point.GetGroupLabel(),
+		sequenceLengthOne: point.GetSequenceLengthOne(),
+		sequenceLengthTwo: point.GetSequenceLengthTwo(),
+		sequenceDimOne:    point.GetSequenceDimOne(),
+		sequenceDimTwo:    point.GetSequenceDimTwo()}
+	return ret
+}
+
 func equal(p1 kdtree.Point, p2 kdtree.Point) bool {
 	for i := 0; i < p1.Dim(); i++ {
 		if p1.GetValue(i) != p2.GetValue(i) {
@@ -305,19 +456,7 @@ func (dt *Data) GetKnn(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, 
 		for i := 0; i < len(ans); i++ {
 			fmt.Printf("Label: %v distance: %v\n", ans[i].GetLabel(), VectorDistance(point.GetValues(), ans[i].GetValues()))
 			fmt.Printf("Feature: %v\n", ans[i].GetValues())
-			d := (ans[i].GetSequenceLengthOne() * ans[i].GetSequenceDimOne()) + (ans[i].GetSequenceLengthTwo() * ans[i].GetSequenceDimTwo())
-			if d == 0 {
-				fmt.Printf("D is 0 !!!!!!!!!!\n")
-			}
-			ret[i] = &EuclideanPoint{
-				PointBase:         kdtree.NewPointBase(ans[i].GetValues()[:d]),
-				timestamp:         ans[i].GetTimestamp(),
-				label:             ans[i].GetLabel(),
-				groupLabel:        ans[i].GetGroupLabel(),
-				sequenceLengthOne: ans[i].GetSequenceLengthOne(),
-				sequenceLengthTwo: ans[i].GetSequenceLengthTwo(),
-				sequenceDimOne:    ans[i].GetSequenceDimOne(),
-				sequenceDimTwo:    ans[i].GetSequenceDimTwo()}
+			ret[i] = NewEuclideanPointFromPoint(ans[i])
 		}
 		return ret, nil
 	}
@@ -351,15 +490,7 @@ func (dt *Data) Process(force bool) error {
 				dt.pointsMap.Delete(key)
 				return true // evict this data point
 			}
-			point := NewEuclideanPointArrWithLabel(
-				euclideanPointKey.Feature,
-				euclideanPointValue.Timestamp,
-				euclideanPointValue.Label,
-				euclideanPointValue.GroupLabel,
-				euclideanPointKey.SequenceLengthOne,
-				euclideanPointKey.SequenceLengthTwo,
-				euclideanPointKey.SequenceDimOne,
-				euclideanPointKey.SequenceDimTwo)
+			point := NewEuclideanPointFromKeyValue(&euclideanPointKey, &euclideanPointValue)
 			points = append(points, point)
 			n++
 			avg = CalculateAverage(avg, point.GetValues(), nFloat)
@@ -413,12 +544,7 @@ func (dt *Data) GetAll(stream pb.VeriService_GetLocalDataServer) error {
 	dt.pointsMap.Range(func(key, value interface{}) bool {
 		euclideanPointKey := key.(EuclideanPointKey)
 		euclideanPointValue := value.(EuclideanPointValue)
-		feature := &pb.Feature{
-			Feature:    euclideanPointKey.Feature[:dt.d],
-			Timestamp:  euclideanPointValue.Timestamp,
-			Label:      euclideanPointValue.Label,
-			Grouplabel: euclideanPointValue.GroupLabel,
-		}
+		feature := FeatureFromEuclideanKeyValue(&euclideanPointKey, &euclideanPointValue)
 		if err := stream.Send(feature); err != nil {
 			// return err pass err someway
 			return false
@@ -435,15 +561,7 @@ func (dt *Data) GetRandomPoints(limit int) []kdtree.Point {
 	dt.pointsMap.Range(func(key, value interface{}) bool {
 		euclideanPointKey := key.(EuclideanPointKey)
 		euclideanPointValue := value.(EuclideanPointValue)
-		point := NewEuclideanPointArrWithLabel(
-			euclideanPointKey.Feature,
-			euclideanPointValue.Timestamp,
-			euclideanPointValue.Label,
-			euclideanPointValue.GroupLabel,
-			euclideanPointKey.SequenceLengthOne,
-			euclideanPointKey.SequenceLengthTwo,
-			euclideanPointKey.SequenceDimOne,
-			euclideanPointKey.SequenceDimTwo)
+		point := NewEuclideanPointFromKeyValue(&euclideanPointKey, &euclideanPointValue)
 		if rand.Float64() < 0.5 { // TODO: improve randomness
 			if count <= limit {
 				points = append(points, point)

@@ -153,16 +153,7 @@ func (s *veriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 	if err == nil {
 		for i := 0; i < len(ans); i++ {
 			log.Printf("New Feature from Local before")
-			feature := &pb.Feature{
-				Feature:           ans[i].GetValues(),
-				Timestamp:         ans[i].GetTimestamp(),
-				Label:             ans[i].GetLabel(),
-				Grouplabel:        ans[i].GetGroupLabel(),
-				Sequencelengthone: ans[i].GetSequenceLengthOne(),
-				Sequencelengthtwo: ans[i].GetSequenceLengthTwo(),
-				Sequencedimone:    ans[i].GetSequenceDimOne(),
-				Sequencedimtwo:    ans[i].GetSequenceDimTwo(),
-			}
+			feature := data.NewFeatureFromEuclideanPoint(ans[i])
 			log.Printf("New Feature from Local: %v after", feature.GetLabel())
 			featuresChannel <- *feature
 		}
@@ -205,23 +196,8 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 	for dataAvailable {
 		select {
 		case feature := <-featuresChannel:
-			key := data.EuclideanPointKey{
-				GroupLabel:        feature.GetGrouplabel(),
-				SequenceLengthOne: feature.GetSequencelengthone(),
-				SequenceLengthTwo: feature.GetSequencelengthtwo(),
-				SequenceDimOne:    feature.GetSequencedimone(),
-				SequenceDimTwo:    feature.GetSequencedimtwo(),
-			}
-			if len(feature.Feature) == 0 {
-				log.Printf("len(feature.Feature) is 0 !!!")
-			}
-			copy(key.Feature[:len(feature.Feature)], feature.Feature)
-			value := data.EuclideanPointValue{
-				Timestamp:  feature.Timestamp,
-				Label:      feature.Label,
-				GroupLabel: feature.Grouplabel,
-			}
-			reduceMap[key] = value
+			key, value := data.FeatureToEuclideanPointKeyValue(&feature)
+			reduceMap[*key] = *value
 		case <-timeLimit:
 			log.Printf("timeout")
 			dataAvailable = false
@@ -232,15 +208,7 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		points := make([]kdtree.Point, 0)
 		for euclideanPointKey, euclideanPointValue := range reduceMap {
 			log.Printf("Received Feature (Get KNN): %v", euclideanPointValue.Label)
-			point := data.NewEuclideanPointArrWithLabel(
-				euclideanPointKey.Feature,
-				euclideanPointValue.Timestamp,
-				euclideanPointValue.Label,
-				euclideanPointValue.GroupLabel,
-				euclideanPointKey.SequenceLengthOne,
-				euclideanPointKey.SequenceLengthTwo,
-				euclideanPointKey.SequenceDimOne,
-				euclideanPointKey.SequenceDimTwo)
+			point := data.NewEuclideanPointFromKeyValue(&euclideanPointKey, &euclideanPointValue)
 			points = append(points, point)
 		}
 		tree := kdtree.NewKDTree(points)
@@ -248,16 +216,7 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		// log.Printf("len(points): %d, in.K:%d", len(points), int(in.K))
 		ans := tree.KNN(point, int(in.K))
 		for i := 0; i < len(ans); i++ {
-			featureJson := &pb.Feature{
-				Feature:           ans[i].GetValues()[:d],
-				Timestamp:         ans[i].GetTimestamp(),
-				Label:             ans[i].GetLabel(),
-				Grouplabel:        ans[i].GetGroupLabel(),
-				Sequencelengthone: ans[i].GetSequenceLengthOne(),
-				Sequencelengthtwo: ans[i].GetSequenceLengthTwo(),
-				Sequencedimone:    ans[i].GetSequenceDimOne(),
-				Sequencedimtwo:    ans[i].GetSequenceDimTwo(),
-			}
+			featureJson := data.NewFeatureFromPoint(ans[i])
 			log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
 			responseFeatures = append(responseFeatures, featureJson)
 		}
@@ -271,23 +230,8 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 	if s.state > 2 {
 		return &pb.InsertionResponse{Code: 1}, nil
 	}
-	key := data.EuclideanPointKey{
-		GroupLabel:        in.GetGrouplabel(),
-		SequenceLengthOne: in.GetSequencelengthone(),
-		SequenceLengthTwo: in.GetSequencelengthtwo(),
-		SequenceDimOne:    in.GetSequencedimone(),
-		SequenceDimTwo:    in.GetSequencedimtwo(),
-	}
-	d := int64(len(in.GetFeature()))
-	fmt.Printf("Insert len: %v\n", d)
-	copy(key.Feature[:d], in.GetFeature()[:d])
-	// fmt.Printf("Inserted arr: %v\n", key.Feature[:d])
-	value := data.EuclideanPointValue{
-		Timestamp:  in.GetTimestamp(),
-		Label:      in.GetLabel(),
-		GroupLabel: in.GetGrouplabel(),
-	}
-	s.dt.Insert(key, value)
+	key, value := data.InsertionRequestToEuclideanPointKeyValue(in)
+	s.dt.Insert(*key, *value)
 	return &pb.InsertionResponse{Code: 0}, nil
 }
 
@@ -497,31 +441,15 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 	points := s.dt.GetRandomPoints(limit)
 
 	for _, point := range points {
-		request := &pb.InsertionRequest{
-			Timestamp:         point.GetTimestamp(),
-			Label:             point.GetLabel(),
-			Grouplabel:        point.GetGroupLabel(),
-			Feature:           point.GetValues(),
-			Sequencelengthone: point.GetSequenceLengthOne(),
-			Sequencelengthtwo: point.GetSequenceLengthTwo(),
-			Sequencedimone:    point.GetSequenceDimOne(),
-			Sequencedimtwo:    point.GetSequenceDimTwo(),
-		}
+		request := data.NewInsertionRequestFromPoint(point)
 		resp, err := (*client).Insert(context.Background(), request)
 		if err != nil {
 			log.Printf("There is an error: %v", err)
 		} else {
 			// log.Printf("A new Response has been received for %d. with code: %d", i, resp.GetCode())
 			if resp.GetCode() == 0 && s.state > 0 && rand.Float64() < (0.3*float64(s.state)) {
-				key := data.EuclideanPointKey{
-					GroupLabel:        point.GetGroupLabel(),
-					SequenceLengthOne: point.GetSequenceLengthOne(),
-					SequenceLengthTwo: point.GetSequenceLengthTwo(),
-					SequenceDimOne:    point.GetSequenceDimOne(),
-					SequenceDimTwo:    point.GetSequenceDimTwo(),
-				}
-				copy(key.Feature[:len(point.GetValues())], point.GetValues())
-				s.dt.Delete(key)
+				key := data.NewEuclideanPointKeyFromPoint(point)
+				s.dt.Delete(*key)
 			}
 		}
 	}
