@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-/*
 func TestData(t *testing.T) {
 	dt := data.NewData()
 	key := data.EuclideanPointKey{
@@ -23,7 +22,6 @@ func TestData(t *testing.T) {
 	}
 	dt.Insert(key, value)
 }
-*/
 
 func TestDataBasic(t *testing.T) {
 	dt := data.NewData()
@@ -40,6 +38,7 @@ func TestDataBasic(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, len(result), 3)
+
 	assert.Equal(t, "3", result[0].GetLabel())
 	assert.Equal(t, "1", result[1].GetLabel())
 	assert.Equal(t, "7", result[2].GetLabel())

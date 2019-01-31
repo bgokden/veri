@@ -150,17 +150,24 @@ func (s *veriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 	log.Printf("GetKnnFromLocal")
 	point := data.NewEuclideanPointArr(in.GetFeature())
 	ans, err := s.dt.GetKnn(int64(in.GetK()), point)
-	if err != nil {
+	if err == nil {
 		for i := 0; i < len(ans); i++ {
+			log.Printf("New Feature from Local before")
 			feature := &pb.Feature{
-				Feature:    ans[i].GetValues(),
-				Timestamp:  ans[i].GetTimestamp(),
-				Label:      ans[i].GetLabel(),
-				Grouplabel: ans[i].GetGroupLabel(),
+				Feature:           ans[i].GetValues(),
+				Timestamp:         ans[i].GetTimestamp(),
+				Label:             ans[i].GetLabel(),
+				Grouplabel:        ans[i].GetGroupLabel(),
+				Sequencelengthone: ans[i].GetSequenceLengthOne(),
+				Sequencelengthtwo: ans[i].GetSequenceLengthTwo(),
+				Sequencedimone:    ans[i].GetSequenceDimOne(),
+				Sequencedimtwo:    ans[i].GetSequenceDimTwo(),
 			}
-			log.Printf("New Feature from Local: %v", feature.GetLabel())
+			log.Printf("New Feature from Local: %v after", feature.GetLabel())
 			featuresChannel <- *feature
 		}
+	} else {
+		log.Printf("Error in GetKnn: %v", err.Error())
 	}
 }
 
@@ -199,7 +206,14 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		select {
 		case feature := <-featuresChannel:
 			key := data.EuclideanPointKey{
-				GroupLabel: feature.GetGrouplabel(),
+				GroupLabel:        feature.GetGrouplabel(),
+				SequenceLengthOne: feature.GetSequencelengthone(),
+				SequenceLengthTwo: feature.GetSequencelengthtwo(),
+				SequenceDimOne:    feature.GetSequencedimone(),
+				SequenceDimTwo:    feature.GetSequencedimtwo(),
+			}
+			if len(feature.Feature) == 0 {
+				log.Printf("len(feature.Feature) is 0 !!!")
 			}
 			copy(key.Feature[:len(feature.Feature)], feature.Feature)
 			value := data.EuclideanPointValue{
@@ -223,7 +237,6 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 				euclideanPointValue.Timestamp,
 				euclideanPointValue.Label,
 				euclideanPointValue.GroupLabel,
-				s.d,
 				euclideanPointKey.SequenceLengthOne,
 				euclideanPointKey.SequenceLengthTwo,
 				euclideanPointKey.SequenceDimOne,
@@ -236,7 +249,7 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		ans := tree.KNN(point, int(in.K))
 		for i := 0; i < len(ans); i++ {
 			featureJson := &pb.Feature{
-				Feature:           ans[i].GetValues()[:s.d],
+				Feature:           ans[i].GetValues()[:d],
 				Timestamp:         ans[i].GetTimestamp(),
 				Label:             ans[i].GetLabel(),
 				Grouplabel:        ans[i].GetGroupLabel(),
@@ -266,7 +279,9 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 		SequenceDimTwo:    in.GetSequencedimtwo(),
 	}
 	d := int64(len(in.GetFeature()))
+	fmt.Printf("Insert len: %v\n", d)
 	copy(key.Feature[:d], in.GetFeature()[:d])
+	// fmt.Printf("Inserted arr: %v\n", key.Feature[:d])
 	value := data.EuclideanPointValue{
 		Timestamp:  in.GetTimestamp(),
 		Label:      in.GetLabel(),
@@ -403,13 +418,14 @@ func (s *veriServiceServer) refresh_client(address string) {
 }
 
 func (s *veriServiceServer) callJoin(client *pb.VeriServiceClient) {
+	stats := s.dt.GetStats()
 	request := &pb.JoinRequest{
 		Address:   s.address,
-		Avg:       s.avg,
+		Avg:       stats.Avg,
 		Port:      int32(*port),
 		Version:   s.version,
-		Hist:      s.hist,
-		N:         s.n,
+		Hist:      stats.Hist,
+		N:         stats.N,
 		Timestamp: s.timestamp,
 	}
 	// log.Printf("Call Join Request %v", *request)
@@ -448,7 +464,8 @@ func (s *veriServiceServer) callExchangeServices(client *pb.VeriServiceClient) {
 func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer *Peer) {
 	// need to check avg and hist differences ...
 	// chose datum
-	log.Printf("For peer: %v s.n: %d peer.n: %d peer timestamp: %v currentTime: %v", peer.address, s.n, peer.n, peer.timestamp, getCurrentTime())
+	stats := s.dt.GetStats()
+	log.Printf("For peer: %v s.n: %d peer.n: %d peer timestamp: %v currentTime: %v", peer.address, stats.N, peer.n, peer.timestamp, getCurrentTime())
 	if peer.timestamp+360 < getCurrentTime() {
 		log.Printf("Peer data is too old, maybe peer is dead: %s, peer timestamp: %d, current time: %d", peer.address, peer.timestamp, getCurrentTime())
 		// Maybe remove the peer here
@@ -461,17 +478,17 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 		// limit = 1 // no change can be risky
 		return
 	}
-	if s.n < peer.n {
+	if stats.N < peer.n {
 		// log.Printf("Other peer should initiate exchange data %s", peer.address)
 		return
 	}
-	distanceAvg := data.VectorDistance(s.avg, peer.avg)
-	distanceHist := data.VectorDistance(s.hist, peer.hist)
+	distanceAvg := data.VectorDistance(stats.Avg, peer.avg)
+	distanceHist := data.VectorDistance(stats.Hist, peer.hist)
 	// log.Printf("%s => distanceAvg %f, distanceHist: %f", peer.address, distanceAvg, distanceHist)
-	limit := int(((s.n - peer.n) / 10) % 1000)
+	limit := int(((stats.N - peer.n) / 10) % 1000)
 	nRatio := 0.0
 	if peer.n != 0 {
-		nRatio = float64(s.n) / float64(peer.n)
+		nRatio = float64(stats.N) / float64(peer.n)
 	}
 	if 0.99 < nRatio && nRatio < 1.01 && distanceAvg < 0.0005 && distanceHist < 0.0005 && s.state == 0 {
 		// log.Printf("Decrease number of changes to 1 since stats are close enough %s", peer.address)
@@ -484,7 +501,7 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			Timestamp:         point.GetTimestamp(),
 			Label:             point.GetLabel(),
 			Grouplabel:        point.GetGroupLabel(),
-			Feature:           point.GetValues()[:s.d],
+			Feature:           point.GetValues(),
 			Sequencelengthone: point.GetSequenceLengthOne(),
 			Sequencelengthtwo: point.GetSequenceLengthTwo(),
 			Sequencedimone:    point.GetSequenceDimOne(),
@@ -497,7 +514,11 @@ func (s *veriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			// log.Printf("A new Response has been received for %d. with code: %d", i, resp.GetCode())
 			if resp.GetCode() == 0 && s.state > 0 && rand.Float64() < (0.3*float64(s.state)) {
 				key := data.EuclideanPointKey{
-					GroupLabel: point.GetGroupLabel(),
+					GroupLabel:        point.GetGroupLabel(),
+					SequenceLengthOne: point.GetSequenceLengthOne(),
+					SequenceLengthTwo: point.GetSequenceLengthTwo(),
+					SequenceDimOne:    point.GetSequenceDimOne(),
+					SequenceDimTwo:    point.GetSequenceDimTwo(),
 				}
 				copy(key.Feature[:len(point.GetValues())], point.GetValues())
 				s.dt.Delete(key)
@@ -653,7 +674,7 @@ func (s *veriServiceServer) check() {
 			s.SyncJoin()
 			nextSyncJoinTime = getCurrentTime() + 10
 		}
-
+		s.timestamp = getCurrentTime()
 		time.Sleep(time.Duration(1000) * time.Millisecond) // always wait one second
 	}
 }

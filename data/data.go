@@ -46,6 +46,14 @@ func NewData() *Data {
 }
 
 type Stats struct {
+	K                int64
+	D                int64
+	Avg              []float64
+	N                int64
+	MaxDistance      float64
+	Hist             []float64
+	Timestamp        int64
+	AverageTimestamp int64
 }
 
 type EuclideanPoint struct {
@@ -190,12 +198,15 @@ func NewEuclideanPointArrWithLabel(vals [k]float64,
 	timestamp int64,
 	label string,
 	groupLabel string,
-	d int64,
 	sequenceLengthOne int64,
 	sequenceLengthTwo int64,
 	sequenceDimOne int64,
 	sequenceDimTwo int64) *EuclideanPoint {
-	slice := make([]float64, len(vals))
+	d := (sequenceLengthOne * sequenceDimOne) + (sequenceLengthTwo * sequenceDimTwo)
+	if d == 0 {
+		fmt.Printf("NewEuclideanPointArrWithLabel: D is 0 !!!!!!!!!!\n")
+	}
+	slice := make([]float64, d)
 	copy(slice[:d], vals[:d])
 	ret := &EuclideanPoint{
 		PointBase:         kdtree.NewPointBase(slice),
@@ -236,6 +247,17 @@ func CalculateAverage(avg []float64, p []float64, n float64) []float64 {
 }
 
 func (dt *Data) Insert(key EuclideanPointKey, value EuclideanPointValue) {
+	d := (key.SequenceLengthOne * key.SequenceDimOne) + (key.SequenceLengthTwo * key.SequenceDimTwo)
+	if d == 0 {
+		fmt.Printf("Insert D is 0 !!!!!!!!!!\n")
+	}
+	if dt.d < d {
+		if d > k {
+			d = k // d can not be larger than maximum capacity
+		}
+		log.Printf("Updating current dimension to: %v\n", d)
+		dt.d = d // Maybe we can use max of
+	}
 	dt.pointsMap.Store(key, value)
 	dt.dirty = true
 	dt.latestNumberOfChanges++
@@ -247,7 +269,7 @@ func (dt *Data) InsertBasic(label string, vals ...float64) {
 		if d > k {
 			d = k // d can not be larger than maximum capacity
 		}
-		log.Printf("Updating current dimension to: %v", d)
+		log.Printf("Updating current dimension to: %v\n", d)
 		dt.d = d // Maybe we can use max of
 	}
 	key := EuclideanPointKey{
@@ -277,13 +299,18 @@ func (dt *Data) GetKnn(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, 
 		dt.treeMu.RLock()
 		ans := dt.tree.KNN(point, int(queryK))
 		dt.treeMu.RUnlock()
-		// fmt.Printf("Len ans: %v\n", len(ans))
+		// size := len(point.GetValues())
+		fmt.Printf("Len ans: %v\n", len(ans))
 		ret := make([]*EuclideanPoint, len(ans))
 		for i := 0; i < len(ans); i++ {
-			// fmt.Printf("Label: %v distance: %v\n", ans[i].GetLabel(), VectorDistance(point.GetValues()[:size], ans[i].GetValues()[:size]))
-			// fmt.Printf("Feature: %v\n", ans[i].GetValues()[:size])
+			fmt.Printf("Label: %v distance: %v\n", ans[i].GetLabel(), VectorDistance(point.GetValues(), ans[i].GetValues()))
+			fmt.Printf("Feature: %v\n", ans[i].GetValues())
+			d := (ans[i].GetSequenceLengthOne() * ans[i].GetSequenceDimOne()) + (ans[i].GetSequenceLengthTwo() * ans[i].GetSequenceDimTwo())
+			if d == 0 {
+				fmt.Printf("D is 0 !!!!!!!!!!\n")
+			}
 			ret[i] = &EuclideanPoint{
-				PointBase:         kdtree.NewPointBase(ans[i].GetValues()[:dt.d]),
+				PointBase:         kdtree.NewPointBase(ans[i].GetValues()[:d]),
 				timestamp:         ans[i].GetTimestamp(),
 				label:             ans[i].GetLabel(),
 				groupLabel:        ans[i].GetGroupLabel(),
@@ -329,7 +356,6 @@ func (dt *Data) Process(force bool) error {
 				euclideanPointValue.Timestamp,
 				euclideanPointValue.Label,
 				euclideanPointValue.GroupLabel,
-				dt.d,
 				euclideanPointKey.SequenceLengthOne,
 				euclideanPointKey.SequenceLengthTwo,
 				euclideanPointKey.SequenceDimOne,
@@ -414,7 +440,6 @@ func (dt *Data) GetRandomPoints(limit int) []kdtree.Point {
 			euclideanPointValue.Timestamp,
 			euclideanPointValue.Label,
 			euclideanPointValue.GroupLabel,
-			dt.d,
 			euclideanPointKey.SequenceLengthOne,
 			euclideanPointKey.SequenceLengthTwo,
 			euclideanPointKey.SequenceDimOne,
@@ -433,4 +458,17 @@ func (dt *Data) GetRandomPoints(limit int) []kdtree.Point {
 		return true
 	})
 	return points
+}
+
+func (dt *Data) GetStats() *Stats {
+	return &Stats{
+		K:                dt.k,
+		D:                dt.d,
+		Avg:              dt.avg,
+		N:                dt.n,
+		MaxDistance:      dt.maxDistance,
+		Hist:             dt.hist,
+		Timestamp:        dt.timestamp,
+		AverageTimestamp: dt.averageTimestamp,
+	}
 }

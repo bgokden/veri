@@ -5,7 +5,7 @@ import random
 from veriservice import veriservice_pb2 as pb
 from veriservice import veriservice_pb2_grpc as pb_grpc
 
-__version__ = "0.0.17"
+__version__ = "0.0.18"
 
 class GrpcClientWrapper:
     def __init__(self, service, client):
@@ -42,10 +42,10 @@ class VeriClient:
                 label,
                 grouplabel = '',
                 timestamp = 0,
-                sequencelengthone = -1,
-                sequencelengthtwo = -1,
-                sequencedimone = -1,
-                sequencedimtwo = -1,
+                sequencelengthone = 0,
+                sequencelengthtwo = 0,
+                sequencedimone = 0,
+                sequencedimtwo = 0,
                 retry = 5):
         request = pb.InsertionRequest(timestamp = timestamp,
                                         label = label,
