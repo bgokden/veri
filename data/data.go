@@ -446,6 +446,7 @@ func (dt *Data) Delete(key EuclideanPointKey) {
 }
 
 func (dt *Data) GetKnn(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, error) {
+	fmt.Printf("KNN Input Feature: %v\n", point.GetValues())
 	if dt.tree != nil {
 		dt.treeMu.RLock()
 		ans := dt.tree.KNN(point, int(queryK))
