@@ -31,7 +31,7 @@ func TestDataBasic(t *testing.T) {
 	dt.InsertBasic("4", 0.0, 1.0, 0.0)
 	dt.InsertBasic("5", 1.0, 0.0, 0.0)
 	dt.InsertBasic("6", 0.0, 0.0, 0.0)
-	dt.InsertBasic("7", 0.0, 0.0, 0.1)
+	dt.InsertBasic("7", 0.0, 0.01, 0.1)
 	dt.InsertBasic("8", 1.0, 1.0, 1.0)
 	dt.Process(true)
 	result, err := dt.GetKnnBasic(3, 0.0, 0.0, 1.0)
@@ -49,4 +49,25 @@ func TestCalculateAverage(t *testing.T) {
 	p1 := []float64{1.0, 1.0, 1.0}
 	avg = data.CalculateAverage(avg, p1, 2)
 	t.Logf("Avg %v\n", avg)
+}
+
+func TestDataBasicLinear(t *testing.T) {
+	dt := data.NewData()
+	dt.InsertBasic("1", 0.1, 0.2, 0.3)
+	dt.InsertBasic("2", 0.0, 0.0, 0.0)
+	dt.InsertBasic("3", 0.0, 0.0, 1.0)
+	dt.InsertBasic("4", 0.0, 1.0, 0.0)
+	dt.InsertBasic("5", 1.0, 0.0, 0.0)
+	dt.InsertBasic("6", 0.0, 0.0, 0.0)
+	dt.InsertBasic("7", 0.0, 0.01, 0.1)
+	dt.InsertBasic("8", 1.0, 1.0, 1.0)
+	dt.Process(true)
+	result, err := dt.GetKnnBasicLinear(3, 0.0, 0.0, 1.0)
+
+	assert.Nil(t, err)
+	assert.Equal(t, len(result), 3)
+
+	assert.Equal(t, "3", result[0].GetLabel())
+	assert.Equal(t, "7", result[1].GetLabel())
+	assert.Equal(t, "1", result[2].GetLabel())
 }

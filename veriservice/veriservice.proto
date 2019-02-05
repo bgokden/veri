@@ -13,6 +13,9 @@ service VeriService {
   rpc ExchangeServices(ServiceMessage) returns (ServiceMessage) {}
   rpc ExchangePeers(PeerMessage) returns (PeerMessage) {}
   rpc GetLocalData(GetLocalDataRequest) returns (stream Feature) {}
+
+  rpc GetKnnStream(KnnRequest) returns (stream Feature) {}
+  rpc InsertStream(stream Feature) returns (stream InsertionResponse) {}
 }
 
 // Request message for creating a new customer
@@ -36,6 +39,7 @@ message Feature {
   int64 sequencelengthtwo = 6;
   int64 sequencedimone = 7;
   int64 sequencedimtwo = 8;
+  double distance = 9;
 }
 
 message KnnResponse {

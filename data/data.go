@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"sort"
 	"sync"
 	"time"
 
@@ -19,7 +20,7 @@ const k = 1024 // 1024
 
 // 0 => euclidean distance
 // 1 => consine distance
-const distance_mode = 0
+// const distance_mode = 0
 
 type Data struct {
 	k                     int64
@@ -33,15 +34,20 @@ type Data struct {
 	dirty                 bool
 	latestNumberOfChanges int
 	pointsMap             sync.Map
-	pointsMu              sync.RWMutex // protects points
 	treeMu                sync.RWMutex // protects KDTree
 	tree                  *kdtree.KDTree
 	isEvictable           bool
+	// pointsMu              sync.RWMutex // protects points
 }
 
 func NewData() *Data {
 	dt := Data{}
 	go dt.Run()
+	return &dt
+}
+
+func NewTempData() *Data {
+	dt := Data{}
 	return &dt
 }
 
@@ -160,6 +166,15 @@ func VectorDistance(arr1 []float64, arr2 []float64) float64 {
 			return euclideanDistance(arr1, arr2)
 		}
 	*/
+}
+
+func SearchVectorDistance(arr1 []float64, arr2 []float64, distance_mode int) float64 {
+	minLen := min(len(arr1), len(arr2))
+	if distance_mode == 1 {
+		return cosineDistance(arr1[:minLen], arr2[:minLen])
+	} else {
+		return euclideanDistance(arr1[:minLen], arr2[:minLen])
+	}
 }
 
 func (p *EuclideanPoint) Distance(other kdtree.Point) float64 {
@@ -304,7 +319,7 @@ func InsertionRequestToEuclideanPointKeyValue(in *pb.InsertionRequest) (*Euclide
 		SequenceDimTwo:    in.GetSequencedimtwo(),
 	}
 	d := int64(len(in.GetFeature()))
-	fmt.Printf("Insert len: %v\n", d)
+	// fmt.Printf("Insert len: %v\n", d)
 	copy(key.Feature[:d], in.GetFeature()[:d])
 	// fmt.Printf("Inserted arr: %v\n", key.Feature[:d])
 	value := &EuclideanPointValue{
@@ -446,17 +461,17 @@ func (dt *Data) Delete(key EuclideanPointKey) {
 }
 
 func (dt *Data) GetKnn(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, error) {
-	fmt.Printf("KNN Input Feature: %v\n", point.GetValues())
+	// return dt.GetKnnLinear(queryK, point)
 	if dt.tree != nil {
 		dt.treeMu.RLock()
 		ans := dt.tree.KNN(point, int(queryK))
 		dt.treeMu.RUnlock()
 		// size := len(point.GetValues())
-		fmt.Printf("Len ans: %v\n", len(ans))
+		// fmt.Printf("Len ans: %v\n", len(ans))
 		ret := make([]*EuclideanPoint, len(ans))
 		for i := 0; i < len(ans); i++ {
-			fmt.Printf("Label: %v distance: %v\n", ans[i].GetLabel(), VectorDistance(point.GetValues(), ans[i].GetValues()))
-			fmt.Printf("Feature: %v\n", ans[i].GetValues())
+			// fmt.Printf("Label: %v distance: %v\n", ans[i].GetLabel(), VectorDistance(point.GetValues(), ans[i].GetValues()))
+			// fmt.Printf("Feature: %v\n", ans[i].GetValues())
 			ret[i] = NewEuclideanPointFromPoint(ans[i])
 		}
 		return ret, nil
@@ -516,12 +531,14 @@ func (dt *Data) Process(force bool) error {
 		dt.n = n
 		dt.timestamp = getCurrentTime()
 		dt.latestNumberOfChanges = dt.latestNumberOfChanges - tempLatestNumberOfChanges
+
 		if len(points) > 0 {
 			tree := kdtree.NewKDTree(points)
 			dt.treeMu.Lock()
 			dt.tree = tree
 			dt.treeMu.Unlock()
 		}
+
 	}
 	dt.timestamp = getCurrentTime() // update always
 
@@ -590,4 +607,57 @@ func (dt *Data) GetStats() *Stats {
 		Timestamp:        dt.timestamp,
 		AverageTimestamp: dt.averageTimestamp,
 	}
+}
+
+type SortByDistance []*DataPoint
+
+type DataPoint struct {
+	Distance float64
+	Point    *EuclideanPoint
+}
+
+func (e SortByDistance) Len() int {
+	return len(e)
+}
+func (e SortByDistance) Swap(i, j int) {
+	e[i], e[j] = e[j], e[i]
+}
+func (e SortByDistance) Less(i, j int) bool {
+	return e[i].Distance < e[j].Distance
+}
+
+func (dt *Data) GetKnnLinear(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, error) {
+	// fmt.Printf("KNN Input Feature: %v\n", point.GetValues())
+	temp := make([]*DataPoint, 0)
+	result := make([]*EuclideanPoint, 0)
+	maxDistance := 0.0
+	dt.pointsMap.Range(func(key, value interface{}) bool {
+		euclideanPointKey := key.(EuclideanPointKey)
+		euclideanPointValue := value.(EuclideanPointValue)
+		distance := SearchVectorDistance(euclideanPointKey.Feature[:], point.GetValues(), 1)
+		if len(result) < int(queryK) || distance < maxDistance {
+			newPoint := NewEuclideanPointFromKeyValue(&euclideanPointKey, &euclideanPointValue)
+			temp = append(temp, &DataPoint{distance, newPoint})
+			if distance < maxDistance {
+				maxDistance = distance
+			}
+		}
+		return true
+	})
+
+	sort.Sort(SortByDistance(temp))
+	for i, e := range temp {
+		if i >= int(queryK) {
+			break
+		}
+		result = append(result, e.Point)
+	}
+
+	return result, nil
+	// return []*EuclideanPoint{}, errors.New("Points not initialized yet")
+}
+
+func (dt *Data) GetKnnBasicLinear(queryK int64, vals ...float64) ([]*EuclideanPoint, error) {
+	point := NewEuclideanPointArr(vals)
+	return dt.GetKnnLinear(queryK, point)
 }

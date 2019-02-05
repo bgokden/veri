@@ -19,7 +19,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/bgokden/go-kdtree"
 	"github.com/istio/istio/pkg/cache"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
@@ -102,16 +101,14 @@ func (s *veriServiceServer) GetLocalData(rect *pb.GetLocalDataRequest, stream pb
 func (s *veriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featuresChannel chan<- pb.Feature) {
 	log.Printf("GetKnnFromPeer %s", peer.address)
 	client, err0 := s.get_client(peer.address)
-	if err0 != nil {
+	if err0 == nil {
 		grpc_client := client.client
 		resp, err := (*grpc_client).GetKnn(context.Background(), in)
 		if err != nil {
 			log.Printf("There is an error: %v", err)
 			// conn.Close()
-			return
-		} else {
-			log.Printf("Get Knn err: %v", err)
 			go s.refresh_client(peer.address)
+			return
 		}
 		// if resp.Success {
 		// log.Printf("A new Response has been received with id: %s", resp.Id)
@@ -152,9 +149,9 @@ func (s *veriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 	ans, err := s.dt.GetKnn(int64(in.GetK()), point)
 	if err == nil {
 		for i := 0; i < len(ans); i++ {
-			log.Printf("New Feature from Local before")
+			// log.Printf("New Feature from Local before")
 			feature := data.NewFeatureFromEuclideanPoint(ans[i])
-			log.Printf("New Feature from Local: %v after", feature.GetLabel())
+			// log.Printf("New Feature from Local: %v after", feature.GetLabel())
 			featuresChannel <- *feature
 		}
 	} else {
@@ -176,8 +173,10 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		if loaded {
 			cachedResult, isCached := s.cache.Get(featureHash)
 			if isCached {
+				log.Printf("Return cached result for id %v", request.GetId())
 				return cachedResult.(*pb.KnnResponse), nil
 			} else {
+				log.Printf("Return un-cached result for id %v since it is already processed.", request.GetId())
 				return &pb.KnnResponse{Id: in.Id, Features: nil}, nil
 			}
 		} else {
@@ -192,34 +191,31 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 	responseFeatures := make([]*pb.Feature, 0)
 	dataAvailable := true
 	timeLimit := time.After(time.Duration(in.GetTimeout()) * time.Millisecond)
-	reduceMap := make(map[data.EuclideanPointKey]data.EuclideanPointValue)
+	// reduceMap := make(map[data.EuclideanPointKey]data.EuclideanPointValue)
+	reduceData := data.NewTempData()
 	for dataAvailable {
 		select {
 		case feature := <-featuresChannel:
 			key, value := data.FeatureToEuclideanPointKeyValue(&feature)
-			reduceMap[*key] = *value
+			// reduceMap[*key] = *value
+			reduceData.Insert(*key, *value)
 		case <-timeLimit:
 			log.Printf("timeout")
 			dataAvailable = false
 			break
 		}
 	}
-	if len(reduceMap) > 0 {
-		points := make([]kdtree.Point, 0)
-		for euclideanPointKey, euclideanPointValue := range reduceMap {
-			log.Printf("Received Feature (Get KNN): %v", euclideanPointValue.Label)
-			point := data.NewEuclideanPointFromKeyValue(&euclideanPointKey, &euclideanPointValue)
-			points = append(points, point)
-		}
-		tree := kdtree.NewKDTree(points)
-		point := data.NewEuclideanPointArr(in.Feature)
-		// log.Printf("len(points): %d, in.K:%d", len(points), int(in.K))
-		ans := tree.KNN(point, int(in.K))
-		for i := 0; i < len(ans); i++ {
-			featureJson := data.NewFeatureFromPoint(ans[i])
-			log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
-			responseFeatures = append(responseFeatures, featureJson)
-		}
+	point := data.NewEuclideanPointArr(in.Feature)
+	reduceData.Process(true)
+	ans, err := reduceData.GetKnn(int64(in.K), point)
+	if err != nil {
+		log.Printf("Error in Knn: %v", err.Error())
+		return &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, err
+	}
+	for i := 0; i < len(ans); i++ {
+		featureJson := data.NewFeatureFromPoint(ans[i])
+		// log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
+		responseFeatures = append(responseFeatures, featureJson)
 	}
 	s.knnQueryId.Set(request.GetId(), true)
 	s.cache.Set(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
