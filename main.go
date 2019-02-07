@@ -103,7 +103,7 @@ func (s *veriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featur
 	client, err0 := s.get_client(peer.address)
 	if err0 == nil {
 		grpc_client := client.client
-		resp, err := (*grpc_client).GetKnn(context.Background(), in)
+		resp, err := (*grpc_client).GetKnnStream(context.Background(), in)
 		if err != nil {
 			log.Printf("There is an error: %v", err)
 			// conn.Close()
@@ -112,11 +112,14 @@ func (s *veriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *Peer, featur
 		}
 		// if resp.Success {
 		// log.Printf("A new Response has been received with id: %s", resp.Id)
-		features := resp.GetFeatures()
-		for i := 0; i < len(features); i++ {
-			log.Printf("New Feature from Peer (%s) : %v", peer.address, features[i].GetLabel())
-			featuresChannel <- *(features[i])
-			// log.Println(features[i].GetLabel())
+		for {
+			feature, err := resp.Recv()
+			if err != nil {
+				log.Printf("Error: (%v)", err)
+				break
+			}
+			log.Printf("New Feature from Peer (%s) : %v", peer.address, feature.GetLabel())
+			featuresChannel <- *(feature)
 		}
 		// conn.Close()
 	}
@@ -222,6 +225,73 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 	return &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, nil
 }
 
+func (s *veriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriService_GetKnnStreamServer) error {
+	request := *in
+	d := int64(len(request.GetFeature()))
+	var featureHash [k]float64
+	copy(featureHash[:d], request.GetFeature()[:])
+	if len(in.GetId()) == 0 {
+		request.Id = ksuid.New().String()
+		s.knnQueryId.Set(request.Id, true)
+	} else {
+		_, loaded := s.knnQueryId.Get(request.GetId())
+		if loaded {
+			cachedResult, isCached := s.cache.Get(featureHash)
+			if isCached {
+				log.Printf("Return cached result for id %v", request.GetId())
+				result := cachedResult.(*pb.KnnResponse).GetFeatures()
+				for _, e := range result {
+					stream.Send(e)
+				}
+				return nil
+			} else {
+				log.Printf("Return un-cached result for id %v since it is already processed.", request.GetId())
+				return nil
+			}
+		} else {
+			s.knnQueryId.Set(request.GetId(), getCurrentTime())
+		}
+	}
+	featuresChannel := make(chan pb.Feature, in.GetK())
+	go s.GetKnnFromPeers(&request, featuresChannel)
+	go s.GetKnnFromLocal(&request, featuresChannel)
+	// time.Sleep(1 * time.Second)
+	// close(featuresChannel)
+	responseFeatures := make([]*pb.Feature, 0)
+	dataAvailable := true
+	timeLimit := time.After(time.Duration(in.GetTimeout()) * time.Millisecond)
+	// reduceMap := make(map[data.EuclideanPointKey]data.EuclideanPointValue)
+	reduceData := data.NewTempData()
+	for dataAvailable {
+		select {
+		case feature := <-featuresChannel:
+			key, value := data.FeatureToEuclideanPointKeyValue(&feature)
+			// reduceMap[*key] = *value
+			reduceData.Insert(*key, *value)
+		case <-timeLimit:
+			log.Printf("timeout")
+			dataAvailable = false
+			break
+		}
+	}
+	point := data.NewEuclideanPointArr(in.Feature)
+	reduceData.Process(true)
+	ans, err := reduceData.GetKnn(int64(in.K), point)
+	if err != nil {
+		log.Printf("Error in Knn: %v", err.Error())
+		return err
+	}
+	for i := 0; i < len(ans); i++ {
+		feature := data.NewFeatureFromPoint(ans[i])
+		// log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
+		stream.Send(feature)
+		responseFeatures = append(responseFeatures, feature)
+	}
+	s.knnQueryId.Set(request.GetId(), true)
+	s.cache.Set(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
+	return nil
+}
+
 func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest) (*pb.InsertionResponse, error) {
 	if s.state > 2 {
 		return &pb.InsertionResponse{Code: 1}, nil
@@ -229,6 +299,28 @@ func (s *veriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 	key, value := data.InsertionRequestToEuclideanPointKeyValue(in)
 	s.dt.Insert(*key, *value)
 	return &pb.InsertionResponse{Code: 0}, nil
+}
+
+func (s *veriServiceServer) InsertStream(stream pb.VeriService_InsertStreamServer) error {
+	for {
+		in, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			log.Fatalf("Failed to receive a note : %v", err)
+		}
+		key, value := data.FeatureToEuclideanPointKeyValue(in)
+		s.dt.Insert(*key, *value)
+
+		if s.state > 2 {
+			stream.Send(&pb.InsertionResponse{Code: 1})
+			return nil
+		} else {
+			stream.Send(&pb.InsertionResponse{Code: 0})
+		}
+	}
+	return nil
 }
 
 func (s *veriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {

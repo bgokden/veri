@@ -23,12 +23,12 @@ const k = 1024 // 1024
 // const distance_mode = 0
 
 type Data struct {
-	k                     int64
-	d                     int64
-	avg                   []float64
-	n                     int64
-	maxDistance           float64
-	hist                  []float64
+	K                     int64
+	D                     int64
+	Avg                   []float64
+	N                     int64
+	MaxDistance           float64
+	Hist                  []float64
 	timestamp             int64
 	averageTimestamp      int64
 	dirty                 bool
@@ -417,12 +417,12 @@ func (dt *Data) Insert(key EuclideanPointKey, value EuclideanPointValue) {
 	if d == 0 {
 		fmt.Printf("Insert D is 0 !!!!!!!!!!\n")
 	}
-	if dt.d < d {
+	if dt.D < d {
 		if d > k {
 			d = k // d can not be larger than maximum capacity
 		}
 		log.Printf("Updating current dimension to: %v\n", d)
-		dt.d = d // Maybe we can use max of
+		dt.D = d // Maybe we can use max of
 	}
 	dt.pointsMap.Store(key, value)
 	dt.dirty = true
@@ -431,12 +431,12 @@ func (dt *Data) Insert(key EuclideanPointKey, value EuclideanPointValue) {
 
 func (dt *Data) InsertBasic(label string, vals ...float64) {
 	d := int64(len(vals))
-	if dt.d < d {
+	if dt.D < d {
 		if d > k {
 			d = k // d can not be larger than maximum capacity
 		}
 		log.Printf("Updating current dimension to: %v\n", d)
-		dt.d = d // Maybe we can use max of
+		dt.D = d // Maybe we can use max of
 	}
 	key := EuclideanPointKey{
 		SequenceLengthOne: 1,
@@ -495,7 +495,7 @@ func (dt *Data) Process(force bool) error {
 		maxDistance := 0.0
 		avg := make([]float64, 0)
 		hist := make([]float64, 64)
-		nFloat := float64(dt.n)
+		nFloat := float64(dt.N)
 		histUnit := 1 / nFloat
 		averageTimeStamp := 0.0
 		dt.pointsMap.Range(func(key, value interface{}) bool {
@@ -511,12 +511,12 @@ func (dt *Data) Process(force bool) error {
 			n++
 			avg = CalculateAverage(avg, point.GetValues(), nFloat)
 			averageTimeStamp = averageTimeStamp + float64(euclideanPointValue.Timestamp)/nFloat
-			distance = VectorDistance(dt.avg, point.GetValues())
+			distance = VectorDistance(dt.Avg, point.GetValues())
 			if distance > maxDistance {
 				maxDistance = distance
 			}
-			if dt.maxDistance != 0 {
-				index := int((distance / dt.maxDistance) * 64)
+			if dt.MaxDistance != 0 {
+				index := int((distance / dt.MaxDistance) * 64)
 				if index >= 64 {
 					index = 63
 				}
@@ -524,11 +524,11 @@ func (dt *Data) Process(force bool) error {
 			}
 			return true
 		})
-		dt.avg = avg
+		dt.Avg = avg
 		dt.averageTimestamp = int64(averageTimeStamp)
-		dt.hist = hist
-		dt.maxDistance = maxDistance
-		dt.n = n
+		dt.Hist = hist
+		dt.MaxDistance = maxDistance
+		dt.N = n
 		dt.timestamp = getCurrentTime()
 		dt.latestNumberOfChanges = dt.latestNumberOfChanges - tempLatestNumberOfChanges
 
@@ -598,12 +598,12 @@ func (dt *Data) GetRandomPoints(limit int) []kdtree.Point {
 
 func (dt *Data) GetStats() *Stats {
 	return &Stats{
-		K:                dt.k,
-		D:                dt.d,
-		Avg:              dt.avg,
-		N:                dt.n,
-		MaxDistance:      dt.maxDistance,
-		Hist:             dt.hist,
+		K:                dt.K,
+		D:                dt.D,
+		Avg:              dt.Avg,
+		N:                dt.N,
+		MaxDistance:      dt.MaxDistance,
+		Hist:             dt.Hist,
 		Timestamp:        dt.timestamp,
 		AverageTimestamp: dt.averageTimestamp,
 	}
