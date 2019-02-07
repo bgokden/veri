@@ -5,7 +5,7 @@ import random
 from veriservice import veriservice_pb2 as pb
 from veriservice import veriservice_pb2_grpc as pb_grpc
 
-__version__ = "0.0.18"
+__version__ = "0.0.19"
 
 class GrpcClientWrapper:
     def __init__(self, service, client):
@@ -80,6 +80,24 @@ class VeriClient:
             try:
                 client_wrapper = self.__get_client()
                 response = client_wrapper.get_client().GetKnn(request)
+                return response
+            except grpc.RpcError as e: # there should be connection problem
+                if client_wrapper is not None:
+                    self.__refresh_client(client_wrapper.get_service())
+            except Exception as e:
+                print(e)
+                time.sleep(5)
+            retry -= 1
+        return response
+
+    def getKnnStream(self, feature, k=10, id='', timestamp=0, timeout=1000, retry = 5):
+        request = pb.KnnRequest(id=id, timestamp=timestamp, timeout=timeout, k=k, feature=feature)
+        response = None
+        while retry >= 0:
+            client_wrapper = None
+            try:
+                client_wrapper = self.__get_client()
+                response = client_wrapper.get_client().GetKnnStream(request)
                 return response
             except grpc.RpcError as e: # there should be connection problem
                 if client_wrapper is not None:
