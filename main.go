@@ -19,7 +19,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/istio/istio/pkg/cache"
+	"github.com/goburrow/cache"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/testdata"
@@ -170,11 +170,11 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 	copy(featureHash[:d], request.GetFeature()[:])
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
-		s.knnQueryId.Set(request.Id, true)
+		s.knnQueryId.Put(request.Id, true)
 	} else {
-		_, loaded := s.knnQueryId.Get(request.GetId())
+		_, loaded := s.knnQueryId.GetIfPresent(request.GetId())
 		if loaded {
-			cachedResult, isCached := s.cache.Get(featureHash)
+			cachedResult, isCached := s.cache.GetIfPresent(featureHash)
 			if isCached {
 				log.Printf("Return cached result for id %v", request.GetId())
 				return cachedResult.(*pb.KnnResponse), nil
@@ -183,7 +183,7 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 				return &pb.KnnResponse{Id: in.Id, Features: nil}, nil
 			}
 		} else {
-			s.knnQueryId.Set(request.GetId(), getCurrentTime())
+			s.knnQueryId.Put(request.GetId(), getCurrentTime())
 		}
 	}
 	featuresChannel := make(chan pb.Feature, in.GetK())
@@ -220,8 +220,8 @@ func (s *veriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		// log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
 		responseFeatures = append(responseFeatures, featureJson)
 	}
-	s.knnQueryId.Set(request.GetId(), true)
-	s.cache.Set(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
+	s.knnQueryId.Put(request.GetId(), true)
+	s.cache.Put(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
 	return &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, nil
 }
 
@@ -232,11 +232,11 @@ func (s *veriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 	copy(featureHash[:d], request.GetFeature()[:])
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
-		s.knnQueryId.Set(request.Id, true)
+		s.knnQueryId.Put(request.Id, true)
 	} else {
-		_, loaded := s.knnQueryId.Get(request.GetId())
+		_, loaded := s.knnQueryId.GetIfPresent(request.GetId())
 		if loaded {
-			cachedResult, isCached := s.cache.Get(featureHash)
+			cachedResult, isCached := s.cache.GetIfPresent(featureHash)
 			if isCached {
 				log.Printf("Return cached result for id %v", request.GetId())
 				result := cachedResult.(*pb.KnnResponse).GetFeatures()
@@ -249,7 +249,7 @@ func (s *veriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 				return nil
 			}
 		} else {
-			s.knnQueryId.Set(request.GetId(), getCurrentTime())
+			s.knnQueryId.Put(request.GetId(), getCurrentTime())
 		}
 	}
 	featuresChannel := make(chan pb.Feature, in.GetK())
@@ -287,8 +287,8 @@ func (s *veriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 		stream.Send(feature)
 		responseFeatures = append(responseFeatures, feature)
 	}
-	s.knnQueryId.Set(request.GetId(), true)
-	s.cache.Set(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
+	s.knnQueryId.Put(request.GetId(), true)
+	s.cache.Put(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
 	return nil
 }
 
@@ -654,8 +654,19 @@ func newServer() *veriServiceServer {
 	}
 	s.maxMemoryMiB = 1024
 	s.timestamp = getCurrentTime()
-	s.cache = cache.NewLRU(5*time.Minute, 5*time.Minute, 1000)
-	s.knnQueryId = cache.NewLRU(5*time.Minute, 5*time.Minute, 1000)
+	load := func(k cache.Key) (cache.Value, error) {
+		return fmt.Sprintf("%d", k), nil
+	}
+	s.cache = cache.NewLoadingCache(load,
+		cache.WithMaximumSize(1000),
+		cache.WithExpireAfterAccess(10*time.Second),
+		cache.WithRefreshAfterWrite(60*time.Second),
+	)
+	s.knnQueryId = cache.NewLoadingCache(load,
+		cache.WithMaximumSize(1000),
+		cache.WithExpireAfterAccess(10*time.Second),
+		cache.WithRefreshAfterWrite(60*time.Second),
+	)
 	return s
 }
 
