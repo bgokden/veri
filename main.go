@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"os"
 
@@ -31,10 +30,13 @@ func main() {
 	flag.Parse()
 	logging.Init(os.Stdout, os.Stderr)
 	logging.Verbose = true
+	veriserviceserver.Health = true
+	veriserviceserver.Ready = true
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logging.Error("failed to listen: %v", err)
+		return
 	}
 	var opts []grpc.ServerOption
 	if *tls {
@@ -46,15 +48,15 @@ func main() {
 		}
 		creds, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
 		if err != nil {
-			log.Fatalf("Failed to generate credentials %v", err)
+			logging.Error("Failed to generate credentials %v", err)
+			return
 		}
 		opts = []grpc.ServerOption{grpc.Creds(creds)}
 	}
 	grpcServer := grpc.NewServer(opts...)
 	s := veriserviceserver.NewServer(*services, *evictable)
 	pb.RegisterVeriServiceServer(grpcServer, s)
-	go s.Check()
-	go s.RestApi()
+	go veriserviceserver.RestApi()
 	logging.Info("Server started.")
 	grpcServer.Serve(lis)
 }

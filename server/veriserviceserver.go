@@ -2,12 +2,10 @@ package veriserviceserver
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
-	"net/http"
 	"runtime"
 	"strconv"
 	"strings"
@@ -18,7 +16,6 @@ import (
 	"github.com/bgokden/veri/models"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/goburrow/cache"
-	"github.com/gorilla/mux"
 	"github.com/segmentio/ksuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
@@ -628,6 +625,7 @@ func NewServer(services string, evict bool) *VeriServiceServer {
 		cache.WithExpireAfterAccess(10*time.Second),
 		cache.WithRefreshAfterWrite(60*time.Second),
 	)
+	go s.Check()
 	return s
 }
 
@@ -669,29 +667,4 @@ func (s *VeriServiceServer) Check() {
 
 func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
-}
-
-func GetHeath(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	io.WriteString(w, `{"alive": true}`)
-}
-
-func respondWithError(w http.ResponseWriter, code int, message string) {
-	respondWithJSON(w, code, map[string]string{"error": message})
-}
-
-func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	response, _ := json.Marshal(payload)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	w.Write(response)
-}
-
-func (s *VeriServiceServer) RestApi() {
-	log.Println("Rest api stared")
-	router := mux.NewRouter()
-	router.HandleFunc("/", GetHeath).Methods("GET")
-	router.HandleFunc("/health", GetHeath).Methods("GET")
-	log.Fatal(http.ListenAndServe(":8000", router))
 }
