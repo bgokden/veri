@@ -94,13 +94,14 @@ func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel c
 		Timestamp: in.GetTimestamp(),
 		Timeout:   timeout,
 	}
-	log.Printf("GetKnnFromPeers")
+	logging.Info("GetKnnFromPeers")
+	// TODO: get recommended peers instead of all peers
 	s.peers.Range(func(key, value interface{}) bool {
 		peerAddress := key.(string)
-		log.Printf("Peer %s", peerAddress)
+		logging.Info("Querying Peer %v\n", peerAddress)
 		if len(peerAddress) > 0 && peerAddress != s.address {
 			peerValue := value.(models.Peer)
-			s.GetKnnFromPeer(request, &peerValue, featuresChannel)
+			go s.GetKnnFromPeer(request, &peerValue, featuresChannel)
 		}
 		return true
 	})
