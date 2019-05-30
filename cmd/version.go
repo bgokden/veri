@@ -17,12 +17,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package main
+package cmd
 
 import (
-	"github.com/bgokden/veri/cmd"
+	"fmt"
+
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	cmd.Execute()
+var clean bool
+
+// versionCmd represents the version command
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number of veri",
+	Long: `All software has versions. This is veri's:
+  veri version
+  veri version --clean
+  `,
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) >= 1 {
+			if clean {
+				fmt.Printf("%v\n", Version)
+			}
+		} else {
+			fmt.Printf("Version: %v\n", Version)
+		}
+
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
+	versionCmd.Flags().BoolVarP(&clean, "clean", "", false, "Just write version")
 }

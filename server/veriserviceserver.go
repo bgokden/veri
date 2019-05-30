@@ -2,10 +2,12 @@ package veriserviceserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
+	"net"
 	"runtime"
 	"strconv"
 	"strings"
@@ -16,9 +18,12 @@ import (
 	"github.com/bgokden/veri/models"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/goburrow/cache"
+	"github.com/magneticio/go-common/logging"
 	"github.com/segmentio/ksuid"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/testdata"
 )
 
 type VeriServiceServer struct {
@@ -279,11 +284,15 @@ func (s *VeriServiceServer) InsertStream(stream pb.VeriService_InsertStreamServe
 }
 
 func (s *VeriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
-	// log.Printf("Join request received %v", *in)
-	p, _ := peer.FromContext(ctx)
+	logging.Info("Join request received %v\n", *in)
+	p, ok := peer.FromContext(ctx)
+	if !ok {
+		logging.Error("Peer can not be get from context %v\n", p)
+		return nil, errors.New("Peer can not be get from context")
+	}
 	address := strings.Split(p.Addr.String(), ":")[0] + ":" + strconv.FormatInt(int64(in.GetPort()), 10)
 	// log.Printf("Peer with Addr: %s called Join", address)
-	peer := models.Peer{
+	peerStruct := models.Peer{
 		Address:   address,
 		Avg:       in.GetAvg(),
 		Version:   in.GetVersion(),
@@ -291,7 +300,7 @@ func (s *VeriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.J
 		N:         in.GetN(),
 		Timestamp: in.GetTimestamp(),
 	}
-	s.peers.Store(address, peer)
+	s.peers.Store(address, peerStruct)
 	return &pb.JoinResponse{Address: address}, nil
 }
 
@@ -415,10 +424,10 @@ func (s *VeriServiceServer) callJoin(client *pb.VeriServiceClient) {
 		N:         stats.N,
 		Timestamp: s.timestamp,
 	}
-	// log.Printf("Call Join Request %v", *request)
+	logging.Info("Call Join Request %v", *request)
 	resp, err := (*s).Join(context.Background(), request)
 	if err != nil {
-		log.Printf("(Call Join) There is an error %v", err)
+		logging.Error("(Call Join) There is an error %v", err)
 		return
 	}
 	if s.address != resp.GetAddress() {
@@ -552,14 +561,14 @@ func (s *VeriServiceServer) SyncJoin() {
 	// log.Printf("Sync Join")
 	s.services.Range(func(key, value interface{}) bool {
 		serviceName := key.(string)
-		// log.Printf("Service %s", serviceName)
+		logging.Info("Service %s", serviceName)
 		if len(serviceName) > 0 {
 			client, err := s.get_client(serviceName)
 			if err == nil {
 				grpcClient := client.Client
 				s.callJoin(grpcClient)
 			} else {
-				log.Printf("SyncJoin err: %v", err)
+				logging.Error("SyncJoin Error: %v\n", err)
 				go s.refresh_client(serviceName)
 			}
 			// conn.Close()
@@ -580,7 +589,7 @@ func (s *VeriServiceServer) SyncJoin() {
 				s.callExchangePeers(grpcClient)
 				s.callExchangeData(grpcClient, &peerValue)
 			} else {
-				log.Printf("SyncJoin 2 err: %v", err)
+				logging.Error("SyncJoin Error: %v\n", err)
 				go s.refresh_client(peerAddress)
 			}
 			// conn.Close()
@@ -667,4 +676,43 @@ func (s *VeriServiceServer) Check() {
 
 func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
+}
+
+func RunServer(configMap map[string]interface{}) {
+	Health = true
+	Ready = true
+
+	services := configMap["services"].(string)
+	logging.Info("Services: %v\n", services)
+	port := configMap["port"].(int)
+	evictable := configMap["evictable"].(bool)
+	tls := configMap["tls"].(bool)
+	certFile := configMap["cert"].(string)
+	keyFile := configMap["key"].(string)
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
+	if err != nil {
+		logging.Error("failed to listen: %v", err)
+		return
+	}
+	var opts []grpc.ServerOption
+	if tls {
+		if certFile == "" {
+			certFile = testdata.Path("server1.pem")
+		}
+		if keyFile == "" {
+			keyFile = testdata.Path("server1.key")
+		}
+		creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+		if err != nil {
+			logging.Error("Failed to generate credentials %v", err)
+			return
+		}
+		opts = []grpc.ServerOption{grpc.Creds(creds)}
+	}
+	grpcServer := grpc.NewServer(opts...)
+	s := NewServer(services, evictable)
+	pb.RegisterVeriServiceServer(grpcServer, s)
+	go RestApi()
+	logging.Info("Server started.")
+	grpcServer.Serve(lis)
 }
