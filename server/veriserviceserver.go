@@ -22,7 +22,7 @@ import (
 	"github.com/segmentio/ksuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/peer"
+	grpcPeer "google.golang.org/grpc/peer"
 	"google.golang.org/grpc/testdata"
 )
 
@@ -285,7 +285,7 @@ func (s *VeriServiceServer) InsertStream(stream pb.VeriService_InsertStreamServe
 
 func (s *VeriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
 	logging.Info("Join request received %v\n", *in)
-	p, ok := peer.FromContext(ctx)
+	p, ok := grpcPeer.FromContext(ctx)
 	if !ok {
 		logging.Error("Peer can not be get from context %v\n", p)
 		return nil, errors.New("Peer can not be get from context")
@@ -364,7 +364,7 @@ func (s *VeriServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessag
 func (s *VeriServiceServer) getClient(address string) (*pb.VeriServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		log.Printf("fail to dial: %v", err)
+		logging.Error("fail to dial: %v\n", err)
 		return nil, nil, err
 	}
 	client := pb.NewVeriServiceClient(conn)
@@ -374,9 +374,10 @@ func (s *VeriServiceServer) getClient(address string) (*pb.VeriServiceClient, *g
 func (s *VeriServiceServer) new_client(address string) (*models.Client, error) {
 	client, conn, err := s.getClient(address)
 	if err != nil {
-		log.Printf("fail to create a client: %v", err)
+		logging.Error("fail to create a client: %v\n", err)
 		return nil, err
 	}
+	logging.Info("Client created with address: %v\n", address)
 	return &models.Client{
 		Address: address,
 		Client:  client,
@@ -390,14 +391,22 @@ There may be some concurrency problems where unclosed connections can occur
 func (s *VeriServiceServer) get_client(address string) (models.Client, error) {
 	client, ok := s.clients.Load(address)
 	if ok {
-		return (*(client.(*models.Client))), nil
+		logging.Info("Using existing client for %v\n", address)
+		newClientPointer, castOk := client.(*models.Client)
+		if castOk {
+			return *newClientPointer, nil
+		} else {
+			return models.Client{}, errors.New("Client can not be created")
+		}
 	} else {
-		new_client, err := s.new_client(address)
+		newClientPointer, err := s.new_client(address)
 		if err != nil {
+			logging.Error("Client creation failed: %v\n", err)
 			return models.Client{}, err
 		} else {
-			s.clients.Store(address, new_client)
-			return (*new_client), nil
+			logging.Info("Using new client for %v\n", address)
+			s.clients.Store(address, newClientPointer)
+			return *newClientPointer, nil
 		}
 	}
 	// return models.Client{}, errors.New("Can not initilize client")
@@ -425,7 +434,7 @@ func (s *VeriServiceServer) callJoin(client *pb.VeriServiceClient) {
 		Timestamp: s.timestamp,
 	}
 	logging.Info("Call Join Request %v", *request)
-	resp, err := (*s).Join(context.Background(), request)
+	resp, err := (*client).Join(context.Background(), request)
 	if err != nil {
 		logging.Error("(Call Join) There is an error %v", err)
 		return
