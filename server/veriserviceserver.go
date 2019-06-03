@@ -287,7 +287,7 @@ func (s *VeriServiceServer) InsertStream(stream pb.VeriService_InsertStreamServe
 }
 
 func (s *VeriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
-	logging.Info("Join request received %v\n", *in)
+	// logging.Info("Join request received %v\n", *in)
 	p, ok := grpcPeer.FromContext(ctx)
 	if !ok {
 		logging.Error("Peer can not be get from context %v\n", p)
@@ -436,7 +436,7 @@ func (s *VeriServiceServer) callJoin(client *pb.VeriServiceClient) {
 		N:         stats.N,
 		Timestamp: s.timestamp,
 	}
-	logging.Info("Call Join Request %v", *request)
+	// logging.Info("Call Join Request %v", *request)
 	resp, err := (*client).Join(context.Background(), request)
 	if err != nil {
 		logging.Error("(Call Join) There is an error %v", err)
