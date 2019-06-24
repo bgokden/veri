@@ -16,7 +16,8 @@ import (
 )
 
 // This is set in compile time for optimization
-const k = 1024 // 1024
+// const k = 7200 // 1024
+const K_MAX = 7200
 
 // 0 => euclidean distance
 // 1 => consine distance
@@ -74,7 +75,7 @@ type EuclideanPoint struct {
 }
 
 type EuclideanPointKey struct {
-	Feature           [k]float64
+	Feature           [K_MAX]float64
 	SequenceLengthOne int64
 	SequenceLengthTwo int64
 	SequenceDimOne    int64
@@ -209,7 +210,7 @@ func NewEuclideanPointArr(vals []float64) *EuclideanPoint {
 	return ret
 }
 
-func NewEuclideanPointArrWithLabel(vals [k]float64,
+func NewEuclideanPointArrWithLabel(vals [K_MAX]float64,
 	timestamp int64,
 	label string,
 	groupLabel string,
@@ -418,8 +419,8 @@ func (dt *Data) Insert(key EuclideanPointKey, value EuclideanPointValue) {
 		fmt.Printf("Insert D is 0 !!!!!!!!!!\n")
 	}
 	if dt.D < d {
-		if d > k {
-			d = k // d can not be larger than maximum capacity
+		if d > K_MAX {
+			d = K_MAX // d can not be larger than maximum capacity
 		}
 		log.Printf("Updating current dimension to: %v\n", d)
 		dt.D = d // Maybe we can use max of
@@ -432,8 +433,8 @@ func (dt *Data) Insert(key EuclideanPointKey, value EuclideanPointValue) {
 func (dt *Data) InsertBasic(label string, vals ...float64) {
 	d := int64(len(vals))
 	if dt.D < d {
-		if d > k {
-			d = k // d can not be larger than maximum capacity
+		if d > K_MAX {
+			d = K_MAX // d can not be larger than maximum capacity
 		}
 		log.Printf("Updating current dimension to: %v\n", d)
 		dt.D = d // Maybe we can use max of
@@ -555,7 +556,7 @@ func (dt *Data) Run() error {
 		}
 		time.Sleep(time.Duration(1000) * time.Millisecond)
 	}
-	return nil
+	// return nil
 }
 
 func (dt *Data) GetAll(stream pb.VeriService_GetLocalDataServer) error {

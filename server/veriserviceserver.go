@@ -43,13 +43,6 @@ type VeriServiceServer struct {
 
 var port int = 10000
 
-// This is set in compile time for optimization
-const k = 1024 // 1024
-
-// 0 => euclidean distance
-// 1 => consine distance
-const distance_mode = 0
-
 func getCurrentTime() int64 {
 	return time.Now().Unix()
 }
@@ -129,7 +122,7 @@ func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.KnnResponse, error) {
 	request := *in
 	d := int64(len(request.GetFeature()))
-	var featureHash [k]float64
+	var featureHash [data.K_MAX]float64
 	copy(featureHash[:d], request.GetFeature()[:])
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
@@ -191,7 +184,7 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriService_GetKnnStreamServer) error {
 	request := *in
 	d := int64(len(request.GetFeature()))
-	var featureHash [k]float64
+	var featureHash [data.K_MAX]float64
 	copy(featureHash[:d], request.GetFeature()[:])
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
