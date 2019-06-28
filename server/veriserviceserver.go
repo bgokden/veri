@@ -78,7 +78,7 @@ func (s *VeriServiceServer) GetKnnFromPeer(in *pb.KnnRequest, peer *models.Peer,
 	}
 }
 
-func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel chan<- pb.Feature) {
+func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel chan<- pb.Feature, queryWaitGroup *sync.WaitGroup) {
 	timeout := int64(float64(in.GetTimeout()) * 0.9)
 	request := &pb.KnnRequest{
 		Feature:   in.GetFeature(),
@@ -89,21 +89,27 @@ func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel c
 	}
 	logging.Info("GetKnnFromPeers")
 	// TODO: get recommended peers instead of all peers
+
 	s.peers.Range(func(key, value interface{}) bool {
+		queryWaitGroup.Add(1)
 		go func() {
 			peerAddress := key.(string)
 			logging.Info("Querying Peer %v\n", peerAddress)
 			if len(peerAddress) > 0 && peerAddress != s.address {
 				peerValue := value.(models.Peer)
 				s.GetKnnFromPeer(request, &peerValue, featuresChannel)
+				queryWaitGroup.Done()
 			}
 		}()
 		return true
 	})
+	queryWaitGroup.Wait()
+	close(featuresChannel)
 }
 
-func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel chan<- pb.Feature) {
+func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel chan<- pb.Feature, queryWaitGroup *sync.WaitGroup) {
 	log.Printf("GetKnnFromLocal")
+	queryWaitGroup.Add(1)
 	point := data.NewEuclideanPointArr(in.GetFeature())
 	ans, err := s.dt.GetKnn(int64(in.GetK()), point)
 	if err == nil {
@@ -116,6 +122,7 @@ func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 	} else {
 		log.Printf("Error in GetKnn: %v", err.Error())
 	}
+	queryWaitGroup.Done()
 }
 
 // Do a distributed Knn search
@@ -143,8 +150,9 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		}
 	}
 	featuresChannel := make(chan pb.Feature, in.GetK())
-	go s.GetKnnFromPeers(&request, featuresChannel)
-	go s.GetKnnFromLocal(&request, featuresChannel)
+	var queryWaitGroup sync.WaitGroup
+	go s.GetKnnFromPeers(&request, featuresChannel, &queryWaitGroup)
+	go s.GetKnnFromLocal(&request, featuresChannel, &queryWaitGroup)
 	// time.Sleep(1 * time.Second)
 	// close(featuresChannel)
 	responseFeatures := make([]*pb.Feature, 0)
@@ -209,8 +217,9 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 		}
 	}
 	featuresChannel := make(chan pb.Feature, in.GetK())
-	go s.GetKnnFromPeers(&request, featuresChannel)
-	go s.GetKnnFromLocal(&request, featuresChannel)
+	var queryWaitGroup sync.WaitGroup
+	go s.GetKnnFromPeers(&request, featuresChannel, &queryWaitGroup)
+	go s.GetKnnFromLocal(&request, featuresChannel, &queryWaitGroup)
 	// time.Sleep(1 * time.Second)
 	// close(featuresChannel)
 	responseFeatures := make([]*pb.Feature, 0)
@@ -315,6 +324,7 @@ func (s *VeriServiceServer) ExchangeServices(ctx context.Context, in *pb.Service
 }
 
 func (s *VeriServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessage) (*pb.PeerMessage, error) {
+	logging.Info("ExchangePeers\n")
 	inputPeerList := in.GetPeers()
 	for i := 0; i < len(inputPeerList); i++ {
 		insert := true
@@ -450,7 +460,7 @@ func (s *VeriServiceServer) callExchangeServices(client *pb.VeriServiceClient) {
 	request := &pb.ServiceMessage{
 		Services: outputServiceList,
 	}
-	resp, err := (*s).ExchangeServices(context.Background(), request)
+	resp, err := (*client).ExchangeServices(context.Background(), request)
 	if err != nil {
 		log.Printf("(callExchangeServices) There is an error %v", err)
 		return
@@ -499,7 +509,7 @@ func (s *VeriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 
 	for _, point := range points {
 		request := data.NewInsertionRequestFromPoint(point)
-		resp, err := (*s).Insert(context.Background(), request)
+		resp, err := (*client).Insert(context.Background(), request)
 		if err != nil {
 			log.Printf("There is an error: %v", err)
 		} else {
@@ -513,7 +523,7 @@ func (s *VeriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 }
 
 func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
-	// log.Printf("callExchangePeers")
+	logging.Info("callExchangePeers")
 	outputPeerList := make([]*pb.Peer, 0)
 	s.peers.Range(func(key, value interface{}) bool {
 		// address := key.(string)
@@ -532,9 +542,10 @@ func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
 	request := &pb.PeerMessage{
 		Peers: outputPeerList,
 	}
-	resp, err := (*s).ExchangePeers(context.Background(), request)
+	logging.Info("Sending peer list with size: %v\n", len(outputPeerList))
+	resp, err := (*client).ExchangePeers(context.Background(), request)
 	if err != nil {
-		log.Printf("(callExchangePeers) There is an error %v", err)
+		logging.Error("(callExchangePeers) There is an error %v\n", err)
 		return
 	}
 	inputPeerList := resp.GetPeers()
@@ -559,7 +570,7 @@ func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
 			s.peers.Store(inputPeerList[i].GetAddress(), peer)
 		}
 	}
-	// log.Printf("Peers exhanged")
+	logging.Info("Peers exhanged")
 }
 
 func (s *VeriServiceServer) SyncJoin() {
@@ -580,10 +591,10 @@ func (s *VeriServiceServer) SyncJoin() {
 		}
 		return true
 	})
-	// log.Printf("Service loop Ended")
+	logging.Info("Service loop Ended")
 	s.peers.Range(func(key, value interface{}) bool {
 		peerAddress := key.(string)
-		// log.Printf("Peer %s", peerAddress)
+		logging.Info("Peer %s", peerAddress)
 		if len(peerAddress) > 0 && peerAddress != s.address {
 			peerValue := value.(models.Peer)
 			client, err := s.get_client(peerAddress)
@@ -601,7 +612,7 @@ func (s *VeriServiceServer) SyncJoin() {
 		}
 		return true
 	})
-	// log.Printf("Peer loop Ended")
+	logging.Info("Peer loop Ended")
 }
 
 var evictable bool

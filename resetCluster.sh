@@ -6,7 +6,7 @@ docker rm -f service1
 docker run -d -p 8000:8000 -p 10000:10000 --network=mynetwork --name=service1 berkgokden/veri serve -v
 sleep 60
 
-if [[ "1" == "2" ]]; then
+if [[ "3" == "$1" ]]; then
   docker rm -f service2
   docker run -d --network=mynetwork --name=service2 berkgokden/veri serve -v --services=service1:10000
   sleep 60

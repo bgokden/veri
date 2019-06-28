@@ -299,10 +299,11 @@ func FeatureToEuclideanPointKeyValue(feature *pb.Feature) (*EuclideanPointKey, *
 		SequenceDimOne:    feature.GetSequencedimone(),
 		SequenceDimTwo:    feature.GetSequencedimtwo(),
 	}
+	d := (key.SequenceLengthOne * key.SequenceDimOne) + (key.SequenceLengthTwo * key.SequenceDimTwo)
 	if len(feature.Feature) == 0 {
 		log.Printf("len(feature.Feature) is 0 !!!")
 	}
-	copy(key.Feature[:len(feature.Feature)], feature.Feature)
+	copy(key.Feature[:d], feature.Feature)
 	value := &EuclideanPointValue{
 		Timestamp:  feature.Timestamp,
 		Label:      feature.Label,
