@@ -192,9 +192,9 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		return &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, err
 	}
 	for i := 0; i < len(ans); i++ {
-		featureJson := data.NewFeatureFromPoint(ans[i])
-		// log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
-		responseFeatures = append(responseFeatures, featureJson)
+		featureFromPoint := data.NewFeatureFromPoint(ans[i])
+		featureFromPoint.Distance = data.VectorDistance(in.Feature, featureFromPoint.Feature)
+		responseFeatures = append(responseFeatures, featureFromPoint)
 	}
 	s.knnQueryId.Put(request.GetId(), true)
 	s.cache.Put(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
@@ -272,10 +272,10 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 		return err
 	}
 	for i := 0; i < len(ans); i++ {
-		feature := data.NewFeatureFromPoint(ans[i])
-		// log.Printf("New Feature (Get Knn): %v", ans[i].GetLabel())
-		stream.Send(feature)
-		responseFeatures = append(responseFeatures, feature)
+		featureFromPoint := data.NewFeatureFromPoint(ans[i])
+		featureFromPoint.Distance = data.VectorDistance(in.Feature, featureFromPoint.Feature)
+		stream.Send(featureFromPoint)
+		responseFeatures = append(responseFeatures, featureFromPoint)
 	}
 	s.knnQueryId.Put(request.GetId(), true)
 	s.cache.Put(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
