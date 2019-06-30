@@ -13,6 +13,7 @@ import (
 	kdtree "github.com/bgokden/go-kdtree"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/gaspiman/cosine_similarity"
+	"github.com/magneticio/vampkubistcli/logging"
 )
 
 // This is set in compile time for optimization
@@ -488,7 +489,7 @@ func (dt *Data) GetKnnBasic(queryK int64, vals ...float64) ([]*EuclideanPoint, e
 
 func (dt *Data) Process(force bool) error {
 	if dt.dirty || dt.isEvictable || dt.latestNumberOfChanges > 0 || force {
-		fmt.Printf("Running Process\n")
+		logging.Info("Running Process (forced: %v)\n", force)
 		tempLatestNumberOfChanges := dt.latestNumberOfChanges
 		dt.dirty = false
 		points := make([]kdtree.Point, 0)

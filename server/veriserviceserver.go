@@ -91,8 +91,8 @@ func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel c
 	// TODO: get recommended peers instead of all peers
 
 	s.peers.Range(func(key, value interface{}) bool {
-		queryWaitGroup.Add(1)
 		go func() {
+			queryWaitGroup.Add(1)
 			peerAddress := key.(string)
 			logging.Info("Querying Peer %v\n", peerAddress)
 			if len(peerAddress) > 0 && peerAddress != s.address {
@@ -103,13 +103,11 @@ func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel c
 		}()
 		return true
 	})
-	queryWaitGroup.Wait()
-	close(featuresChannel)
 }
 
 func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel chan<- pb.Feature, queryWaitGroup *sync.WaitGroup) {
-	log.Printf("GetKnnFromLocal")
 	queryWaitGroup.Add(1)
+	logging.Info("GetKnnFromLocal")
 	point := data.NewEuclideanPointArr(in.GetFeature())
 	ans, err := s.dt.GetKnn(int64(in.GetK()), point)
 	if err == nil {
@@ -120,7 +118,7 @@ func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 			featuresChannel <- *feature
 		}
 	} else {
-		log.Printf("Error in GetKnn: %v", err.Error())
+		logging.Error("Error in GetKnn: %v\n", err.Error())
 	}
 	queryWaitGroup.Done()
 }
@@ -151,6 +149,11 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 	}
 	featuresChannel := make(chan pb.Feature, in.GetK())
 	var queryWaitGroup sync.WaitGroup
+	waitChannel := make(chan struct{})
+	go func() {
+		defer close(waitChannel)
+		queryWaitGroup.Wait()
+	}()
 	go s.GetKnnFromPeers(&request, featuresChannel, &queryWaitGroup)
 	go s.GetKnnFromLocal(&request, featuresChannel, &queryWaitGroup)
 	// time.Sleep(1 * time.Second)
@@ -166,8 +169,17 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 			key, value := data.FeatureToEuclideanPointKeyValue(&feature)
 			// reduceMap[*key] = *value
 			reduceData.Insert(*key, *value)
+		case <-waitChannel:
+			logging.Info("all data finished")
+			/* close(featuresChannel)
+			for feature := range featuresChannel {
+				key, value := data.FeatureToEuclideanPointKeyValue(&feature)
+				reduceData.Insert(*key, *value)
+			}
+			dataAvailable = false */
+			break
 		case <-timeLimit:
-			log.Printf("timeout")
+			logging.Info("timeout")
 			dataAvailable = false
 			break
 		}
@@ -218,6 +230,11 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 	}
 	featuresChannel := make(chan pb.Feature, in.GetK())
 	var queryWaitGroup sync.WaitGroup
+	waitChannel := make(chan struct{})
+	go func() {
+		defer close(waitChannel)
+		queryWaitGroup.Wait()
+	}()
 	go s.GetKnnFromPeers(&request, featuresChannel, &queryWaitGroup)
 	go s.GetKnnFromLocal(&request, featuresChannel, &queryWaitGroup)
 	// time.Sleep(1 * time.Second)
@@ -231,8 +248,16 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 		select {
 		case feature := <-featuresChannel:
 			key, value := data.FeatureToEuclideanPointKeyValue(&feature)
-			// reduceMap[*key] = *value
 			reduceData.Insert(*key, *value)
+		case <-waitChannel:
+			logging.Info("all data finished")
+			/* close(featuresChannel)
+			for feature := range featuresChannel {
+				key, value := data.FeatureToEuclideanPointKeyValue(&feature)
+				reduceData.Insert(*key, *value)
+			}
+			dataAvailable = false
+			break */
 		case <-timeLimit:
 			log.Printf("timeout")
 			dataAvailable = false
@@ -243,7 +268,7 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 	reduceData.Process(true)
 	ans, err := reduceData.GetKnn(int64(in.K), point)
 	if err != nil {
-		log.Printf("Error in Knn: %v", err.Error())
+		logging.Info("Error in Knn: %v", err.Error())
 		return err
 	}
 	for i := 0; i < len(ans); i++ {
