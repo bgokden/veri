@@ -18,7 +18,7 @@ import (
 
 // This is set in compile time for optimization
 // const k = 7200 // 1024
-const K_MAX = 7200
+const K_MAX = 32 // 7200
 
 // 0 => euclidean distance
 // 1 => consine distance

@@ -89,10 +89,9 @@ func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel c
 	}
 	logging.Info("GetKnnFromPeers")
 	// TODO: get recommended peers instead of all peers
-
 	s.peers.Range(func(key, value interface{}) bool {
+		queryWaitGroup.Add(1)
 		go func() {
-			queryWaitGroup.Add(1)
 			peerAddress := key.(string)
 			logging.Info("Querying Peer %v\n", peerAddress)
 			if len(peerAddress) > 0 && peerAddress != s.address {
@@ -106,7 +105,6 @@ func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel c
 }
 
 func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel chan<- pb.Feature, queryWaitGroup *sync.WaitGroup) {
-	queryWaitGroup.Add(1)
 	logging.Info("GetKnnFromLocal")
 	point := data.NewEuclideanPointArr(in.GetFeature())
 	ans, err := s.dt.GetKnn(int64(in.GetK()), point)
@@ -154,29 +152,28 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		defer close(waitChannel)
 		queryWaitGroup.Wait()
 	}()
-	go s.GetKnnFromPeers(&request, featuresChannel, &queryWaitGroup)
+	queryWaitGroup.Add(1) // for local
 	go s.GetKnnFromLocal(&request, featuresChannel, &queryWaitGroup)
-	// time.Sleep(1 * time.Second)
-	// close(featuresChannel)
+	s.GetKnnFromPeers(&request, featuresChannel, &queryWaitGroup)
+
 	responseFeatures := make([]*pb.Feature, 0)
 	dataAvailable := true
 	timeLimit := time.After(time.Duration(in.GetTimeout()) * time.Millisecond)
-	// reduceMap := make(map[data.EuclideanPointKey]data.EuclideanPointValue)
+
 	reduceData := data.NewTempData()
 	for dataAvailable {
 		select {
 		case feature := <-featuresChannel:
 			key, value := data.FeatureToEuclideanPointKeyValue(&feature)
-			// reduceMap[*key] = *value
 			reduceData.Insert(*key, *value)
 		case <-waitChannel:
 			logging.Info("all data finished")
-			/* close(featuresChannel)
+			close(featuresChannel)
 			for feature := range featuresChannel {
 				key, value := data.FeatureToEuclideanPointKeyValue(&feature)
 				reduceData.Insert(*key, *value)
 			}
-			dataAvailable = false */
+			dataAvailable = false
 			break
 		case <-timeLimit:
 			logging.Info("timeout")
@@ -235,14 +232,14 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 		defer close(waitChannel)
 		queryWaitGroup.Wait()
 	}()
-	go s.GetKnnFromPeers(&request, featuresChannel, &queryWaitGroup)
+	queryWaitGroup.Add(1) // for local
 	go s.GetKnnFromLocal(&request, featuresChannel, &queryWaitGroup)
-	// time.Sleep(1 * time.Second)
-	// close(featuresChannel)
+	s.GetKnnFromPeers(&request, featuresChannel, &queryWaitGroup)
+
 	responseFeatures := make([]*pb.Feature, 0)
 	dataAvailable := true
 	timeLimit := time.After(time.Duration(in.GetTimeout()) * time.Millisecond)
-	// reduceMap := make(map[data.EuclideanPointKey]data.EuclideanPointValue)
+
 	reduceData := data.NewTempData()
 	for dataAvailable {
 		select {
@@ -251,13 +248,13 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 			reduceData.Insert(*key, *value)
 		case <-waitChannel:
 			logging.Info("all data finished")
-			/* close(featuresChannel)
+			close(featuresChannel)
 			for feature := range featuresChannel {
 				key, value := data.FeatureToEuclideanPointKeyValue(&feature)
 				reduceData.Insert(*key, *value)
 			}
 			dataAvailable = false
-			break */
+			break
 		case <-timeLimit:
 			log.Printf("timeout")
 			dataAvailable = false
