@@ -18,7 +18,7 @@ import (
 
 // This is set in compile time for optimization
 // const k = 7200 // 1024
-const K_MAX = 32 // 7200
+const K_MAX = 512 // 32 // 7200
 
 // 0 => euclidean distance
 // 1 => consine distance
@@ -424,7 +424,7 @@ func (dt *Data) Insert(key EuclideanPointKey, value EuclideanPointValue) {
 		if d > K_MAX {
 			d = K_MAX // d can not be larger than maximum capacity
 		}
-		log.Printf("Updating current dimension to: %v\n", d)
+		// log.Printf("Updating current dimension to: %v\n", d)
 		dt.D = d // Maybe we can use max of
 	}
 	dt.pointsMap.Store(key, value)

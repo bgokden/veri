@@ -42,6 +42,7 @@ type VeriServiceServer struct {
 }
 
 var port int = 10000
+var memory uint64 = 1024
 
 func getCurrentTime() int64 {
 	return time.Now().Unix()
@@ -657,7 +658,7 @@ func NewServer(services string, evict bool) *VeriServiceServer {
 			s.services.Store(service, true)
 		}
 	}
-	s.maxMemoryMiB = 1024
+	s.maxMemoryMiB = memory
 	s.timestamp = getCurrentTime()
 	load := func(k cache.Key) (cache.Value, error) {
 		return fmt.Sprintf("%d", k), nil
@@ -687,6 +688,7 @@ func (s *VeriServiceServer) Check() {
 		// log.Printf("NumGC = %v\n", m.NumGC)
 		currentMemory := float64(bToMb(m.Alloc))
 		maxMemory := float64(s.maxMemoryMiB)
+		previousState := s.state
 		if currentMemory < maxMemory*0.5 {
 			s.state = 0 // Accept insert, don't delete while sending data
 		} else if currentMemory < maxMemory*0.75 {
@@ -695,6 +697,9 @@ func (s *VeriServiceServer) Check() {
 			s.state = 2 // Accept insert, delete while sending data and evict data
 		} else {
 			s.state = 3 // Don't accept insert, delete while sending data
+		}
+		if s.state != previousState {
+			logging.Info("State changed to %v\n", s.state)
 		}
 		// log.Printf("Current Memory = %f MiB => current State %d", currentMemory, s.state)
 		// millisecondToSleep := int64(((s.latestNumberOfInserts + 100) % 1000) * 10)
@@ -727,6 +732,7 @@ func RunServer(configMap map[string]interface{}) {
 	tls := configMap["tls"].(bool)
 	certFile := configMap["cert"].(string)
 	keyFile := configMap["key"].(string)
+	memory = configMap["memory"].(uint64)
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		logging.Error("failed to listen: %v", err)

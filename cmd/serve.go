@@ -30,6 +30,7 @@ var evictable bool
 var tls bool
 var cert string
 var key string
+var memory uint64
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
@@ -48,6 +49,7 @@ var serveCmd = &cobra.Command{
 		configMap["tls"] = tls
 		configMap["cert"] = cert
 		configMap["key"] = key
+		configMap["memory"] = memory
 
 		veriserviceserver.RunServer(configMap)
 		return nil
@@ -62,6 +64,7 @@ func init() {
 	serveCmd.Flags().BoolVarP(&tls, "tls", "t", false, "enable tls")
 	serveCmd.Flags().StringVarP(&cert, "cert", "", "", "cert file path")
 	serveCmd.Flags().StringVarP(&key, "key", "", "", "key file path")
+	serveCmd.Flags().Uint64VarP(&memory, "memory", "m", 1024, "maximum memory in MiB")
 
 	//TODO: serveCmd.Flags().StringSliceVarP(&services, "services", "", []string{}, "Services to connect, Comma separated lists are supported")
 }
