@@ -1,8 +1,19 @@
 # veri
 
-Probabilistically Scaling Vector Spaces
 
-Veri as a cluster can hold a Vector Space with fixed dimension and allows easy querying of k nearest neighbour search queries and also querying a sample space to be used in a machine learning algorithm.
+![](./resources/verilogo.svg)
+
+Veri is a Feature Label Store.
+
+Feature Label store allows storing features as keys and labels as values.
+Querying values is only possible with knn using features.
+
+Veri also supports creating sub sample spaces of data by default.
+
+
+# Probabilistically Scaling Vector Spaces
+
+Veri works as a cluster that can hold a Vector Space with fixed dimension and allows easy querying of k nearest neighbour search queries and also querying a sample space to be used in a machine learning algorithm.
 
 Veri is currently in Alpha Stage
 

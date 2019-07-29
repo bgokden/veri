@@ -38,10 +38,8 @@ var versionCmd = &cobra.Command{
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) >= 1 {
-			if clean {
-				fmt.Printf("%v\n", Version)
-			}
+		if clean {
+			fmt.Printf("%v\n", Version)
 		} else {
 			fmt.Printf("Version: %v\n", Version)
 		}

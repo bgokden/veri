@@ -1,0 +1,68 @@
+version: 2
+jobs:
+  build:
+    docker:
+    - image: circleci/golang:1.12.3
+    steps:
+    - checkout
+    - run: go test ./...
+    - run: mkdir -p ./artifacts
+    - run: go run main.go version --clean > ./artifacts/version.txt
+    - persist_to_workspace:
+            root: ./artifacts
+            paths:
+            - .
+  releasedev:
+    machine: true
+    steps:
+    - checkout
+    - attach_workspace:
+        at: ./artifacts
+    - run:
+        name: "Publish image to docker hub as development release"
+        command: |
+          VERSION=$(cat ./artifacts/version.txt)
+          rm ./artifacts/version.txt
+          docker login -u $DOCKER_USER -p $DOCKER_PASS
+          docker build -t berkgokden/veri-dev:$VERSION-${CIRCLE_SHA1} .
+          docker push berkgokden/veri-dev:$VERSION-${CIRCLE_SHA1}
+          docker tag berkgokden/veri-dev:$VERSION-${CIRCLE_SHA1} berkgokden/veri-dev:latest
+          docker push berkgokden/veri-dev:latest
+  release:
+    machine: true
+    steps:
+    - checkout
+    - attach_workspace:
+        at: ./artifacts
+    - run:
+        name: "Publish image to docker hub"
+        command: |
+          VERSION=$(cat ./artifacts/version.txt)
+          rm ./artifacts/version.txt
+          docker login -u $DOCKER_USER -p $DOCKER_PASS
+          docker build -t berkgokden/veri:$VERSION .
+          docker push berkgokden/veri:$VERSION
+workflows:
+  version: 2
+  main:
+    jobs:
+    - build:
+        filters:
+          tags:
+            only: /^(v)\d+\.\d+\.\d+$/
+    - releasedev:
+        requires:
+        - build
+        filters:
+          branches:
+            only:
+            - master
+            - /rc-.*/
+    - release:
+        requires:
+        - build
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /^(v)\d+\.\d+\.\d+$/
