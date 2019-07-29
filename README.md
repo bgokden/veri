@@ -1,4 +1,4 @@
-# veri
+# Veri
 
 
 ![](./resources/verilogo.svg)
