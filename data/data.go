@@ -13,7 +13,6 @@ import (
 	kdtree "github.com/bgokden/go-kdtree"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/gaspiman/cosine_similarity"
-	"github.com/magneticio/vampkubistcli/logging"
 )
 
 // This is set in compile time for optimization
@@ -38,12 +37,13 @@ type Data struct {
 	pointsMap             sync.Map
 	treeMu                sync.RWMutex // protects KDTree
 	tree                  *kdtree.KDTree
-	isEvictable           bool
+	IsEvictable           bool
 	// pointsMu              sync.RWMutex // protects points
 }
 
 func NewData() *Data {
 	dt := Data{}
+	log.Printf("Create Data\n")
 	go dt.Run()
 	return &dt
 }
@@ -415,7 +415,9 @@ func CalculateAverage(avg []float64, p []float64, n float64) []float64 {
 	return avg
 }
 
-func (dt *Data) Insert(key EuclideanPointKey, value EuclideanPointValue) {
+// Insert entry into the data
+func (dt *Data) Insert(key *EuclideanPointKey, value *EuclideanPointValue) {
+	// TODO: check for nil
 	d := (key.SequenceLengthOne * key.SequenceDimOne) + (key.SequenceLengthTwo * key.SequenceDimTwo)
 	if d == 0 {
 		fmt.Printf("Insert D is 0 !!!!!!!!!!\n")
@@ -427,7 +429,7 @@ func (dt *Data) Insert(key EuclideanPointKey, value EuclideanPointValue) {
 		// log.Printf("Updating current dimension to: %v\n", d)
 		dt.D = d // Maybe we can use max of
 	}
-	dt.pointsMap.Store(key, value)
+	dt.pointsMap.Store(*key, *value)
 	dt.dirty = true
 	dt.latestNumberOfChanges++
 }
@@ -454,7 +456,7 @@ func (dt *Data) InsertBasic(label string, vals ...float64) {
 		Label:      label,
 		GroupLabel: label,
 	}
-	dt.Insert(key, value)
+	dt.Insert(&key, &value)
 }
 
 func (dt *Data) Delete(key EuclideanPointKey) {
@@ -488,8 +490,9 @@ func (dt *Data) GetKnnBasic(queryK int64, vals ...float64) ([]*EuclideanPoint, e
 }
 
 func (dt *Data) Process(force bool) error {
-	if dt.dirty || dt.isEvictable || dt.latestNumberOfChanges > 0 || force {
-		logging.Info("Running Process (forced: %v)\n", force)
+	log.Printf("Data isEvictable %v\n", dt.IsEvictable)
+	if dt.dirty || dt.IsEvictable || dt.latestNumberOfChanges > 0 || force {
+		log.Printf("Running Process (forced: %v)\n", force)
 		tempLatestNumberOfChanges := dt.latestNumberOfChanges
 		dt.dirty = false
 		points := make([]kdtree.Point, 0)
@@ -505,7 +508,7 @@ func (dt *Data) Process(force bool) error {
 			euclideanPointKey := key.(EuclideanPointKey)
 			euclideanPointValue := value.(EuclideanPointValue)
 			// In eviction mode, if a point timestamp is older than average timestamp, delete data randomly.
-			if dt.isEvictable && dt.averageTimestamp != 0 && euclideanPointValue.Timestamp > dt.averageTimestamp && rand.Float32() < 0.2 {
+			if dt.IsEvictable && dt.averageTimestamp != 0 && euclideanPointValue.Timestamp > dt.averageTimestamp && rand.Float32() < 0.2 {
 				dt.pointsMap.Delete(key)
 				return true // evict this data point
 			}
@@ -559,6 +562,22 @@ func (dt *Data) Run() error {
 		time.Sleep(time.Duration(1000) * time.Millisecond)
 	}
 	// return nil
+}
+
+const RefreshPeriod = 30 * time.Second
+
+func (dt *Data) SetupRun() {
+	log.Printf("Setup Run at %v Refresh period: %v\n", time.Now(), RefreshPeriod)
+	dt.Process(false)
+	ticker := time.NewTicker(RefreshPeriod)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				dt.Process(false)
+			}
+		}
+	}()
 }
 
 func (dt *Data) GetAll(stream pb.VeriService_GetLocalDataServer) error {

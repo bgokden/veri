@@ -11,4 +11,4 @@ WORKDIR /app
 COPY --from=build-env /src/veri/veri /app/
 ENTRYPOINT ["/app/veri"]
 
-EXPOSE 8000 10000
+EXPOSE 8000 10000 6060

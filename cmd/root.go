@@ -33,7 +33,7 @@ import (
 var cfgFile string
 
 // Version should be in format vd.d.d where d is a decimal number
-const Version string = "v0.0.19"
+const Version string = "v0.0.20"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

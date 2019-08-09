@@ -16,6 +16,7 @@ require (
 	github.com/magneticio/go-common v0.0.1
 	github.com/magneticio/vampkubistcli v0.0.34
 	github.com/mdempsky/maligned v0.0.0-20180708014732-6e39bd26a8c8 // indirect
+	github.com/mibk/dupl v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/segmentio/ksuid v1.0.2
@@ -23,7 +24,8 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
 	github.com/walle/lll v0.0.0-20160702150637-8b13b3fbf731 // indirect
-	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980
+	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
 	google.golang.org/grpc v1.20.1
 	gopkg.in/yaml.v2 v2.2.2
+	mvdan.cc/unparam v0.0.0-20190720180237-d51796306d8f // indirect
 )

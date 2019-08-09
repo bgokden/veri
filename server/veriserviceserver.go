@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,7 +19,6 @@ import (
 	"github.com/bgokden/veri/models"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/goburrow/cache"
-	"github.com/magneticio/go-common/logging"
 	"github.com/segmentio/ksuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -88,13 +88,13 @@ func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel c
 		Timestamp: in.GetTimestamp(),
 		Timeout:   timeout,
 	}
-	logging.Info("GetKnnFromPeers")
+	log.Printf("GetKnnFromPeers")
 	// TODO: get recommended peers instead of all peers
 	s.peers.Range(func(key, value interface{}) bool {
 		queryWaitGroup.Add(1)
 		go func() {
 			peerAddress := key.(string)
-			logging.Info("Querying Peer %v\n", peerAddress)
+			log.Printf("Querying Peer %v\n", peerAddress)
 			if len(peerAddress) > 0 && peerAddress != s.address {
 				peerValue := value.(models.Peer)
 				s.GetKnnFromPeer(request, &peerValue, featuresChannel)
@@ -106,7 +106,7 @@ func (s *VeriServiceServer) GetKnnFromPeers(in *pb.KnnRequest, featuresChannel c
 }
 
 func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel chan<- pb.Feature, queryWaitGroup *sync.WaitGroup) {
-	logging.Info("GetKnnFromLocal")
+	log.Printf("GetKnnFromLocal")
 	point := data.NewEuclideanPointArr(in.GetFeature())
 	ans, err := s.dt.GetKnn(int64(in.GetK()), point)
 	if err == nil {
@@ -117,7 +117,7 @@ func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 			featuresChannel <- *feature
 		}
 	} else {
-		logging.Error("Error in GetKnn: %v\n", err.Error())
+		log.Printf("Error in GetKnn: %v\n", err.Error())
 	}
 	queryWaitGroup.Done()
 }
@@ -166,18 +166,18 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		select {
 		case feature := <-featuresChannel:
 			key, value := data.FeatureToEuclideanPointKeyValue(&feature)
-			reduceData.Insert(*key, *value)
+			reduceData.Insert(key, value)
 		case <-waitChannel:
-			logging.Info("all data finished")
+			log.Printf("all data finished")
 			close(featuresChannel)
 			for feature := range featuresChannel {
 				key, value := data.FeatureToEuclideanPointKeyValue(&feature)
-				reduceData.Insert(*key, *value)
+				reduceData.Insert(key, value)
 			}
 			dataAvailable = false
 			break
 		case <-timeLimit:
-			logging.Info("timeout")
+			log.Printf("timeout")
 			dataAvailable = false
 			break
 		}
@@ -246,13 +246,13 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 		select {
 		case feature := <-featuresChannel:
 			key, value := data.FeatureToEuclideanPointKeyValue(&feature)
-			reduceData.Insert(*key, *value)
+			reduceData.Insert(key, value)
 		case <-waitChannel:
-			logging.Info("all data finished")
+			log.Printf("all data finished")
 			close(featuresChannel)
 			for feature := range featuresChannel {
 				key, value := data.FeatureToEuclideanPointKeyValue(&feature)
-				reduceData.Insert(*key, *value)
+				reduceData.Insert(key, value)
 			}
 			dataAvailable = false
 			break
@@ -266,7 +266,7 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 	reduceData.Process(true)
 	ans, err := reduceData.GetKnn(int64(in.K), point)
 	if err != nil {
-		logging.Info("Error in Knn: %v", err.Error())
+		log.Printf("Error in Knn: %v", err.Error())
 		return err
 	}
 	for i := 0; i < len(ans); i++ {
@@ -285,7 +285,7 @@ func (s *VeriServiceServer) Insert(ctx context.Context, in *pb.InsertionRequest)
 		return &pb.InsertionResponse{Code: 1}, nil
 	}
 	key, value := data.InsertionRequestToEuclideanPointKeyValue(in)
-	s.dt.Insert(*key, *value)
+	s.dt.Insert(key, value)
 	return &pb.InsertionResponse{Code: 0}, nil
 }
 
@@ -299,7 +299,7 @@ func (s *VeriServiceServer) InsertStream(stream pb.VeriService_InsertStreamServe
 			log.Fatalf("Failed to receive a note : %v", err)
 		}
 		key, value := data.FeatureToEuclideanPointKeyValue(in)
-		s.dt.Insert(*key, *value)
+		s.dt.Insert(key, value)
 
 		if s.state > 2 {
 			stream.Send(&pb.InsertionResponse{Code: 1})
@@ -312,10 +312,10 @@ func (s *VeriServiceServer) InsertStream(stream pb.VeriService_InsertStreamServe
 }
 
 func (s *VeriServiceServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
-	// logging.Info("Join request received %v\n", *in)
+	// log.Printf("Join request received %v\n", *in)
 	p, ok := grpcPeer.FromContext(ctx)
 	if !ok {
-		logging.Error("Peer can not be get from context %v\n", p)
+		log.Printf("Peer can not be get from context %v\n", p)
 		return nil, errors.New("Peer can not be get from context")
 	}
 	address := strings.Split(p.Addr.String(), ":")[0] + ":" + strconv.FormatInt(int64(in.GetPort()), 10)
@@ -347,7 +347,7 @@ func (s *VeriServiceServer) ExchangeServices(ctx context.Context, in *pb.Service
 }
 
 func (s *VeriServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessage) (*pb.PeerMessage, error) {
-	logging.Info("ExchangePeers\n")
+	log.Printf("ExchangePeers\n")
 	inputPeerList := in.GetPeers()
 	for i := 0; i < len(inputPeerList); i++ {
 		insert := true
@@ -393,7 +393,7 @@ func (s *VeriServiceServer) ExchangePeers(ctx context.Context, in *pb.PeerMessag
 func (s *VeriServiceServer) getClient(address string) (*pb.VeriServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		logging.Error("fail to dial: %v\n", err)
+		log.Printf("fail to dial: %v\n", err)
 		return nil, nil, err
 	}
 	client := pb.NewVeriServiceClient(conn)
@@ -403,10 +403,10 @@ func (s *VeriServiceServer) getClient(address string) (*pb.VeriServiceClient, *g
 func (s *VeriServiceServer) new_client(address string) (*models.Client, error) {
 	client, conn, err := s.getClient(address)
 	if err != nil {
-		logging.Error("fail to create a client: %v\n", err)
+		log.Printf("fail to create a client: %v\n", err)
 		return nil, err
 	}
-	logging.Info("Client created with address: %v\n", address)
+	log.Printf("Client created with address: %v\n", address)
 	return &models.Client{
 		Address: address,
 		Client:  client,
@@ -420,7 +420,7 @@ There may be some concurrency problems where unclosed connections can occur
 func (s *VeriServiceServer) get_client(address string) (models.Client, error) {
 	client, ok := s.clients.Load(address)
 	if ok {
-		logging.Info("Using existing client for %v\n", address)
+		log.Printf("Using existing client for %v\n", address)
 		newClientPointer, castOk := client.(*models.Client)
 		if castOk {
 			return *newClientPointer, nil
@@ -430,10 +430,10 @@ func (s *VeriServiceServer) get_client(address string) (models.Client, error) {
 	} else {
 		newClientPointer, err := s.new_client(address)
 		if err != nil {
-			logging.Error("Client creation failed: %v\n", err)
+			log.Printf("Client creation failed: %v\n", err)
 			return models.Client{}, err
 		} else {
-			logging.Info("Using new client for %v\n", address)
+			log.Printf("Using new client for %v\n", address)
 			s.clients.Store(address, newClientPointer)
 			return *newClientPointer, nil
 		}
@@ -462,10 +462,10 @@ func (s *VeriServiceServer) callJoin(client *pb.VeriServiceClient) {
 		N:         stats.N,
 		Timestamp: s.timestamp,
 	}
-	// logging.Info("Call Join Request %v", *request)
+	// log.Printf("Call Join Request %v", *request)
 	resp, err := (*client).Join(context.Background(), request)
 	if err != nil {
-		logging.Error("(Call Join) There is an error %v", err)
+		log.Printf("(Call Join) There is an error %v", err)
 		return
 	}
 	if s.address != resp.GetAddress() {
@@ -546,7 +546,7 @@ func (s *VeriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 }
 
 func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
-	logging.Info("callExchangePeers")
+	log.Printf("callExchangePeers")
 	outputPeerList := make([]*pb.Peer, 0)
 	s.peers.Range(func(key, value interface{}) bool {
 		// address := key.(string)
@@ -565,10 +565,10 @@ func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
 	request := &pb.PeerMessage{
 		Peers: outputPeerList,
 	}
-	logging.Info("Sending peer list with size: %v\n", len(outputPeerList))
+	log.Printf("Sending peer list with size: %v\n", len(outputPeerList))
 	resp, err := (*client).ExchangePeers(context.Background(), request)
 	if err != nil {
-		logging.Error("(callExchangePeers) There is an error %v\n", err)
+		log.Printf("(callExchangePeers) There is an error %v\n", err)
 		return
 	}
 	inputPeerList := resp.GetPeers()
@@ -593,31 +593,31 @@ func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
 			s.peers.Store(inputPeerList[i].GetAddress(), peer)
 		}
 	}
-	logging.Info("Peers exhanged")
+	log.Printf("Peers exhanged")
 }
 
 func (s *VeriServiceServer) SyncJoin() {
 	// log.Printf("Sync Join")
 	s.services.Range(func(key, value interface{}) bool {
 		serviceName := key.(string)
-		logging.Info("Service %s", serviceName)
+		log.Printf("Service %s", serviceName)
 		if len(serviceName) > 0 {
 			client, err := s.get_client(serviceName)
 			if err == nil {
 				grpcClient := client.Client
 				s.callJoin(grpcClient)
 			} else {
-				logging.Error("SyncJoin Error: %v\n", err)
+				log.Printf("SyncJoin Error: %v\n", err)
 				go s.refresh_client(serviceName)
 			}
 			// conn.Close()
 		}
 		return true
 	})
-	logging.Info("Service loop Ended")
+	log.Printf("Service loop Ended")
 	s.peers.Range(func(key, value interface{}) bool {
 		peerAddress := key.(string)
-		logging.Info("Peer %s", peerAddress)
+		log.Printf("Peer %s", peerAddress)
 		if len(peerAddress) > 0 && peerAddress != s.address {
 			peerValue := value.(models.Peer)
 			client, err := s.get_client(peerAddress)
@@ -628,14 +628,14 @@ func (s *VeriServiceServer) SyncJoin() {
 				s.callExchangePeers(grpcClient)
 				s.callExchangeData(grpcClient, &peerValue)
 			} else {
-				logging.Error("SyncJoin Error: %v\n", err)
+				log.Printf("SyncJoin Error: %v\n", err)
 				go s.refresh_client(peerAddress)
 			}
 			// conn.Close()
 		}
 		return true
 	})
-	logging.Info("Peer loop Ended")
+	log.Printf("Peer loop Ended")
 }
 
 var evictable bool
@@ -699,7 +699,8 @@ func (s *VeriServiceServer) Check() {
 			s.state = 3 // Don't accept insert, delete while sending data
 		}
 		if s.state != previousState {
-			logging.Info("State changed to %v\n", s.state)
+			log.Printf("State changed to %v\n", s.state)
+			s.dt.IsEvictable = s.isEvictable()
 		}
 		// log.Printf("Current Memory = %f MiB => current State %d", currentMemory, s.state)
 		// millisecondToSleep := int64(((s.latestNumberOfInserts + 100) % 1000) * 10)
@@ -711,6 +712,10 @@ func (s *VeriServiceServer) Check() {
 		if nextSyncJoinTime <= getCurrentTime() {
 			s.SyncJoin()
 			nextSyncJoinTime = getCurrentTime() + 10
+			log.Printf("Run GC %v\n", getCurrentTime())
+			debug.FreeOSMemory()
+			debug.SetGCPercent(1)
+			runtime.GC()
 		}
 		s.timestamp = getCurrentTime()
 		time.Sleep(time.Duration(1000) * time.Millisecond) // always wait one second
@@ -726,7 +731,7 @@ func RunServer(configMap map[string]interface{}) {
 	Ready = true
 
 	services := configMap["services"].(string)
-	logging.Info("Services: %v\n", services)
+	log.Printf("Services: %v\n", services)
 	port := configMap["port"].(int)
 	evictable := configMap["evictable"].(bool)
 	tls := configMap["tls"].(bool)
@@ -735,7 +740,7 @@ func RunServer(configMap map[string]interface{}) {
 	memory = configMap["memory"].(uint64)
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
-		logging.Error("failed to listen: %v", err)
+		log.Printf("failed to listen: %v", err)
 		return
 	}
 	var opts []grpc.ServerOption
@@ -748,7 +753,7 @@ func RunServer(configMap map[string]interface{}) {
 		}
 		creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
 		if err != nil {
-			logging.Error("Failed to generate credentials %v", err)
+			log.Printf("Failed to generate credentials %v", err)
 			return
 		}
 		opts = []grpc.ServerOption{grpc.Creds(creds)}
@@ -757,6 +762,6 @@ func RunServer(configMap map[string]interface{}) {
 	s := NewServer(services, evictable)
 	pb.RegisterVeriServiceServer(grpcServer, s)
 	go RestApi()
-	logging.Info("Server started.")
+	log.Printf("Server started.")
 	grpcServer.Serve(lis)
 }

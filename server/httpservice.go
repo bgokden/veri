@@ -3,7 +3,9 @@ package veriserviceserver
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
+	_ "net/http/pprof"
 
 	"github.com/gorilla/mux"
 	"github.com/magneticio/go-common/logging"
@@ -47,11 +49,16 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
+// RestApi serves common services needed
 func RestApi() {
 	logging.Info("Rest api stared")
 	router := mux.NewRouter()
 	router.HandleFunc("/", GetHeath).Methods("GET")
 	router.HandleFunc("/health", GetHeath).Methods("GET")
 	router.HandleFunc("/ready", GetReady).Methods("GET")
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
+
 	logging.Error("Http Server failure: %v\n", http.ListenAndServe(":8000", router))
 }
