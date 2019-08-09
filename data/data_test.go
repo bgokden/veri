@@ -20,7 +20,7 @@ func TestData(t *testing.T) {
 		Label:      "a",
 		GroupLabel: "a",
 	}
-	dt.Insert(key, value)
+	dt.Insert(&key, &value)
 }
 
 func TestDataBasic(t *testing.T) {
