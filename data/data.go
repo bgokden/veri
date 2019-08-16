@@ -10,6 +10,9 @@ import (
 	"math/rand"
 	"sync"
 	"time"
+	"os"
+	"os/signal"
+	"syscall"
 
 	kdtree "github.com/bgokden/go-kdtree"
 	pb "github.com/bgokden/veri/veriservice"
@@ -53,6 +56,18 @@ func NewData(path string) *Data {
 	}
 	dt.DB = db
 	go dt.Run()
+	go func() {
+		sigint := make(chan os.Signal, 1)
+
+		// interrupt signal sent from terminal
+		signal.Notify(sigint, os.Interrupt)
+		// sigterm signal sent from kubernetes
+		signal.Notify(sigint, syscall.SIGTERM)
+
+		<-sigint
+
+		dt.DB.Close()
+	}()
 	return &dt
 }
 
@@ -283,13 +298,14 @@ func NewEuclideanPointArrWithLabel(vals []float64,
 func NewEuclideanPointFromFeature(feature *pb.Feature) *EuclideanPoint {
 	ret := &EuclideanPoint{
 		PointBase:         kdtree.NewPointBase(feature.Feature),
-		timestamp:         feature.Timestamp,
-		label:             feature.Label,
-		groupLabel:        feature.Grouplabel,
-		sequenceLengthOne: feature.Sequencelengthone,
-		sequenceLengthTwo: feature.Sequencelengthtwo,
-		sequenceDimOne:    feature.Sequencedimone,
-		sequenceDimTwo:    feature.Sequencedimtwo}
+		timestamp:         feature.GetTimestamp(),
+		label:             feature.GetLabel(),
+		groupLabel:        feature.GetGrouplabel(),
+		sequenceLengthOne: feature.GetSequencelengthone(),
+		sequenceLengthTwo: feature.GetSequencelengthtwo(),
+		sequenceDimOne:    feature.GetSequencedimone(),
+		sequenceDimTwo:    feature.GetSequencedimtwo(),
+	}
 	return ret
 }
 
@@ -337,37 +353,30 @@ func NewInsertionRequestFromPoint(point kdtree.Point) *pb.InsertionRequest {
 
 func FeatureToEuclideanPointKeyValue(feature *pb.Feature) (*EuclideanPointKey, *EuclideanPointValue) {
 	key := &EuclideanPointKey{
+		Feature:           feature.GetFeature(),
 		GroupLabel:        feature.GetGrouplabel(),
 		SequenceLengthOne: feature.GetSequencelengthone(),
 		SequenceLengthTwo: feature.GetSequencelengthtwo(),
 		SequenceDimOne:    feature.GetSequencedimone(),
 		SequenceDimTwo:    feature.GetSequencedimtwo(),
 	}
-	d := (key.SequenceLengthOne * key.SequenceDimOne) + (key.SequenceLengthTwo * key.SequenceDimTwo)
-	if len(feature.Feature) == 0 {
-		log.Printf("len(feature.Feature) is 0 !!!")
-	}
-	copy(key.Feature[:d], feature.Feature)
 	value := &EuclideanPointValue{
-		Timestamp:  feature.Timestamp,
-		Label:      feature.Label,
-		GroupLabel: feature.Grouplabel,
+		Timestamp:  feature.GetTimestamp(),
+		Label:      feature.GetLabel(),
+		GroupLabel: feature.GetGrouplabel(),
 	}
 	return key, value
 }
 
 func InsertionRequestToEuclideanPointKeyValue(in *pb.InsertionRequest) (*EuclideanPointKey, *EuclideanPointValue) {
 	key := &EuclideanPointKey{
+		Feature:           in.GetFeature(),
 		GroupLabel:        in.GetGrouplabel(),
 		SequenceLengthOne: in.GetSequencelengthone(),
 		SequenceLengthTwo: in.GetSequencelengthtwo(),
 		SequenceDimOne:    in.GetSequencedimone(),
 		SequenceDimTwo:    in.GetSequencedimtwo(),
 	}
-	d := int64(len(in.GetFeature()))
-	// fmt.Printf("Insert len: %v\n", d)
-	copy(key.Feature[:d], in.GetFeature()[:d])
-	// fmt.Printf("Inserted arr: %v\n", key.Feature[:d])
 	value := &EuclideanPointValue{
 		Timestamp:  in.GetTimestamp(),
 		Label:      in.GetLabel(),
@@ -409,13 +418,13 @@ func FeatureFromEuclideanKeyValue(key *EuclideanPointKey, value *EuclideanPointV
 
 func NewEuclideanPointKeyFromPoint(point kdtree.Point) *EuclideanPointKey {
 	key := &EuclideanPointKey{
+		Feature:           point.GetValues(),
 		GroupLabel:        point.GetGroupLabel(),
 		SequenceLengthOne: point.GetSequenceLengthOne(),
 		SequenceLengthTwo: point.GetSequenceLengthTwo(),
 		SequenceDimOne:    point.GetSequenceDimOne(),
 		SequenceDimTwo:    point.GetSequenceDimTwo(),
 	}
-	copy(key.Feature[:len(point.GetValues())], point.GetValues())
 	return key
 }
 
@@ -475,6 +484,9 @@ func (dt *Data) Insert(key *EuclideanPointKey, value *EuclideanPointValue) error
 		// dt.D = d // Maybe we can use max of
 	}
 
+	if len(key.Feature) == 0 {
+		log.Printf("Data lenght is 0: %v\n", value.Label)
+	}
 	// dt.pointsMap.Store(*key, *value)
 	keyByte := EncodeEuclideanPointKey(key)
 	valueByte := EncodeEuclideanPointValue(value)
@@ -637,10 +649,13 @@ func (dt *Data) Run() error {
 			nextTime = getCurrentTime() + secondsToSleep
 		}
 		time.Sleep(time.Duration(1000) * time.Millisecond)
-		err := dt.DB.RunValueLogGC(0.7)
-		if err != nil {
-			log.Printf("DB Garbage Collection Error: %v\n", err)
-		}
+		dt.DB.RunValueLogGC(0.7)
+		/*
+			err := dt.DB.RunValueLogGC(0.7)
+			if err != nil {
+				og.Printf("DB Garbage Collection Error: %v\n", err)
+			}
+		*/
 	}
 	// return nil
 }

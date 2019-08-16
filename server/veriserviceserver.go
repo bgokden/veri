@@ -1,7 +1,9 @@
 package veriserviceserver
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"io"
@@ -18,7 +20,7 @@ import (
 	"github.com/bgokden/veri/data"
 	"github.com/bgokden/veri/models"
 	pb "github.com/bgokden/veri/veriservice"
-	"github.com/goburrow/cache"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/segmentio/ksuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -35,8 +37,8 @@ type VeriServiceServer struct {
 	maxMemoryMiB uint64
 	services     sync.Map
 	peers        sync.Map
-	knnQueryId   cache.Cache
-	cache        cache.Cache
+	knnQueryID   *cache.Cache
+	cache        *cache.Cache
 	clients      sync.Map
 	dt           *data.Data
 }
@@ -122,28 +124,36 @@ func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 	queryWaitGroup.Done()
 }
 
+// EncodeFloatSliceAsString serializes EncodeFloatSlice
+func EncodeFloatSliceAsString(p []float64) string {
+	var byteBuffer bytes.Buffer
+	encoder := gob.NewEncoder(&byteBuffer)
+	if err := encoder.Encode(p); err != nil {
+		log.Printf("Encoding error %v\n", err)
+	}
+	return byteBuffer.String()
+}
+
 // Do a distributed Knn search
 func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.KnnResponse, error) {
 	request := *in
-	d := int64(len(request.GetFeature()))
-	var featureHash [data.K_MAX]float64
-	copy(featureHash[:d], request.GetFeature()[:])
+	featureHash := EncodeFloatSliceAsString(request.GetFeature())
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
-		s.knnQueryId.Put(request.Id, true)
+		s.knnQueryID.Set(request.Id, true, cache.DefaultExpiration)
 	} else {
-		_, loaded := s.knnQueryId.GetIfPresent(request.GetId())
+		_, loaded := s.knnQueryID.Get(request.GetId())
 		if loaded {
-			cachedResult, isCached := s.cache.GetIfPresent(featureHash)
+			cachedResult, isCached := s.cache.Get(featureHash)
 			if isCached {
 				log.Printf("Return cached result for id %v", request.GetId())
-				return cachedResult.(*pb.KnnResponse), nil
+				return cachedResult.(*pb.KnnResponse), nil //TODO: byte conversion
 			} else {
 				log.Printf("Return un-cached result for id %v since it is already processed.", request.GetId())
 				return &pb.KnnResponse{Id: in.Id, Features: nil}, nil
 			}
 		} else {
-			s.knnQueryId.Put(request.GetId(), getCurrentTime())
+			s.knnQueryID.Set(request.GetId(), true, cache.DefaultExpiration)
 		}
 	}
 	featuresChannel := make(chan pb.Feature, in.GetK())
@@ -194,23 +204,21 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		featureFromPoint.Distance = data.VectorDistance(in.Feature, featureFromPoint.Feature)
 		responseFeatures = append(responseFeatures, featureFromPoint)
 	}
-	s.knnQueryId.Put(request.GetId(), true)
-	s.cache.Put(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
+	s.knnQueryID.Set(request.GetId(), true, cache.DefaultExpiration)
+	s.cache.Set(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, cache.DefaultExpiration)
 	return &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, nil
 }
 
 func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriService_GetKnnStreamServer) error {
 	request := *in
-	d := int64(len(request.GetFeature()))
-	var featureHash [data.K_MAX]float64
-	copy(featureHash[:d], request.GetFeature()[:])
+	featureHash := EncodeFloatSliceAsString(request.GetFeature())
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
-		s.knnQueryId.Put(request.Id, true)
+		s.knnQueryID.Set(request.Id, true, cache.DefaultExpiration)
 	} else {
-		_, loaded := s.knnQueryId.GetIfPresent(request.GetId())
+		_, loaded := s.knnQueryID.Get(request.GetId())
 		if loaded {
-			cachedResult, isCached := s.cache.GetIfPresent(featureHash)
+			cachedResult, isCached := s.cache.Get(featureHash)
 			if isCached {
 				log.Printf("Return cached result for id %v", request.GetId())
 				result := cachedResult.(*pb.KnnResponse).GetFeatures()
@@ -223,7 +231,7 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 				return nil
 			}
 		} else {
-			s.knnQueryId.Put(request.GetId(), getCurrentTime())
+			s.knnQueryID.Set(request.GetId(), getCurrentTime(), cache.DefaultExpiration)
 		}
 	}
 	featuresChannel := make(chan pb.Feature, in.GetK())
@@ -275,8 +283,8 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 		stream.Send(featureFromPoint)
 		responseFeatures = append(responseFeatures, featureFromPoint)
 	}
-	s.knnQueryId.Put(request.GetId(), true)
-	s.cache.Put(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures})
+	s.knnQueryID.Set(request.GetId(), true, cache.DefaultExpiration)
+	s.cache.Set(featureHash, &pb.KnnResponse{Id: request.GetId(), Features: responseFeatures}, cache.DefaultExpiration)
 	return nil
 }
 
@@ -641,7 +649,7 @@ func (s *VeriServiceServer) SyncJoin() {
 var evictable bool
 
 func (s *VeriServiceServer) isEvictable() bool {
-	if s.state >= 2 && evictable {
+	if s.state >= 3 && evictable {
 		return true
 	}
 	return false
@@ -651,6 +659,7 @@ func NewServer(services string, evict bool) *VeriServiceServer {
 	s := &VeriServiceServer{}
 	evictable = evict
 	s.dt = data.NewData("/tmp/veri")
+	s.dt.Process(true)
 	log.Printf("services %s", services)
 	serviceList := strings.Split(services, ",")
 	for _, service := range serviceList {
@@ -660,19 +669,8 @@ func NewServer(services string, evict bool) *VeriServiceServer {
 	}
 	s.maxMemoryMiB = memory
 	s.timestamp = getCurrentTime()
-	load := func(k cache.Key) (cache.Value, error) {
-		return fmt.Sprintf("%d", k), nil
-	}
-	s.cache = cache.NewLoadingCache(load,
-		cache.WithMaximumSize(1000),
-		cache.WithExpireAfterAccess(10*time.Second),
-		cache.WithRefreshAfterWrite(60*time.Second),
-	)
-	s.knnQueryId = cache.NewLoadingCache(load,
-		cache.WithMaximumSize(1000),
-		cache.WithExpireAfterAccess(10*time.Second),
-		cache.WithRefreshAfterWrite(60*time.Second),
-	)
+	s.cache = cache.New(30*time.Minute, 10*time.Minute)
+	s.knnQueryID = cache.New(30*time.Minute, 10*time.Minute)
 	go s.Check()
 	return s
 }
