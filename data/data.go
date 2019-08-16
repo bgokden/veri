@@ -36,13 +36,11 @@ type Data struct {
 	averageTimestamp      int64
 	dirty                 bool
 	latestNumberOfChanges int
-	// pointsMap             sync.Map
-	treeMu      sync.RWMutex // protects KDTree
-	tree        *kdtree.KDTree
-	IsEvictable bool
-
-	DB     *badger.DB
-	DBPath string
+	treeMu                sync.RWMutex // protects KDTree
+	tree                  *kdtree.KDTree
+	IsEvictable           bool
+	DB                    *badger.DB
+	DBPath                string
 }
 
 func NewData(path string) *Data {
@@ -54,18 +52,12 @@ func NewData(path string) *Data {
 		log.Fatal(err)
 	}
 	dt.DB = db
-	// defer db.Close() // This will never happen
 	go dt.Run()
 	return &dt
 }
 
 func (dt *Data) Close() error {
 	return dt.DB.Close()
-}
-
-func NewTempData() *Data {
-	dt := Data{}
-	return &dt
 }
 
 type Stats struct {
@@ -540,7 +532,7 @@ func (dt *Data) GetKnn(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, 
 		// fmt.Printf("Len ans: %v\n", len(ans))
 		ret := make([]*EuclideanPoint, len(ans))
 		for i := 0; i < len(ans); i++ {
-			fmt.Printf("Label: %v distance: %v\n", ans[i].GetLabel(), VectorDistance(point.GetValues(), ans[i].GetValues()))
+			// fmt.Printf("Label: %v distance: %v\n", ans[i].GetLabel(), VectorDistance(point.GetValues(), ans[i].GetValues()))
 			// fmt.Printf("Feature: %v\n", ans[i].GetValues())
 			ret[i] = NewEuclideanPointFromPoint(ans[i])
 		}

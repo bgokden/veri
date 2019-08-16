@@ -183,7 +183,7 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 		}
 	}
 	point := data.NewEuclideanPointArr(in.Feature)
-	reduceData.Process(true)
+	reduceData.Process()
 	ans, err := reduceData.GetKnn(int64(in.K), point)
 	if err != nil {
 		log.Printf("Error in Knn: %v", err.Error())
@@ -263,7 +263,7 @@ func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriServic
 		}
 	}
 	point := data.NewEuclideanPointArr(in.Feature)
-	reduceData.Process(true)
+	reduceData.Process()
 	ans, err := reduceData.GetKnn(int64(in.K), point)
 	if err != nil {
 		log.Printf("Error in Knn: %v", err.Error())

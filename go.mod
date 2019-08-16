@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/alexflint/go-arg v1.0.0 // indirect
 	github.com/bgokden/go-kdtree v0.0.0-20181219192024-2e8968891a38
+	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/coocood/freecache v1.1.0 // indirect
 	github.com/dgraph-io/badger v1.6.0
