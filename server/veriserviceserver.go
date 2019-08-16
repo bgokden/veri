@@ -650,7 +650,7 @@ func (s *VeriServiceServer) isEvictable() bool {
 func NewServer(services string, evict bool) *VeriServiceServer {
 	s := &VeriServiceServer{}
 	evictable = evict
-	s.dt = data.NewData()
+	s.dt = data.NewData("/tmp/veri")
 	log.Printf("services %s", services)
 	serviceList := strings.Split(services, ",")
 	for _, service := range serviceList {
