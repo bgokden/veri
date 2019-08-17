@@ -1,17 +1,22 @@
 package data
 
 import (
+	bytes "bytes"
+	gob "encoding/gob"
 	"errors"
 	"fmt"
 	"log"
 	"math"
 	"math/rand"
-	"sort"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	kdtree "github.com/bgokden/go-kdtree"
 	pb "github.com/bgokden/veri/veriservice"
+	badger "github.com/dgraph-io/badger"
 	"github.com/gaspiman/cosine_similarity"
 )
 
@@ -34,23 +39,40 @@ type Data struct {
 	averageTimestamp      int64
 	dirty                 bool
 	latestNumberOfChanges int
-	pointsMap             sync.Map
 	treeMu                sync.RWMutex // protects KDTree
 	tree                  *kdtree.KDTree
 	IsEvictable           bool
-	// pointsMu              sync.RWMutex // protects points
+	DB                    *badger.DB
+	DBPath                string
 }
 
-func NewData() *Data {
+func NewData(path string) *Data {
 	dt := Data{}
 	log.Printf("Create Data\n")
+	dt.DBPath = path // "/tmp/veri"
+	db, err := badger.Open(badger.DefaultOptions(dt.DBPath))
+	if err != nil {
+		log.Fatal(err)
+	}
+	dt.DB = db
 	go dt.Run()
+	go func() {
+		sigint := make(chan os.Signal, 1)
+
+		// interrupt signal sent from terminal
+		signal.Notify(sigint, os.Interrupt)
+		// sigterm signal sent from kubernetes
+		signal.Notify(sigint, syscall.SIGTERM)
+
+		<-sigint
+
+		dt.DB.Close()
+	}()
 	return &dt
 }
 
-func NewTempData() *Data {
-	dt := Data{}
-	return &dt
+func (dt *Data) Close() error {
+	return dt.DB.Close()
 }
 
 type Stats struct {
@@ -76,7 +98,7 @@ type EuclideanPoint struct {
 }
 
 type EuclideanPointKey struct {
-	Feature           [K_MAX]float64
+	Feature           []float64
 	SequenceLengthOne int64
 	SequenceLengthTwo int64
 	SequenceDimOne    int64
@@ -131,6 +153,48 @@ func (p *EuclideanPoint) GetSequenceDimOne() int64 {
 // Return the sequenceDimTwo
 func (p *EuclideanPoint) GetSequenceDimTwo() int64 {
 	return p.sequenceDimTwo
+}
+
+// EncodeEuclideanPointKey serializes EuclideanPointKey
+func EncodeEuclideanPointKey(p *EuclideanPointKey) []byte {
+	var byteBuffer bytes.Buffer
+	encoder := gob.NewEncoder(&byteBuffer)
+	if err := encoder.Encode(*p); err != nil {
+		log.Printf("Encoding error %v\n", err)
+	}
+	return byteBuffer.Bytes()
+}
+
+// DecodeEuclideanPointKey de-serializes EuclideanPointKey
+func DecodeEuclideanPointKey(byteArray []byte) *EuclideanPointKey {
+	var element EuclideanPointKey
+	r := bytes.NewReader(byteArray)
+	decoder := gob.NewDecoder(r)
+	if err := decoder.Decode(&element); err != nil {
+		log.Printf("Encoding error %v\n", err)
+	}
+	return &element
+}
+
+// EncodeEuclideanPointValue serializes EuclideanPointValue
+func EncodeEuclideanPointValue(p *EuclideanPointValue) []byte {
+	var byteBuffer bytes.Buffer
+	encoder := gob.NewEncoder(&byteBuffer)
+	if err := encoder.Encode(*p); err != nil {
+		log.Printf("Encoding error %v\n", err)
+	}
+	return byteBuffer.Bytes()
+}
+
+// DecodeEuclideanPointValue de-serializes EuclideanPointValue
+func DecodeEuclideanPointValue(byteArray []byte) *EuclideanPointValue {
+	var element EuclideanPointValue
+	r := bytes.NewReader(byteArray)
+	decoder := gob.NewDecoder(r)
+	if err := decoder.Decode(&element); err != nil {
+		log.Printf("Encoding error %v\n", err)
+	}
+	return &element
 }
 
 func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
@@ -211,7 +275,7 @@ func NewEuclideanPointArr(vals []float64) *EuclideanPoint {
 	return ret
 }
 
-func NewEuclideanPointArrWithLabel(vals [K_MAX]float64,
+func NewEuclideanPointArrWithLabel(vals []float64,
 	timestamp int64,
 	label string,
 	groupLabel string,
@@ -219,14 +283,8 @@ func NewEuclideanPointArrWithLabel(vals [K_MAX]float64,
 	sequenceLengthTwo int64,
 	sequenceDimOne int64,
 	sequenceDimTwo int64) *EuclideanPoint {
-	d := (sequenceLengthOne * sequenceDimOne) + (sequenceLengthTwo * sequenceDimTwo)
-	if d == 0 {
-		fmt.Printf("NewEuclideanPointArrWithLabel: D is 0 !!!!!!!!!!\n")
-	}
-	slice := make([]float64, d)
-	copy(slice[:d], vals[:d])
 	ret := &EuclideanPoint{
-		PointBase:         kdtree.NewPointBase(slice),
+		PointBase:         kdtree.NewPointBase(vals),
 		timestamp:         timestamp,
 		label:             label,
 		groupLabel:        groupLabel,
@@ -240,13 +298,14 @@ func NewEuclideanPointArrWithLabel(vals [K_MAX]float64,
 func NewEuclideanPointFromFeature(feature *pb.Feature) *EuclideanPoint {
 	ret := &EuclideanPoint{
 		PointBase:         kdtree.NewPointBase(feature.Feature),
-		timestamp:         feature.Timestamp,
-		label:             feature.Label,
-		groupLabel:        feature.Grouplabel,
-		sequenceLengthOne: feature.Sequencelengthone,
-		sequenceLengthTwo: feature.Sequencelengthtwo,
-		sequenceDimOne:    feature.Sequencedimone,
-		sequenceDimTwo:    feature.Sequencedimtwo}
+		timestamp:         feature.GetTimestamp(),
+		label:             feature.GetLabel(),
+		groupLabel:        feature.GetGrouplabel(),
+		sequenceLengthOne: feature.GetSequencelengthone(),
+		sequenceLengthTwo: feature.GetSequencelengthtwo(),
+		sequenceDimOne:    feature.GetSequencedimone(),
+		sequenceDimTwo:    feature.GetSequencedimtwo(),
+	}
 	return ret
 }
 
@@ -294,37 +353,30 @@ func NewInsertionRequestFromPoint(point kdtree.Point) *pb.InsertionRequest {
 
 func FeatureToEuclideanPointKeyValue(feature *pb.Feature) (*EuclideanPointKey, *EuclideanPointValue) {
 	key := &EuclideanPointKey{
+		Feature:           feature.GetFeature(),
 		GroupLabel:        feature.GetGrouplabel(),
 		SequenceLengthOne: feature.GetSequencelengthone(),
 		SequenceLengthTwo: feature.GetSequencelengthtwo(),
 		SequenceDimOne:    feature.GetSequencedimone(),
 		SequenceDimTwo:    feature.GetSequencedimtwo(),
 	}
-	d := (key.SequenceLengthOne * key.SequenceDimOne) + (key.SequenceLengthTwo * key.SequenceDimTwo)
-	if len(feature.Feature) == 0 {
-		log.Printf("len(feature.Feature) is 0 !!!")
-	}
-	copy(key.Feature[:d], feature.Feature)
 	value := &EuclideanPointValue{
-		Timestamp:  feature.Timestamp,
-		Label:      feature.Label,
-		GroupLabel: feature.Grouplabel,
+		Timestamp:  feature.GetTimestamp(),
+		Label:      feature.GetLabel(),
+		GroupLabel: feature.GetGrouplabel(),
 	}
 	return key, value
 }
 
 func InsertionRequestToEuclideanPointKeyValue(in *pb.InsertionRequest) (*EuclideanPointKey, *EuclideanPointValue) {
 	key := &EuclideanPointKey{
+		Feature:           in.GetFeature(),
 		GroupLabel:        in.GetGrouplabel(),
 		SequenceLengthOne: in.GetSequencelengthone(),
 		SequenceLengthTwo: in.GetSequencelengthtwo(),
 		SequenceDimOne:    in.GetSequencedimone(),
 		SequenceDimTwo:    in.GetSequencedimtwo(),
 	}
-	d := int64(len(in.GetFeature()))
-	// fmt.Printf("Insert len: %v\n", d)
-	copy(key.Feature[:d], in.GetFeature()[:d])
-	// fmt.Printf("Inserted arr: %v\n", key.Feature[:d])
 	value := &EuclideanPointValue{
 		Timestamp:  in.GetTimestamp(),
 		Label:      in.GetLabel(),
@@ -366,13 +418,13 @@ func FeatureFromEuclideanKeyValue(key *EuclideanPointKey, value *EuclideanPointV
 
 func NewEuclideanPointKeyFromPoint(point kdtree.Point) *EuclideanPointKey {
 	key := &EuclideanPointKey{
+		Feature:           point.GetValues(),
 		GroupLabel:        point.GetGroupLabel(),
 		SequenceLengthOne: point.GetSequenceLengthOne(),
 		SequenceLengthTwo: point.GetSequenceLengthTwo(),
 		SequenceDimOne:    point.GetSequenceDimOne(),
 		SequenceDimTwo:    point.GetSequenceDimTwo(),
 	}
-	copy(key.Feature[:len(point.GetValues())], point.GetValues())
 	return key
 }
 
@@ -416,41 +468,35 @@ func CalculateAverage(avg []float64, p []float64, n float64) []float64 {
 }
 
 // Insert entry into the data
-func (dt *Data) Insert(key *EuclideanPointKey, value *EuclideanPointValue) {
+func (dt *Data) Insert(key *EuclideanPointKey, value *EuclideanPointValue) error {
 	// TODO: check for nil
-	d := (key.SequenceLengthOne * key.SequenceDimOne) + (key.SequenceLengthTwo * key.SequenceDimTwo)
-	if d == 0 {
-		fmt.Printf("Insert D is 0 !!!!!!!!!!\n")
+	if len(key.Feature) == 0 {
+		log.Printf("Data lenght is 0: %v\n", value.Label)
 	}
-	if dt.D < d {
-		if d > K_MAX {
-			d = K_MAX // d can not be larger than maximum capacity
-		}
-		// log.Printf("Updating current dimension to: %v\n", d)
-		dt.D = d // Maybe we can use max of
+	keyByte := EncodeEuclideanPointKey(key)
+	valueByte := EncodeEuclideanPointValue(value)
+	err := dt.DB.Update(func(txn *badger.Txn) error {
+		err := txn.Set(keyByte, valueByte)
+		return err
+	})
+	if err != nil {
+		return err
 	}
-	dt.pointsMap.Store(*key, *value)
 	dt.dirty = true
 	dt.latestNumberOfChanges++
+	return nil
 }
 
 func (dt *Data) InsertBasic(label string, vals ...float64) {
 	d := int64(len(vals))
-	if dt.D < d {
-		if d > K_MAX {
-			d = K_MAX // d can not be larger than maximum capacity
-		}
-		log.Printf("Updating current dimension to: %v\n", d)
-		dt.D = d // Maybe we can use max of
-	}
 	key := EuclideanPointKey{
+		Feature:           vals,
 		SequenceLengthOne: 1,
 		SequenceLengthTwo: 0,
 		SequenceDimOne:    d,
 		SequenceDimTwo:    0,
 		GroupLabel:        label,
 	}
-	copy(key.Feature[:d], vals[:d])
 	value := EuclideanPointValue{
 		Timestamp:  0,
 		Label:      label,
@@ -459,10 +505,18 @@ func (dt *Data) InsertBasic(label string, vals ...float64) {
 	dt.Insert(&key, &value)
 }
 
-func (dt *Data) Delete(key EuclideanPointKey) {
-	dt.pointsMap.Delete(key)
+func (dt *Data) Delete(key *EuclideanPointKey) error {
+	keyByte := EncodeEuclideanPointKey(key)
+	err := dt.DB.Update(func(txn *badger.Txn) error {
+		err := txn.Delete(keyByte)
+		return err
+	})
+	if err != nil {
+		return err
+	}
 	dt.dirty = true
 	dt.latestNumberOfChanges++
+	return err
 }
 
 func (dt *Data) GetKnn(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, error) {
@@ -504,32 +558,52 @@ func (dt *Data) Process(force bool) error {
 		nFloat := float64(dt.N)
 		histUnit := 1 / nFloat
 		averageTimeStamp := 0.0
-		dt.pointsMap.Range(func(key, value interface{}) bool {
-			euclideanPointKey := key.(EuclideanPointKey)
-			euclideanPointValue := value.(EuclideanPointValue)
-			// In eviction mode, if a point timestamp is older than average timestamp, delete data randomly.
-			if dt.IsEvictable && dt.averageTimestamp != 0 && euclideanPointValue.Timestamp > dt.averageTimestamp && rand.Float32() < 0.2 {
-				dt.pointsMap.Delete(key)
-				return true // evict this data point
-			}
-			point := NewEuclideanPointFromKeyValue(&euclideanPointKey, &euclideanPointValue)
-			points = append(points, point)
-			n++
-			avg = CalculateAverage(avg, point.GetValues(), nFloat)
-			averageTimeStamp = averageTimeStamp + float64(euclideanPointValue.Timestamp)/nFloat
-			distance = VectorDistance(dt.Avg, point.GetValues())
-			if distance > maxDistance {
-				maxDistance = distance
-			}
-			if dt.MaxDistance != 0 {
-				index := int((distance / dt.MaxDistance) * 64)
-				if index >= 64 {
-					index = 63
+
+		err := dt.DB.View(func(txn *badger.Txn) error {
+			opts := badger.DefaultIteratorOptions
+			opts.PrefetchSize = 10
+			it := txn.NewIterator(opts)
+			defer it.Close()
+			for it.Rewind(); it.Valid(); it.Next() {
+				item := it.Item()
+				k := item.Key()
+				err := item.Value(func(v []byte) error {
+					euclideanPointKey := DecodeEuclideanPointKey(k)
+					euclideanPointValue := DecodeEuclideanPointValue(v)
+					// In eviction mode, if a point timestamp is older than average timestamp, delete data randomly.
+					if dt.IsEvictable && dt.averageTimestamp != 0 && euclideanPointValue.Timestamp > dt.averageTimestamp && rand.Float32() < 0.2 {
+						// dt.pointsMap.Delete(key)
+						return nil // evict this data point from memory
+					}
+					point := NewEuclideanPointFromKeyValue(euclideanPointKey, euclideanPointValue)
+					points = append(points, point)
+					n++
+					avg = CalculateAverage(avg, point.GetValues(), nFloat)
+					averageTimeStamp = averageTimeStamp + float64(euclideanPointValue.Timestamp)/nFloat
+					distance = VectorDistance(dt.Avg, point.GetValues())
+					if distance > maxDistance {
+						maxDistance = distance
+					}
+					if dt.MaxDistance != 0 {
+						index := int((distance / dt.MaxDistance) * 64)
+						if index >= 64 {
+							index = 63
+						}
+						hist[index] += histUnit
+					}
+					return nil
+				})
+				if err != nil {
+					return err
 				}
-				hist[index] += histUnit
 			}
-			return true
+			return nil
 		})
+
+		if err != nil {
+			return err
+		}
+
 		dt.Avg = avg
 		dt.averageTimestamp = int64(averageTimeStamp)
 		dt.Hist = hist
@@ -560,6 +634,13 @@ func (dt *Data) Run() error {
 			nextTime = getCurrentTime() + secondsToSleep
 		}
 		time.Sleep(time.Duration(1000) * time.Millisecond)
+		dt.DB.RunValueLogGC(0.7)
+		/*
+			err := dt.DB.RunValueLogGC(0.7)
+			if err != nil {
+				og.Printf("DB Garbage Collection Error: %v\n", err)
+			}
+		*/
 	}
 	// return nil
 }
@@ -581,40 +662,74 @@ func (dt *Data) SetupRun() {
 }
 
 func (dt *Data) GetAll(stream pb.VeriService_GetLocalDataServer) error {
-	dt.pointsMap.Range(func(key, value interface{}) bool {
-		euclideanPointKey := key.(EuclideanPointKey)
-		euclideanPointValue := value.(EuclideanPointValue)
-		feature := FeatureFromEuclideanKeyValue(&euclideanPointKey, &euclideanPointValue)
-		if err := stream.Send(feature); err != nil {
-			// return err pass err someway
-			return false
+	err := dt.DB.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 10
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+			k := item.Key()
+			err := item.Value(func(v []byte) error {
+				fmt.Printf("key=%s, value=%s\n", k, v)
+				euclideanPointKey := DecodeEuclideanPointKey(k)
+				euclideanPointValue := DecodeEuclideanPointValue(k)
+				feature := FeatureFromEuclideanKeyValue(euclideanPointKey, euclideanPointValue)
+				if streamErr := stream.Send(feature); streamErr != nil {
+					return streamErr
+				}
+				return nil
+			})
+			if err != nil {
+				return err
+			}
 		}
-		return true
+		return nil
 	})
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
+// GetRandomPoints returns a sample set of data
 func (dt *Data) GetRandomPoints(limit int) []kdtree.Point {
 	count := 0
 	points := make([]kdtree.Point, 0)
-	dt.pointsMap.Range(func(key, value interface{}) bool {
-		euclideanPointKey := key.(EuclideanPointKey)
-		euclideanPointValue := value.(EuclideanPointValue)
-		point := NewEuclideanPointFromKeyValue(&euclideanPointKey, &euclideanPointValue)
-		if rand.Float64() < 0.5 { // TODO: improve randomness
-			if count <= limit {
-				points = append(points, point)
+	err := dt.DB.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 10
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			if rand.Float64() < 0.5 {
+				item := it.Item()
+				k := item.Key()
+				err := item.Value(func(v []byte) error {
+					fmt.Printf("key=%s, value=%s\n", k, v)
+					euclideanPointKey := DecodeEuclideanPointKey(k)
+					euclideanPointValue := DecodeEuclideanPointValue(k)
+					point := NewEuclideanPointFromKeyValue(euclideanPointKey, euclideanPointValue)
+					points = append(points, point)
+					return nil
+				})
+				if err != nil {
+					return err
+				}
 				count++
-				if count <= limit {
-					return true
-				} else {
-					return false
+				if count > limit {
+					return nil
 				}
 			}
 		}
-		return true
+		return nil
 	})
+
+	if err != nil {
+		log.Printf("Error: %v\n", err)
+	}
 	return points
 }
 
@@ -648,6 +763,7 @@ func (e SortByDistance) Less(i, j int) bool {
 	return e[i].Distance < e[j].Distance
 }
 
+/*
 func (dt *Data) GetKnnLinear(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, error) {
 	// fmt.Printf("KNN Input Feature: %v\n", point.GetValues())
 	temp := make([]*DataPoint, 0)
@@ -683,3 +799,5 @@ func (dt *Data) GetKnnBasicLinear(queryK int64, vals ...float64) ([]*EuclideanPo
 	point := NewEuclideanPointArr(vals)
 	return dt.GetKnnLinear(queryK, point)
 }
+
+*/
