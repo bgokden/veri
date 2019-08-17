@@ -547,7 +547,7 @@ func (s *VeriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			// log.Printf("A new Response has been received for %d. with code: %d", i, resp.GetCode())
 			if resp.GetCode() == 0 && s.state > 0 && rand.Float64() < (0.3*float64(s.state)) {
 				key := data.NewEuclideanPointKeyFromPoint(point)
-				s.dt.Delete(*key)
+				s.dt.Delete(key)
 			}
 		}
 	}

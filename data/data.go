@@ -8,11 +8,11 @@ import (
 	"log"
 	"math"
 	"math/rand"
-	"sync"
-	"time"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+	"time"
 
 	kdtree "github.com/bgokden/go-kdtree"
 	pb "github.com/bgokden/veri/veriservice"
@@ -470,24 +470,9 @@ func CalculateAverage(avg []float64, p []float64, n float64) []float64 {
 // Insert entry into the data
 func (dt *Data) Insert(key *EuclideanPointKey, value *EuclideanPointValue) error {
 	// TODO: check for nil
-	d := (key.SequenceLengthOne * key.SequenceDimOne) + (key.SequenceLengthTwo * key.SequenceDimTwo)
-	if d == 0 {
-		fmt.Printf("Insert D is 0 !!!!!!!!!!\n")
-	}
-
-	if dt.D < d {
-		if d > K_MAX {
-			// d = K_MAX // d can not be larger than maximum capacity
-			log.Printf("Data size too large: %v\n", d)
-		}
-		// log.Printf("Updating current dimension to: %v\n", d)
-		// dt.D = d // Maybe we can use max of
-	}
-
 	if len(key.Feature) == 0 {
 		log.Printf("Data lenght is 0: %v\n", value.Label)
 	}
-	// dt.pointsMap.Store(*key, *value)
 	keyByte := EncodeEuclideanPointKey(key)
 	valueByte := EncodeEuclideanPointValue(value)
 	err := dt.DB.Update(func(txn *badger.Txn) error {
@@ -520,8 +505,8 @@ func (dt *Data) InsertBasic(label string, vals ...float64) {
 	dt.Insert(&key, &value)
 }
 
-func (dt *Data) Delete(key EuclideanPointKey) error {
-	keyByte := EncodeEuclideanPointKey(&key)
+func (dt *Data) Delete(key *EuclideanPointKey) error {
+	keyByte := EncodeEuclideanPointKey(key)
 	err := dt.DB.Update(func(txn *badger.Txn) error {
 		err := txn.Delete(keyByte)
 		return err
