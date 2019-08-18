@@ -20,10 +20,6 @@ import (
 	"github.com/gaspiman/cosine_similarity"
 )
 
-// This is set in compile time for optimization
-// const k = 7200 // 1024
-const K_MAX = 512 // 32 // 7200
-
 // 0 => euclidean distance
 // 1 => consine distance
 // const distance_mode = 0
@@ -545,7 +541,7 @@ func (dt *Data) GetKnnBasic(queryK int64, vals ...float64) ([]*EuclideanPoint, e
 
 func (dt *Data) Process(force bool) error {
 	log.Printf("Data isEvictable %v\n", dt.IsEvictable)
-	if dt.dirty || dt.IsEvictable || dt.latestNumberOfChanges > 0 || force {
+	if dt.dirty || dt.latestNumberOfChanges > 0 || force {
 		log.Printf("Running Process (forced: %v)\n", force)
 		tempLatestNumberOfChanges := dt.latestNumberOfChanges
 		dt.dirty = false
@@ -629,12 +625,12 @@ func (dt *Data) Run() error {
 	nextTime := getCurrentTime()
 	for {
 		if nextTime <= getCurrentTime() {
-			secondsToSleep := 3 + int64((dt.latestNumberOfChanges+1)%60)
+			secondsToSleep := 10 + int64((dt.latestNumberOfChanges+1)%600)
 			dt.Process(false)
 			nextTime = getCurrentTime() + secondsToSleep
+			dt.DB.RunValueLogGC(0.7)
 		}
 		time.Sleep(time.Duration(1000) * time.Millisecond)
-		dt.DB.RunValueLogGC(0.7)
 		/*
 			err := dt.DB.RunValueLogGC(0.7)
 			if err != nil {

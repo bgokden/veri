@@ -692,13 +692,20 @@ func (s *VeriServiceServer) Check() {
 		} else if currentMemory < maxMemory*0.75 {
 			s.state = 1 // Accept insert, delete while sending data
 		} else if currentMemory < maxMemory*0.85 {
-			s.state = 2 // Accept insert, delete while sending data and evict data
+			s.state = 2            // Accept insert, delete while sending data and evict data
+			debug.SetGCPercent(20) // this is just a guess
 		} else {
-			s.state = 3 // Don't accept insert, delete while sending data
+			s.state = 3           // Don't accept insert, delete while sending data
+			debug.SetGCPercent(5) // this is just a guess
 		}
 		if s.state != previousState {
 			log.Printf("State changed to %v\n", s.state)
 			s.dt.IsEvictable = s.isEvictable()
+			if s.isEvictable() {
+				log.Printf("Run FreeOSMemory %v\n", getCurrentTime())
+				debug.FreeOSMemory()
+				// runtime.GC() free Os memory calls garbage collection
+			}
 		}
 		// log.Printf("Current Memory = %f MiB => current State %d", currentMemory, s.state)
 		// millisecondToSleep := int64(((s.latestNumberOfInserts + 100) % 1000) * 10)
@@ -710,10 +717,7 @@ func (s *VeriServiceServer) Check() {
 		if nextSyncJoinTime <= getCurrentTime() {
 			s.SyncJoin()
 			nextSyncJoinTime = getCurrentTime() + 10
-			log.Printf("Run GC %v\n", getCurrentTime())
-			debug.FreeOSMemory()
-			debug.SetGCPercent(1)
-			runtime.GC()
+
 		}
 		s.timestamp = getCurrentTime()
 		time.Sleep(time.Duration(1000) * time.Millisecond) // always wait one second
