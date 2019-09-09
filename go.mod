@@ -28,6 +28,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/walle/lll v0.0.0-20160702150637-8b13b3fbf731 // indirect
 	golang.org/x/net v0.0.0-20190620200207-3b0461eec859
+	gonum.org/v1/gonum v0.0.0-20190907114023-9329cb75255c
 	google.golang.org/grpc v1.20.1
 	gopkg.in/yaml.v2 v2.2.2
 	mvdan.cc/unparam v0.0.0-20190720180237-d51796306d8f // indirect
