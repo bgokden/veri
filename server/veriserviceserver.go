@@ -462,7 +462,7 @@ func (s *VeriServiceServer) refresh_client(address string) {
 	}
 }
 
-func (s *VeriServiceServer) callJoin(client *pb.VeriServiceClient) {
+func (s *VeriServiceServer) callJoin(client *pb.VeriServiceClient) error {
 	stats := s.dt.GetStats()
 	request := &pb.JoinRequest{
 		Address:   s.address,
@@ -477,14 +477,15 @@ func (s *VeriServiceServer) callJoin(client *pb.VeriServiceClient) {
 	resp, err := (*client).Join(context.Background(), request)
 	if err != nil {
 		log.Printf("(Call Join) There is an error %v", err)
-		return
+		return err
 	}
 	if s.address != resp.GetAddress() {
 		s.address = resp.GetAddress()
 	}
+	return nil
 }
 
-func (s *VeriServiceServer) callExchangeServices(client *pb.VeriServiceClient) {
+func (s *VeriServiceServer) callExchangeServices(client *pb.VeriServiceClient) error {
 	outputServiceList := make([]string, 0)
 	s.services.Range(func(key, value interface{}) bool {
 		serviceName := key.(string)
@@ -497,13 +498,14 @@ func (s *VeriServiceServer) callExchangeServices(client *pb.VeriServiceClient) {
 	resp, err := (*client).ExchangeServices(context.Background(), request)
 	if err != nil {
 		log.Printf("(callExchangeServices) There is an error %v", err)
-		return
+		return err
 	}
 	inputServiceList := resp.GetServices()
 	for i := 0; i < len(inputServiceList); i++ {
 		s.services.Store(inputServiceList[i], true)
 	}
 	// log.Printf("Services exhanged")
+	return nil
 }
 
 func (s *VeriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer *models.Peer) {
@@ -540,13 +542,15 @@ func (s *VeriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 		limit = 1 // no change can be risky
 	}
 	points := s.dt.GetRandomPoints(limit)
-
+	count := 0
 	for _, point := range points {
 		request := data.NewInsertionRequestFromPoint(point)
 		resp, err := (*client).Insert(context.Background(), request)
 		if err != nil {
 			log.Printf("There is an error: %v", err)
+			break
 		} else {
+			count++
 			// log.Printf("A new Response has been received for %d. with code: %d", i, resp.GetCode())
 			if resp.GetCode() == 0 && s.state > 0 && rand.Float64() < (0.3*float64(s.state)) {
 				key := data.NewEuclideanPointKeyFromPoint(point)
@@ -554,9 +558,10 @@ func (s *VeriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			}
 		}
 	}
+	log.Printf("Data Exchanged with %v n: %v", peer.Address, count)
 }
 
-func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
+func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) error {
 	log.Printf("callExchangePeers")
 	outputPeerList := make([]*pb.Peer, 0)
 	s.peers.Range(func(key, value interface{}) bool {
@@ -580,7 +585,7 @@ func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
 	resp, err := (*client).ExchangePeers(context.Background(), request)
 	if err != nil {
 		log.Printf("(callExchangePeers) There is an error %v\n", err)
-		return
+		return err
 	}
 	inputPeerList := resp.GetPeers()
 	for i := 0; i < len(inputPeerList); i++ {
@@ -605,6 +610,7 @@ func (s *VeriServiceServer) callExchangePeers(client *pb.VeriServiceClient) {
 		}
 	}
 	log.Printf("Peers exhanged")
+	return nil
 }
 
 func (s *VeriServiceServer) SyncJoin() {
@@ -634,9 +640,21 @@ func (s *VeriServiceServer) SyncJoin() {
 			client, err := s.get_client(peerAddress)
 			if err == nil {
 				grpcClient := client.Client
-				s.callJoin(grpcClient)
-				s.callExchangeServices(grpcClient)
-				s.callExchangePeers(grpcClient)
+				callError := s.callJoin(grpcClient)
+				if callError != nil {
+					return true
+				}
+				callError = s.callExchangeServices(grpcClient)
+				if callError != nil {
+					return true
+				}
+				callError = s.callExchangePeers(grpcClient)
+				if callError != nil {
+					return true
+				}
+				if callError != nil {
+					return true
+				}
 				s.callExchangeData(grpcClient, &peerValue)
 			} else {
 				log.Printf("SyncJoin Error: %v\n", err)
