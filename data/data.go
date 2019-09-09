@@ -4,7 +4,6 @@ import (
 	bytes "bytes"
 	gob "encoding/gob"
 	"errors"
-	"fmt"
 	"log"
 	"math"
 	"math/rand"
@@ -412,7 +411,7 @@ func NewEuclideanPointFromKeyValue(key *EuclideanPointKey, value *EuclideanPoint
 func FeatureFromEuclideanKeyValue(key *EuclideanPointKey, value *EuclideanPointValue) *pb.Feature {
 	d := (key.SequenceLengthOne * key.SequenceDimOne) + (key.SequenceLengthTwo * key.SequenceDimTwo)
 	if d == 0 {
-		fmt.Printf("FeatureFromEuclideanKeyValue: D is 0 !!!!!!!!!!\n")
+		log.Printf("FeatureFromEuclideanKeyValue: D is 0 !!!!!!!!!!\n")
 	}
 	ret := &pb.Feature{
 		Feature:           key.Feature[:d],
@@ -682,7 +681,7 @@ func (dt *Data) GetAll(stream pb.VeriService_GetLocalDataServer) error {
 			item := it.Item()
 			k := item.Key()
 			err := item.Value(func(v []byte) error {
-				fmt.Printf("key=%s, value=%s\n", k, v)
+				// fmt.Printf("key=%s, value=%s\n", k, v)
 				euclideanPointKey := DecodeEuclideanPointKey(k)
 				euclideanPointValue := DecodeEuclideanPointValue(k)
 				feature := FeatureFromEuclideanKeyValue(euclideanPointKey, euclideanPointValue)
@@ -719,7 +718,7 @@ func (dt *Data) GetRandomPoints(limit int) []kdtree.Point {
 				item := it.Item()
 				k := item.Key()
 				err := item.Value(func(v []byte) error {
-					fmt.Printf("key=%s, value=%s\n", k, v)
+					// fmt.Printf("key=%s, value=%s\n", k, v)
 					euclideanPointKey := DecodeEuclideanPointKey(k)
 					euclideanPointValue := DecodeEuclideanPointValue(k)
 					point := NewEuclideanPointFromKeyValue(euclideanPointKey, euclideanPointValue)
