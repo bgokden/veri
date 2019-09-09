@@ -20,10 +20,6 @@ import (
 	"github.com/gaspiman/cosine_similarity"
 )
 
-// 0 => euclidean distance
-// 1 => consine distance
-// const distance_mode = 0
-
 type Data struct {
 	K                     int64
 	D                     int64
@@ -42,6 +38,7 @@ type Data struct {
 	DBPath                string
 }
 
+// NewData
 func NewData(path string) *Data {
 	dt := Data{}
 	log.Printf("Create Data\n")
@@ -67,6 +64,7 @@ func NewData(path string) *Data {
 	return &dt
 }
 
+// Close
 func (dt *Data) Close() error {
 	return dt.DB.Close()
 }
@@ -199,8 +197,31 @@ func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
 		tmp := arr1[i] - arr2[i]
 		ret += tmp * tmp
 	}
-	// fmt.Printf("%v\n", ret)
 	return ret
+}
+
+func euclideanDistanceWithBasicExtremeDetection(arr1 []float64, arr2 []float64) float64 {
+	diffArr := make([]float64, len(arr1), len(arr1))
+	length := float64(len(arr1))
+	avg := 0.0
+	for i := 0; i < len(arr1); i++ {
+		tmp := arr1[i] - arr2[i]
+		sq := tmp * tmp
+		avg += sq / length
+		diffArr[i] = sq
+	}
+	std := 0.0
+	for i := 0; i < len(diffArr); i++ {
+		std += ((diffArr[i] - avg) * (diffArr[i] - avg)) / length
+	}
+	for i := 0; i < len(diffArr); i++ {
+		if diffArr[i] >= avg+2*std {
+			diffArr[i] = 2 * diffArr[i]
+		} else if diffArr[i] <= avg-2*std {
+			diffArr[i] = 2 * diffArr[i]
+		}
+	}
+	return sum(diffArr)
 }
 
 func cosineDistance(arr1 []float64, arr2 []float64) float64 {
@@ -218,25 +239,19 @@ func min(a, b int) int {
 	return b
 }
 
-func VectorDistance(arr1 []float64, arr2 []float64) float64 {
-	minLen := min(len(arr1), len(arr2))
-	return euclideanDistance(arr1[:minLen], arr2[:minLen])
-	/*
-		if distance_mode == 1 {
-			return cosineDistance(arr1, arr2)
-		} else {
-			return euclideanDistance(arr1, arr2)
-		}
-	*/
+func sum(arr []float64) float64 {
+	sum := 0.0
+	for _, e := range arr {
+		sum += e
+	}
+	return sum
 }
 
-func SearchVectorDistance(arr1 []float64, arr2 []float64, distance_mode int) float64 {
+// VectorDistance
+func VectorDistance(arr1 []float64, arr2 []float64) float64 {
 	minLen := min(len(arr1), len(arr2))
-	if distance_mode == 1 {
-		return cosineDistance(arr1[:minLen], arr2[:minLen])
-	} else {
-		return euclideanDistance(arr1[:minLen], arr2[:minLen])
-	}
+	d := euclideanDistance(arr1[:minLen], arr2[:minLen])
+	return d
 }
 
 func (p *EuclideanPoint) Distance(other kdtree.Point) float64 {
@@ -758,42 +773,3 @@ func (e SortByDistance) Swap(i, j int) {
 func (e SortByDistance) Less(i, j int) bool {
 	return e[i].Distance < e[j].Distance
 }
-
-/*
-func (dt *Data) GetKnnLinear(queryK int64, point *EuclideanPoint) ([]*EuclideanPoint, error) {
-	// fmt.Printf("KNN Input Feature: %v\n", point.GetValues())
-	temp := make([]*DataPoint, 0)
-	result := make([]*EuclideanPoint, 0)
-	maxDistance := 0.0
-	dt.pointsMap.Range(func(key, value interface{}) bool {
-		euclideanPointKey := key.(EuclideanPointKey)
-		euclideanPointValue := value.(EuclideanPointValue)
-		distance := SearchVectorDistance(euclideanPointKey.Feature[:], point.GetValues(), 1)
-		if len(result) < int(queryK) || distance < maxDistance {
-			newPoint := NewEuclideanPointFromKeyValue(&euclideanPointKey, &euclideanPointValue)
-			temp = append(temp, &DataPoint{distance, newPoint})
-			if distance < maxDistance {
-				maxDistance = distance
-			}
-		}
-		return true
-	})
-
-	sort.Sort(SortByDistance(temp))
-	for i, e := range temp {
-		if i >= int(queryK) {
-			break
-		}
-		result = append(result, e.Point)
-	}
-
-	return result, nil
-	// return []*EuclideanPoint{}, errors.New("Points not initialized yet")
-}
-
-func (dt *Data) GetKnnBasicLinear(queryK int64, vals ...float64) ([]*EuclideanPoint, error) {
-	point := NewEuclideanPointArr(vals)
-	return dt.GetKnnLinear(queryK, point)
-}
-
-*/

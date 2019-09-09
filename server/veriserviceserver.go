@@ -125,10 +125,13 @@ func (s *VeriServiceServer) GetKnnFromLocal(in *pb.KnnRequest, featuresChannel c
 }
 
 // EncodeFloatSliceAsString serializes EncodeFloatSlice
-func EncodeFloatSliceAsString(p []float64) string {
+func EncodeFloatSliceAsString(p []float64, k int32) string {
 	var byteBuffer bytes.Buffer
 	encoder := gob.NewEncoder(&byteBuffer)
 	if err := encoder.Encode(p); err != nil {
+		log.Printf("Encoding error %v\n", err)
+	}
+	if err := encoder.Encode(k); err != nil {
 		log.Printf("Encoding error %v\n", err)
 	}
 	return byteBuffer.String()
@@ -137,7 +140,7 @@ func EncodeFloatSliceAsString(p []float64) string {
 // Do a distributed Knn search
 func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.KnnResponse, error) {
 	request := *in
-	featureHash := EncodeFloatSliceAsString(request.GetFeature())
+	featureHash := EncodeFloatSliceAsString(request.GetFeature(), request.GetK())
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
 		s.knnQueryID.Set(request.Id, true, cache.DefaultExpiration)
@@ -211,7 +214,7 @@ func (s *VeriServiceServer) GetKnn(ctx context.Context, in *pb.KnnRequest) (*pb.
 
 func (s *VeriServiceServer) GetKnnStream(in *pb.KnnRequest, stream pb.VeriService_GetKnnStreamServer) error {
 	request := *in
-	featureHash := EncodeFloatSliceAsString(request.GetFeature())
+	featureHash := EncodeFloatSliceAsString(request.GetFeature(), request.GetK())
 	if len(in.GetId()) == 0 {
 		request.Id = ksuid.New().String()
 		s.knnQueryID.Set(request.Id, true, cache.DefaultExpiration)
