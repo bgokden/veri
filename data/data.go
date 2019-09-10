@@ -749,6 +749,9 @@ func (dt *Data) GetAll(stream pb.VeriService_GetLocalDataServer) error {
 				// fmt.Printf("key=%s, value=%s\n", k, v)
 				euclideanPointKey := DecodeEuclideanPointKey(k)
 				euclideanPointValue := DecodeEuclideanPointValue(k)
+				if euclideanPointValue.Label == "" {
+					log.Printf("GetAll label empty %v\n", euclideanPointValue.GroupLabel)
+				}
 				feature := FeatureFromEuclideanKeyValue(euclideanPointKey, euclideanPointValue)
 				if streamErr := stream.Send(feature); streamErr != nil {
 					return streamErr
@@ -786,6 +789,9 @@ func (dt *Data) GetRandomPoints(limit int) []*EuclideanPoint {
 					// fmt.Printf("key=%s, value=%s\n", k, v)
 					euclideanPointKey := DecodeEuclideanPointKey(k)
 					euclideanPointValue := DecodeEuclideanPointValue(k)
+					if euclideanPointValue.Label == "" {
+						log.Printf("GetRandomPoints label empty %v\n", euclideanPointValue.GroupLabel)
+					}
 					point := NewEuclideanPointFromKeyValue(euclideanPointKey, euclideanPointValue)
 					points = append(points, point)
 					return nil
