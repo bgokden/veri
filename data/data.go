@@ -302,6 +302,9 @@ func NewEuclideanPointArrWithLabel(vals []float64,
 		sequenceLengthTwo: sequenceLengthTwo,
 		sequenceDimOne:    sequenceDimOne,
 		sequenceDimTwo:    sequenceDimTwo}
+	if ret.label == "" {
+		log.Printf("NewEuclideanPointArrWithLabel label empty %v\n", ret.groupLabel)
+	}
 	return ret
 }
 
@@ -315,6 +318,9 @@ func NewEuclideanPointFromFeature(feature *pb.Feature) *EuclideanPoint {
 		sequenceLengthTwo: feature.GetSequencelengthtwo(),
 		sequenceDimOne:    feature.GetSequencedimone(),
 		sequenceDimTwo:    feature.GetSequencedimtwo(),
+	}
+	if ret.label == "" {
+		log.Printf("NewEuclideanPointFromFeature label empty %v\n", ret.groupLabel)
 	}
 	return ret
 }
@@ -330,6 +336,9 @@ func NewFeatureFromEuclideanPoint(point *EuclideanPoint) *pb.Feature {
 		Sequencedimone:    point.GetSequenceDimOne(),
 		Sequencedimtwo:    point.GetSequenceDimTwo(),
 	}
+	if ret.GetLabel() == "" {
+		log.Printf("NewFeatureFromEuclideanPoint label empty %v\n", ret.GetGrouplabel())
+	}
 	return ret
 }
 
@@ -344,6 +353,9 @@ func NewFeatureFromPoint(point kdtree.Point) *pb.Feature {
 		Sequencedimone:    point.GetSequenceDimOne(),
 		Sequencedimtwo:    point.GetSequenceDimTwo(),
 	}
+	if ret.GetLabel() == "" {
+		log.Printf("NewFeatureFromPoint label empty %v\n", ret.GetGrouplabel())
+	}
 	return ret
 }
 
@@ -357,6 +369,9 @@ func NewInsertionRequestFromPoint(point kdtree.Point) *pb.InsertionRequest {
 		Sequencelengthtwo: point.GetSequenceLengthTwo(),
 		Sequencedimone:    point.GetSequenceDimOne(),
 		Sequencedimtwo:    point.GetSequenceDimTwo(),
+	}
+	if ret.GetLabel() == "" {
+		log.Printf("NewInsertionRequestFromPoint label empty %v\n", ret.GetGrouplabel())
 	}
 	return ret
 }
@@ -375,6 +390,9 @@ func FeatureToEuclideanPointKeyValue(feature *pb.Feature) (*EuclideanPointKey, *
 		Label:      feature.GetLabel(),
 		GroupLabel: feature.GetGrouplabel(),
 	}
+	if feature.GetLabel() == "" {
+		log.Printf("FeatureToEuclideanPointKeyValue label empty %v\n", feature.GetGrouplabel())
+	}
 	return key, value
 }
 
@@ -392,6 +410,9 @@ func InsertionRequestToEuclideanPointKeyValue(in *pb.InsertionRequest) (*Euclide
 		Label:      in.GetLabel(),
 		GroupLabel: in.GetGrouplabel(),
 	}
+	if in.GetLabel() == "" {
+		log.Printf("InsertionRequestToEuclideanPointKeyValue label empty %v\n", in.GetGrouplabel())
+	}
 	return key, value
 }
 
@@ -405,6 +426,9 @@ func NewEuclideanPointFromKeyValue(key *EuclideanPointKey, value *EuclideanPoint
 		key.SequenceLengthTwo,
 		key.SequenceDimOne,
 		key.SequenceDimTwo)
+	if ret.label == "" {
+		log.Printf("NewEuclideanPointFromKeyValue label empty %v\n", ret.groupLabel)
+	}
 	return ret
 }
 
@@ -423,6 +447,9 @@ func FeatureFromEuclideanKeyValue(key *EuclideanPointKey, value *EuclideanPointV
 		Sequencedimone:    key.SequenceDimOne,
 		Sequencedimtwo:    key.SequenceDimTwo,
 	}
+	if ret.Label == "" {
+		log.Printf("FeatureFromEuclideanKeyValue label empty %v\n", ret.Grouplabel)
+	}
 	return ret
 }
 
@@ -434,6 +461,9 @@ func NewEuclideanPointKeyFromPoint(point kdtree.Point) *EuclideanPointKey {
 		SequenceLengthTwo: point.GetSequenceLengthTwo(),
 		SequenceDimOne:    point.GetSequenceDimOne(),
 		SequenceDimTwo:    point.GetSequenceDimTwo(),
+	}
+	if point.GetLabel() == "" {
+		log.Printf("NewEuclideanPointKeyFromPoint label empty %v\n", point.GetGroupLabel())
 	}
 	return key
 }
@@ -448,6 +478,9 @@ func NewEuclideanPointFromPoint(point kdtree.Point) *EuclideanPoint {
 		sequenceLengthTwo: point.GetSequenceLengthTwo(),
 		sequenceDimOne:    point.GetSequenceDimOne(),
 		sequenceDimTwo:    point.GetSequenceDimTwo()}
+	if ret.label == "" {
+		log.Printf("FeatureFromEuclideanKeyValue label empty %v\n", ret.groupLabel)
+	}
 	return ret
 }
 
