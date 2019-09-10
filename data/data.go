@@ -81,13 +81,13 @@ type Stats struct {
 
 type EuclideanPoint struct {
 	kdtree.PointBase
-	timestamp         int64
-	label             string
-	groupLabel        string
-	sequenceLengthOne int64
-	sequenceLengthTwo int64
-	sequenceDimOne    int64
-	sequenceDimTwo    int64
+	Timestamp         int64
+	Label             string
+	GroupLabel        string
+	SequenceLengthOne int64
+	SequenceLengthTwo int64
+	SequenceDimOne    int64
+	SequenceDimTwo    int64
 }
 
 type EuclideanPointKey struct {
@@ -115,37 +115,37 @@ func (p *EuclideanPoint) GetValue(dim int) float64 {
 
 // Return the label
 func (p *EuclideanPoint) GetLabel() string {
-	return p.label
+	return p.Label
 }
 
 // Return the grouplabel
 func (p *EuclideanPoint) GetGroupLabel() string {
-	return p.groupLabel
+	return p.GroupLabel
 }
 
 // Return the timestamp
 func (p *EuclideanPoint) GetTimestamp() int64 {
-	return p.timestamp
+	return p.Timestamp
 }
 
 // Return the sequenceLengthOne
 func (p *EuclideanPoint) GetSequenceLengthOne() int64 {
-	return p.sequenceLengthOne
+	return p.SequenceLengthOne
 }
 
 // Return the sequenceLengthTwo
 func (p *EuclideanPoint) GetSequenceLengthTwo() int64 {
-	return p.sequenceLengthTwo
+	return p.SequenceLengthTwo
 }
 
 // Return the sequenceDimOne
 func (p *EuclideanPoint) GetSequenceDimOne() int64 {
-	return p.sequenceDimOne
+	return p.SequenceDimOne
 }
 
 // Return the sequenceDimTwo
 func (p *EuclideanPoint) GetSequenceDimTwo() int64 {
-	return p.sequenceDimTwo
+	return p.SequenceDimTwo
 }
 
 // EncodeEuclideanPointKey serializes EuclideanPointKey
@@ -272,8 +272,8 @@ func NewEuclideanPoint(vals ...float64) *EuclideanPoint {
 func NewEuclideanPointWithLabel(timestamp int64, label string, vals ...float64) *EuclideanPoint {
 	ret := &EuclideanPoint{
 		PointBase: kdtree.NewPointBase(vals),
-		timestamp: timestamp,
-		label:     label,
+		Timestamp: timestamp,
+		Label:     label,
 	}
 	return ret
 }
@@ -295,15 +295,15 @@ func NewEuclideanPointArrWithLabel(vals []float64,
 	sequenceDimTwo int64) *EuclideanPoint {
 	ret := &EuclideanPoint{
 		PointBase:         kdtree.NewPointBase(vals),
-		timestamp:         timestamp,
-		label:             label,
-		groupLabel:        groupLabel,
-		sequenceLengthOne: sequenceLengthOne,
-		sequenceLengthTwo: sequenceLengthTwo,
-		sequenceDimOne:    sequenceDimOne,
-		sequenceDimTwo:    sequenceDimTwo}
-	if ret.label == "" {
-		log.Printf("NewEuclideanPointArrWithLabel label empty %v\n", ret.groupLabel)
+		Timestamp:         timestamp,
+		Label:             label,
+		GroupLabel:        groupLabel,
+		SequenceLengthOne: sequenceLengthOne,
+		SequenceLengthTwo: sequenceLengthTwo,
+		SequenceDimOne:    sequenceDimOne,
+		SequenceDimTwo:    sequenceDimTwo}
+	if ret.Label == "" {
+		log.Printf("NewEuclideanPointArrWithLabel label empty %v\n", ret.GroupLabel)
 	}
 	return ret
 }
@@ -311,16 +311,16 @@ func NewEuclideanPointArrWithLabel(vals []float64,
 func NewEuclideanPointFromFeature(feature *pb.Feature) *EuclideanPoint {
 	ret := &EuclideanPoint{
 		PointBase:         kdtree.NewPointBase(feature.Feature),
-		timestamp:         feature.GetTimestamp(),
-		label:             feature.GetLabel(),
-		groupLabel:        feature.GetGrouplabel(),
-		sequenceLengthOne: feature.GetSequencelengthone(),
-		sequenceLengthTwo: feature.GetSequencelengthtwo(),
-		sequenceDimOne:    feature.GetSequencedimone(),
-		sequenceDimTwo:    feature.GetSequencedimtwo(),
+		Timestamp:         feature.GetTimestamp(),
+		Label:             feature.GetLabel(),
+		GroupLabel:        feature.GetGrouplabel(),
+		SequenceLengthOne: feature.GetSequencelengthone(),
+		SequenceLengthTwo: feature.GetSequencelengthtwo(),
+		SequenceDimOne:    feature.GetSequencedimone(),
+		SequenceDimTwo:    feature.GetSequencedimtwo(),
 	}
-	if ret.label == "" {
-		log.Printf("NewEuclideanPointFromFeature label empty %v\n", ret.groupLabel)
+	if ret.Label == "" {
+		log.Printf("NewEuclideanPointFromFeature label empty %v\n", ret.GroupLabel)
 	}
 	return ret
 }
@@ -407,8 +407,8 @@ func FeatureToEuclideanPointKeyValue(feature *pb.Feature) (*EuclideanPointKey, *
 		Label:      feature.GetLabel(),
 		GroupLabel: feature.GetGrouplabel(),
 	}
-	if feature.GetLabel() == "" {
-		log.Printf("FeatureToEuclideanPointKeyValue label empty %v\n", feature.GetGrouplabel())
+	if value.Label == "" {
+		log.Printf("FeatureToEuclideanPointKeyValue label empty %v\n", value.GroupLabel)
 	}
 	return key, value
 }
@@ -443,8 +443,8 @@ func NewEuclideanPointFromKeyValue(key *EuclideanPointKey, value *EuclideanPoint
 		key.SequenceLengthTwo,
 		key.SequenceDimOne,
 		key.SequenceDimTwo)
-	if ret.label == "" {
-		log.Printf("NewEuclideanPointFromKeyValue label empty %v\n", ret.groupLabel)
+	if ret.Label == "" {
+		log.Printf("NewEuclideanPointFromKeyValue label empty %v\n", ret.GroupLabel)
 	}
 	return ret
 }
@@ -503,15 +503,15 @@ func NewEuclideanPointKeyFromEuclideanPoint(point *EuclideanPoint) *EuclideanPoi
 func NewEuclideanPointFromPoint(point kdtree.Point) *EuclideanPoint {
 	ret := &EuclideanPoint{
 		PointBase:         kdtree.NewPointBase(point.GetValues()),
-		timestamp:         point.GetTimestamp(),
-		label:             point.GetLabel(),
-		groupLabel:        point.GetGroupLabel(),
-		sequenceLengthOne: point.GetSequenceLengthOne(),
-		sequenceLengthTwo: point.GetSequenceLengthTwo(),
-		sequenceDimOne:    point.GetSequenceDimOne(),
-		sequenceDimTwo:    point.GetSequenceDimTwo()}
-	if ret.label == "" {
-		log.Printf("FeatureFromEuclideanKeyValue label empty %v\n", ret.groupLabel)
+		Timestamp:         point.GetTimestamp(),
+		Label:             point.GetLabel(),
+		GroupLabel:        point.GetGroupLabel(),
+		SequenceLengthOne: point.GetSequenceLengthOne(),
+		SequenceLengthTwo: point.GetSequenceLengthTwo(),
+		SequenceDimOne:    point.GetSequenceDimOne(),
+		SequenceDimTwo:    point.GetSequenceDimTwo()}
+	if ret.Label == "" {
+		log.Printf("FeatureFromEuclideanKeyValue label empty %v\n", ret.GroupLabel)
 	}
 	return ret
 }
