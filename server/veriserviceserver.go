@@ -544,7 +544,7 @@ func (s *VeriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 	points := s.dt.GetRandomPoints(limit)
 	count := 0
 	for _, point := range points {
-		request := data.NewInsertionRequestFromPoint(point)
+		request := data.NewInsertionRequestFromEuclideanPoint(point)
 		resp, err := (*client).Insert(context.Background(), request)
 		if err != nil {
 			log.Printf("There is an error: %v", err)
@@ -553,7 +553,7 @@ func (s *VeriServiceServer) callExchangeData(client *pb.VeriServiceClient, peer 
 			count++
 			// log.Printf("A new Response has been received for %d. with code: %d", i, resp.GetCode())
 			if resp.GetCode() == 0 && s.state > 0 && rand.Float64() < (0.3*float64(s.state)) {
-				key := data.NewEuclideanPointKeyFromPoint(point)
+				key := data.NewEuclideanPointKeyFromEuclideanPoint(point)
 				s.dt.Delete(key)
 			}
 		}

@@ -376,6 +376,23 @@ func NewInsertionRequestFromPoint(point kdtree.Point) *pb.InsertionRequest {
 	return ret
 }
 
+func NewInsertionRequestFromEuclideanPoint(point *EuclideanPoint) *pb.InsertionRequest {
+	ret := &pb.InsertionRequest{
+		Timestamp:         point.GetTimestamp(),
+		Label:             point.GetLabel(),
+		Grouplabel:        point.GetGroupLabel(),
+		Feature:           point.GetValues(),
+		Sequencelengthone: point.GetSequenceLengthOne(),
+		Sequencelengthtwo: point.GetSequenceLengthTwo(),
+		Sequencedimone:    point.GetSequenceDimOne(),
+		Sequencedimtwo:    point.GetSequenceDimTwo(),
+	}
+	if ret.GetLabel() == "" {
+		log.Printf("NewInsertionRequestFromPoint label empty %v\n", ret.GetGrouplabel())
+	}
+	return ret
+}
+
 func FeatureToEuclideanPointKeyValue(feature *pb.Feature) (*EuclideanPointKey, *EuclideanPointValue) {
 	key := &EuclideanPointKey{
 		Feature:           feature.GetFeature(),
@@ -464,6 +481,21 @@ func NewEuclideanPointKeyFromPoint(point kdtree.Point) *EuclideanPointKey {
 	}
 	if point.GetLabel() == "" {
 		log.Printf("NewEuclideanPointKeyFromPoint label empty %v\n", point.GetGroupLabel())
+	}
+	return key
+}
+
+func NewEuclideanPointKeyFromEuclideanPoint(point *EuclideanPoint) *EuclideanPointKey {
+	key := &EuclideanPointKey{
+		Feature:           point.GetValues(),
+		GroupLabel:        point.GetGroupLabel(),
+		SequenceLengthOne: point.GetSequenceLengthOne(),
+		SequenceLengthTwo: point.GetSequenceLengthTwo(),
+		SequenceDimOne:    point.GetSequenceDimOne(),
+		SequenceDimTwo:    point.GetSequenceDimTwo(),
+	}
+	if point.GetLabel() == "" {
+		log.Printf("NewEuclideanPointKeyFromEuclideanPoint label empty %v\n", point.GetGroupLabel())
 	}
 	return key
 }
@@ -738,9 +770,9 @@ func (dt *Data) GetAll(stream pb.VeriService_GetLocalDataServer) error {
 }
 
 // GetRandomPoints returns a sample set of data
-func (dt *Data) GetRandomPoints(limit int) []kdtree.Point {
+func (dt *Data) GetRandomPoints(limit int) []*EuclideanPoint {
 	count := 0
-	points := make([]kdtree.Point, 0)
+	points := make([]*EuclideanPoint, 0)
 	err := dt.DB.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 10
