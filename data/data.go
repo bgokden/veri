@@ -645,6 +645,9 @@ func (dt *Data) Process(force bool) error {
 				err := item.Value(func(v []byte) error {
 					euclideanPointKey := DecodeEuclideanPointKey(k)
 					euclideanPointValue := DecodeEuclideanPointValue(v)
+					if euclideanPointValue.Label == "" {
+						log.Printf("GetAll label empty %v\n", euclideanPointValue.GroupLabel)
+					}
 					// In eviction mode, if a point timestamp is older than average timestamp, delete data randomly.
 					if dt.IsEvictable && dt.averageTimestamp != 0 && euclideanPointValue.Timestamp > dt.averageTimestamp && rand.Float32() < 0.2 {
 						// dt.pointsMap.Delete(key)
@@ -788,7 +791,7 @@ func (dt *Data) GetRandomPoints(limit int) []*EuclideanPoint {
 				err := item.Value(func(v []byte) error {
 					// fmt.Printf("key=%s, value=%s\n", k, v)
 					euclideanPointKey := DecodeEuclideanPointKey(k)
-					euclideanPointValue := DecodeEuclideanPointValue(k)
+					euclideanPointValue := DecodeEuclideanPointValue(v)
 					if euclideanPointValue.Label == "" {
 						log.Printf("GetRandomPoints label empty %v\n", euclideanPointValue.GroupLabel)
 					}
