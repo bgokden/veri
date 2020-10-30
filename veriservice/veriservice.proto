@@ -11,7 +11,6 @@ service VeriService {
   rpc DataStream(GetDataRequest) returns (stream Datum) {}
   rpc GetDataInfo(GetDataRequest) returns (DataInfo) {}
   rpc SearchStream(SearchRequest) returns (stream ScoredDatum) {}
-  rpc InsertStream(stream InsertionRequest) returns (stream InsertionResponse) {}
 }
 
 // Request message for creating a new customer
@@ -23,7 +22,7 @@ message SearchRequest {
 message SearchConfig {
     string scoreFuncName = 1;
     bool higherIsBetter = 2;
-    int64 timestamp = 3;
+    uint64 timestamp = 3;
     uint64 timeout = 4;
     uint32 Limit = 5;
     uint64 cacheDuration = 6;
@@ -35,18 +34,31 @@ message GetDataRequest {
 }
 
 message Datum {
+  DatumKey key = 1;
+  DatumValue value = 2;
+}
+
+message DatumKey {
   repeated double feature = 1;
-  int64 version = 2;
-  bytes label = 3;
-  bytes groupLabel = 4;
-  uint32 size1 = 5;
-  uint32 size2 = 6;
-  uint32 dim1 = 7;
-  uint32 dim2 = 8;
+  bytes groupLabel = 2;
+  uint32 size1 = 3;
+  uint32 size2 = 4;
+  uint32 dim1 = 5;
+  uint32 dim2 = 6;
+}
+
+message DatumValue {
+  uint64 version = 1;
+  bytes label = 2;
 }
 
 message ScoredDatum {
     double score = 1;
+    Datum datum = 2;
+}
+
+message InsertDatumWithConfig{
+    InsertConfig config = 1;
     Datum datum = 2;
 }
 
@@ -61,15 +73,11 @@ message InsertionRequest {
 }
 
 message InsertConfig {
-    uint64 ttl = 1;
+    uint64 tTL = 1;
 }
 
 message InsertionResponse {
   int32 code = 1;
-}
-
-message ServiceMessage {
-  repeated string services = 1;
 }
 
 
@@ -81,6 +89,7 @@ message DataInfo {
   repeated double hist = 5;
   uint64 n = 6;
   double maxDistance = 7;
+  uint64 targetN = 8;
 }
 
 message DataConfig {
@@ -90,12 +99,12 @@ message DataConfig {
 }
 
 message Peer {
-  repeated string addresses = 1;
+  repeated string addressList = 1;
   string version = 2;
   uint64 timestamp = 3;
-  repeated DataConfig data = 4;
-  repeated string services = 5;
-  repeated Peer peers = 6;
+  repeated DataConfig dataList = 4;
+  repeated string serviceList = 5;
+  repeated Peer peerList = 6;
 }
 
 message JoinRequest {

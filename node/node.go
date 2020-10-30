@@ -6,25 +6,14 @@ import (
 	"strings"
 	"time"
 
+	pb "github.com/bgokden/veri/veriservice"
 	"github.com/patrickmn/go-cache"
 
-	data "github.com/bgoken/veri-data"
+	data "github.com/bgokden/veri/data"
 )
 
-type Service struct {
-}
-
-type Peer struct {
-	Version     string
-	Timestamp   uint64
-	Ids         []string
-	ServiceList []string
-	PeerList    []Peer
-	DataList    []data.DataConfig
-}
-
-func (p *Peer) GetId() string {
-	return SerializeStringArray(p.Ids)
+func GetIdOfPeer(p *pb.Peer) string {
+	return SerializeStringArray(p.GetAddressList())
 }
 
 func SerializeStringArray(list []string) string {
@@ -80,9 +69,9 @@ func (n *Node) AddService(service string) error {
 	return nil
 }
 
-func (n *Node) AddPeer(peer *Peer) error {
-	if !n.isPeerSimilarToNode(peer.Ids) {
-		n.PeerList.Set(peer.GetId(), peer, cache.DefaultExpiration)
+func (n *Node) AddPeer(peer *pb.Peer) error {
+	if !n.isPeerSimilarToNode(peer.AddressList) {
+		n.PeerList.Set(GetIdOfPeer(peer), peer, cache.DefaultExpiration)
 	}
 	return nil
 }
@@ -100,24 +89,24 @@ func (n *Node) ServiceListKeys() []string {
 	return keys
 }
 
-func (n *Node) PeerListItems() []Peer {
+func (n *Node) PeerListItems() []*pb.Peer {
 	peerList := n.PeerList.Items()
-	items := make([]Peer, 0, len(peerList))
+	items := make([]*pb.Peer, 0, len(peerList))
 	for _, itemObject := range peerList {
-		item := itemObject.Object.(*Peer)
-		items = append(items, *item)
+		item := itemObject.Object.(*pb.Peer)
+		items = append(items, item)
 	}
 	return items
 }
 
-func (n *Node) GetNodeInfo() *Peer {
+func (n *Node) GetNodeInfo() *pb.Peer {
 	ids := make([]string, 0)
 	ids = append(ids, n.KnownIds...)
 	ids = append(ids, n.AdvertisedIds...)
-	p := &Peer{
+	p := &pb.Peer{
 		Version:     n.Version,
 		Timestamp:   getCurrentTime(),
-		Ids:         ids,
+		AddressList: ids,
 		ServiceList: n.ServiceListKeys(),
 		PeerList:    n.PeerListItems(),
 		DataList:    n.Dataset.DataConfigList(),
@@ -143,16 +132,16 @@ func (n *Node) isPeerSimilarToNode(ids []string) bool {
 func (n *Node) SyncWithPeers() {
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
-		peer := item.Object.(*Peer)
+		peer := item.Object.(*pb.Peer)
 		for _, serviceFromPeer := range peer.ServiceList {
 			n.AddService(serviceFromPeer)
 		}
 		for _, peerFromPeer := range peer.PeerList {
-			n.AddPeer(&peerFromPeer)
+			n.AddPeer(peerFromPeer)
 		}
 		for _, dataConfigFromPeer := range peer.DataList {
-			data, _ := n.Dataset.GetOrCreateIfNotExists(&dataConfigFromPeer)
-			data.AddSource(peer.GetDataSourceClient(dataConfigFromPeer.Name))
+			data, _ := n.Dataset.GetOrCreateIfNotExists(dataConfigFromPeer)
+			data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name))
 		}
 	}
 }
@@ -164,8 +153,8 @@ func (n *Node) JoinToPeers() error {
 	}
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
-		peer := item.Object.(*Peer)
-		for _, id := range peer.Ids {
+		peer := item.Object.(*pb.Peer)
+		for _, id := range peer.AddressList {
 			n.SendJoinRequest(id)
 		}
 	}

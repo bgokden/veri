@@ -5,6 +5,8 @@ import (
 
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
+
+	pb "github.com/bgokden/veri/veriservice"
 )
 
 type Dataset struct {
@@ -31,7 +33,7 @@ func (dts *Dataset) Get(name string) (*Data, error) {
 	return nil, errors.Errorf("Data %v is currupt", name)
 }
 
-func (dts *Dataset) GetOrCreateIfNotExists(config *DataConfig) (*Data, error) {
+func (dts *Dataset) GetOrCreateIfNotExists(config *pb.DataConfig) (*Data, error) {
 	err := dts.CreateIfNotExists(config)
 	if err == nil {
 		return nil, err
@@ -39,7 +41,7 @@ func (dts *Dataset) GetOrCreateIfNotExists(config *DataConfig) (*Data, error) {
 	return dts.Get(config.Name)
 }
 
-func (dts *Dataset) CreateIfNotExists(config *DataConfig) error {
+func (dts *Dataset) CreateIfNotExists(config *pb.DataConfig) error {
 	preData := NewPreData(config, dts.Path)
 	err := dts.DataList.Add(config.Name, preData, cache.NoExpiration)
 	if err == nil {
@@ -69,13 +71,13 @@ func (dts *Dataset) List() []string {
 	return keys
 }
 
-func (dts *Dataset) DataConfigList() []DataConfig {
+func (dts *Dataset) DataConfigList() []*pb.DataConfig {
 	sourceList := dts.DataList.Items()
-	configs := make([]DataConfig, 0, len(sourceList))
+	configs := make([]*pb.DataConfig, 0, len(sourceList))
 	for k := range sourceList {
 		data, _ := dts.Get(k)
 		config := data.GetConfig()
-		configs = append(configs, *config)
+		configs = append(configs, config)
 	}
 	return configs
 }

@@ -2,9 +2,12 @@ package veriserviceserver
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
+	"os"
 
+	"github.com/bgokden/veri/node"
 	pb "github.com/bgokden/veri/veriservice"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -18,11 +21,11 @@ func RunServer(configMap map[string]interface{}) {
 	services := configMap["services"].(string)
 	log.Printf("Services: %v\n", services)
 	port := configMap["port"].(int)
-	evictable := configMap["evictable"].(bool)
+	// evictable := configMap["evictable"].(bool)
 	tls := configMap["tls"].(bool)
 	certFile := configMap["cert"].(string)
 	keyFile := configMap["key"].(string)
-	memory := configMap["memory"].(uint64)
+	// memory := configMap["memory"].(uint64)
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		log.Printf("failed to listen: %v", err)
@@ -44,7 +47,19 @@ func RunServer(configMap map[string]interface{}) {
 		opts = []grpc.ServerOption{grpc.Creds(creds)}
 	}
 	grpcServer := grpc.NewServer(opts...)
-	s := NewServer(services, evictable)
+	dir0, err := ioutil.TempDir("tmp", "node")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.RemoveAll(dir0)
+	broadcastAddresses := []string{fmt.Sprintf("localhost:%d", port)}
+	nodeConfig := &node.NodeConfig{
+		Port:          uint32(port),
+		Folder:        dir0,
+		AdvertisedIds: broadcastAddresses,
+		ServiceList:   []string{services},
+	}
+	s := node.NewNode(nodeConfig) //NewServer(services, evictable)
 	pb.RegisterVeriServiceServer(grpcServer, s)
 	go RestApi()
 	log.Printf("Server started.")

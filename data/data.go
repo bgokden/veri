@@ -17,7 +17,6 @@ import (
 
 type DataSource interface {
 	StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error
-	StreamInsert(datumStream <-chan *InsertDatumWithConfig) error
 	Insert(datum *pb.Datum, config *pb.InsertConfig) error
 	GetDataInfo() *pb.DataInfo
 	GetID() string
@@ -41,23 +40,23 @@ type Data struct {
 	Version     string
 }
 
-type DataConfig struct {
-	Name    string
-	TargetN uint64
-	Version string
-}
+// type DataConfig struct {
+// 	Name    string
+// 	TargetN uint64
+// 	Version string
+// }
 
-// DataInfo is info to share about data
-type DataInfo struct {
-	Name        string
-	Avg         []float64
-	N           uint64
-	MaxDistance float64
-	Hist        []float64
-	Timestamp   uint64
-	Version     string
-	TargetN     uint64
-}
+// // DataInfo is info to share about data
+// type DataInfo struct {
+// 	Name        string
+// 	Avg         []float64
+// 	N           uint64
+// 	MaxDistance float64
+// 	Hist        []float64
+// 	Timestamp   uint64
+// 	Version     string
+// 	TargetN     uint64
+// }
 
 func (d *Data) GetConfig() *pb.DataConfig {
 	return &pb.DataConfig{
@@ -136,10 +135,8 @@ func (dt *Data) InitData() error {
 }
 
 // NewTempData return an inmemory badger instance
-func NewTempData(name string) (*Data, error) {
-	dt := &Data{
-		Name: name,
-	}
+func NewTempData() (*Data, error) {
+	dt := &Data{}
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	if err != nil {
 		return nil, err

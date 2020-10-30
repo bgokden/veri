@@ -4,32 +4,25 @@ import (
 	"errors"
 	"time"
 
+	pb "github.com/bgokden/veri/veriservice"
 	badger "github.com/dgraph-io/badger/v2"
 )
 
-type InsertConfig struct {
-	TTL time.Duration
-}
-
-type InsertDatumWithConfig struct {
-	Config *InsertConfig
-	Datum  *Datum
-}
-
 // Insert inserts data to internal kv store
-func (dt *Data) Insert(datum *Datum, config *InsertConfig) error {
+func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	if dt.N >= dt.TargetN {
 		return errors.New("Number of elements is over the target")
 	}
 	var ttlDuration *time.Duration
 	if config != nil {
-		ttlDuration = &config.TTL
+		d := time.Duration(config.GetTTL()) * time.Second
+		ttlDuration = &d
 	}
-	keyByte, err := datum.GetKey()
+	keyByte, err := GetKeyAsBytes(datum)
 	if err != nil {
 		return err
 	}
-	valueByte, err := datum.GetValue()
+	valueByte, err := GetValueAsBytes(datum)
 	if err != nil {
 		return err
 	}
@@ -42,14 +35,6 @@ func (dt *Data) Insert(datum *Datum, config *InsertConfig) error {
 	})
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-// StreamInsert inserts data in stream
-func (dt *Data) StreamInsert(datumStream <-chan *InsertDatumWithConfig) error {
-	for e := range datumStream {
-		dt.Insert(e.Datum, e.Config)
 	}
 	return nil
 }

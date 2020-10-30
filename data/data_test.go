@@ -12,6 +12,8 @@ import (
 
 	data "github.com/bgokden/veri/data"
 	"github.com/stretchr/testify/assert"
+
+	pb "github.com/bgokden/veri/veriservice"
 )
 
 func TestData(t *testing.T) {
@@ -22,7 +24,7 @@ func TestData(t *testing.T) {
 
 	defer os.RemoveAll(dir) // clean up
 
-	config1 := &data.DataConfig{
+	config1 := &pb.DataConfig{
 		Name:    "data1",
 		Version: "v0",
 		TargetN: 1000,
@@ -142,7 +144,7 @@ func TestDataStreamSearch(t *testing.T) {
 	}
 	defer os.RemoveAll(dir) // clean up
 
-	config01 := &data.DataConfig{
+	config01 := &pb.DataConfig{
 		Name:    "data01",
 		Version: "v0",
 		TargetN: 1000,

@@ -4,8 +4,8 @@ import (
 	"context"
 	"math/rand"
 	"sync"
-	"time"
 
+	pb "github.com/bgokden/veri/veriservice"
 	"github.com/dgraph-io/badger/v2"
 	bpb "github.com/dgraph-io/badger/v2/pb"
 )
@@ -27,7 +27,7 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	localN := dt.GetDataInfo().N
 	diff := (localN - info.N) / 2
 	if diff > 0 {
-		datumStream := make(chan *Datum, 100)
+		datumStream := make(chan *pb.Datum, 100)
 		go func() {
 			for datum := range datumStream {
 				source.Insert(datum, nil)
@@ -42,14 +42,14 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 
 // StreamCollector collects results
 type StreamCollector struct {
-	DatumStream chan<- *Datum
+	DatumStream chan<- *pb.Datum
 }
 
-func (dt *Data) StreamAll(datumStream chan<- *Datum) error {
+func (dt *Data) StreamAll(datumStream chan<- *pb.Datum) error {
 	return dt.StreamSample(datumStream, 1)
 }
 
-func (dt *Data) StreamSample(datumStream chan<- *Datum, fraction float64) error {
+func (dt *Data) StreamSample(datumStream chan<- *pb.Datum, fraction float64) error {
 	c := &StreamCollector{
 		DatumStream: datumStream,
 	}
@@ -101,10 +101,10 @@ func (c *StreamCollector) Send(list *bpb.KVList) error {
 
 // InsertStreamCollector collects results
 type InsertStreamCollector struct {
-	DatumStream chan<- *InsertDatumWithConfig
+	DatumStream chan<- *pb.InsertDatumWithConfig
 }
 
-func (dt *Data) InsertStreamSample(datumStream chan<- *InsertDatumWithConfig, fraction float64) error {
+func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig, fraction float64) error {
 	c := &InsertStreamCollector{
 		DatumStream: datumStream,
 	}
@@ -148,11 +148,11 @@ func (dt *Data) InsertStreamSample(datumStream chan<- *InsertDatumWithConfig, fr
 func (c *InsertStreamCollector) Send(list *bpb.KVList) error {
 	for _, item := range list.Kv {
 		config := InsertConfigFromExpireAt(item.ExpiresAt)
-		if config.TTL < 10*time.Second {
+		if config.TTL < 10 {
 			continue
 		}
 		datum, _ := ToDatum(item.Key, item.Value)
-		c.DatumStream <- &InsertDatumWithConfig{
+		c.DatumStream <- &pb.InsertDatumWithConfig{
 			Datum:  datum,
 			Config: config,
 		}
@@ -161,9 +161,9 @@ func (c *InsertStreamCollector) Send(list *bpb.KVList) error {
 	return nil
 }
 
-func InsertConfigFromExpireAt(expiresAt uint64) *InsertConfig {
+func InsertConfigFromExpireAt(expiresAt uint64) *pb.InsertConfig {
 	timeLeftInSeconds := expiresAt - uint64(getCurrentTime())
-	return &InsertConfig{
-		TTL: time.Duration(timeLeftInSeconds) * time.Second,
+	return &pb.InsertConfig{
+		TTL: timeLeftInSeconds,
 	}
 }

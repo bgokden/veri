@@ -63,11 +63,11 @@ func TestNode(t *testing.T) {
 
 	log.Printf("Peer of peer0:\n")
 	for _, peerFromPeer := range node0.PeerListItems() {
-		log.Printf("%v:\n", peerFromPeer.Ids)
+		log.Printf("%v:\n", peerFromPeer.AddressList)
 	}
 
 	log.Printf("Peer of peer1:\n")
 	for _, peerFromPeer := range node1.PeerListItems() {
-		log.Printf("%v:\n", peerFromPeer.Ids)
+		log.Printf("%v:\n", peerFromPeer.AddressList)
 	}
 }

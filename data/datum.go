@@ -4,29 +4,9 @@ import (
 	"bytes"
 	"encoding/gob"
 	"log"
+
+	pb "github.com/bgokden/veri/veriservice"
 )
-
-// Datum is a general feature holder
-type Datum struct {
-	Key   *DatumKey
-	Value *DatumValue
-}
-
-// DatumKey is a key for Datum
-type DatumKey struct {
-	Feature    []float64
-	Dim1       uint32
-	Dim2       uint32
-	Size1      uint32
-	Size2      uint32
-	GroupLabel []byte
-}
-
-// DatumValue is value of a Datum
-type DatumValue struct {
-	Label   []byte
-	Version int64
-}
 
 // NewDatum is an utily function to initialize datum type
 func NewDatum(feature []float64,
@@ -36,10 +16,10 @@ func NewDatum(feature []float64,
 	size2 uint32,
 	groupLabel []byte,
 	label []byte,
-	version int64,
-) *Datum {
-	return &Datum{
-		Key: &DatumKey{
+	version uint64,
+) *pb.Datum {
+	return &pb.Datum{
+		Key: &pb.DatumKey{
 			Feature:    feature,
 			Dim1:       dim1,
 			Dim2:       dim2,
@@ -47,14 +27,14 @@ func NewDatum(feature []float64,
 			Size2:      size1,
 			GroupLabel: groupLabel,
 		},
-		Value: &DatumValue{
+		Value: &pb.DatumValue{
 			Label:   label,
 			Version: version,
 		},
 	}
 }
 
-func (datum *Datum) GetKey() ([]byte, error) {
+func GetKeyAsBytes(datum *pb.Datum) ([]byte, error) {
 	var byteBuffer bytes.Buffer
 	encoder := gob.NewEncoder(&byteBuffer)
 	if err := encoder.Encode(*datum.Key); err != nil {
@@ -64,7 +44,7 @@ func (datum *Datum) GetKey() ([]byte, error) {
 	return byteBuffer.Bytes(), nil
 }
 
-func (datum *Datum) GetValue() ([]byte, error) {
+func GetValueAsBytes(datum *pb.Datum) ([]byte, error) {
 	var byteBuffer bytes.Buffer
 	encoder := gob.NewEncoder(&byteBuffer)
 	if err := encoder.Encode(*datum.Value); err != nil {
@@ -74,8 +54,8 @@ func (datum *Datum) GetValue() ([]byte, error) {
 	return byteBuffer.Bytes(), nil
 }
 
-func ToDatumKey(byteArray []byte) (*DatumKey, error) {
-	var element DatumKey
+func ToDatumKey(byteArray []byte) (*pb.DatumKey, error) {
+	var element pb.DatumKey
 	r := bytes.NewReader(byteArray)
 	decoder := gob.NewDecoder(r)
 	if err := decoder.Decode(&element); err != nil {
@@ -85,8 +65,8 @@ func ToDatumKey(byteArray []byte) (*DatumKey, error) {
 	return &element, nil
 }
 
-func ToDatumValue(byteArray []byte) (*DatumValue, error) {
-	var element DatumValue
+func ToDatumValue(byteArray []byte) (*pb.DatumValue, error) {
+	var element pb.DatumValue
 	r := bytes.NewReader(byteArray)
 	decoder := gob.NewDecoder(r)
 	if err := decoder.Decode(&element); err != nil {
@@ -96,7 +76,7 @@ func ToDatumValue(byteArray []byte) (*DatumValue, error) {
 	return &element, nil
 }
 
-func ToDatum(key, value []byte) (*Datum, error) {
+func ToDatum(key, value []byte) (*pb.Datum, error) {
 	keyP, err := ToDatumKey(key)
 	if err != nil {
 		return nil, err
@@ -105,7 +85,7 @@ func ToDatum(key, value []byte) (*Datum, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Datum{
+	return &pb.Datum{
 		Key:   keyP,
 		Value: valueP,
 	}, nil

@@ -8,51 +8,52 @@ import (
 	"sync"
 	"time"
 
+	pb "github.com/bgokden/veri/veriservice"
 	bpb "github.com/dgraph-io/badger/v2/pb"
 	"github.com/patrickmn/go-cache"
 )
 
-type SearchConfig struct {
-	ScoreFuncName  string                                       `json:"scoreFuncName"`
-	ScoreFunc      func(arr1 []float64, arr2 []float64) float64 `json:"-"`
-	HigherIsBetter bool                                         `json:"higherIsBetter"`
-	Limit          uint32                                       `json:"limit"`
-	Duration       time.Duration                                `json:"-"`
-}
+// type SearchConfig struct {
+// 	ScoreFuncName  string                                       `json:"scoreFuncName"`
+// 	ScoreFunc      func(arr1 []float64, arr2 []float64) float64 `json:"-"`
+// 	HigherIsBetter bool                                         `json:"higherIsBetter"`
+// 	Limit          uint32                                       `json:"limit"`
+// 	Duration       time.Duration                                `json:"-"`
+// }
 
-func DefaultSearchConfig() *SearchConfig {
-	return &SearchConfig{
-		ScoreFuncName:  "VectorDistance",
-		ScoreFunc:      VectorDistance,
+func DefaultSearchConfig() *pb.SearchConfig {
+	return &pb.SearchConfig{
+		ScoreFuncName: "VectorDistance",
+		// ScoreFunc:      VectorDistance,
 		HigherIsBetter: false,
 		Limit:          10,
-		Duration:       1 * time.Second,
+		Timeout:        1000, //milliseconds
 	}
 }
 
-func EncodeSearchConfig(p *SearchConfig) []byte {
+func EncodeSearchConfig(p *pb.SearchConfig) []byte {
 	marshalled, _ := json.Marshal(p)
 	return marshalled
 }
 
 // Collector collects results
 type Collector struct {
-	List           []*ScoredDatum
+	List           []*pb.ScoredDatum
 	ScoreFunc      func(arr1 []float64, arr2 []float64) float64
 	MaxScore       float64
-	DatumKey       *DatumKey
+	DatumKey       *pb.DatumKey
 	N              uint32
 	HigherIsBetter bool
 }
 
-// ScoredDatum helps to keep Data ordered
-type ScoredDatum struct {
-	Datum *Datum
-	Score float64
-}
+// // ScoredDatum helps to keep Data ordered
+// type ScoredDatum struct {
+// 	Datum *Datum
+// 	Score float64
+// }
 
 // Insert add a new scored datum to collector
-func (c *Collector) Insert(scoredDatum *ScoredDatum) error {
+func (c *Collector) Insert(scoredDatum *pb.ScoredDatum) error {
 	itemAdded := false
 	if uint32(len(c.List)) < c.N {
 		c.List = append(c.List, scoredDatum)
@@ -76,7 +77,7 @@ func (c *Collector) Insert(scoredDatum *ScoredDatum) error {
 	return nil
 }
 
-// Senc collects the results
+// Send collects the results
 func (c *Collector) Send(list *bpb.KVList) error {
 	itemAdded := false
 	for _, item := range list.Kv {
@@ -84,7 +85,7 @@ func (c *Collector) Send(list *bpb.KVList) error {
 		score := c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature)
 		if uint32(len(c.List)) < c.N {
 			datum, _ := ToDatum(item.Key, item.Value)
-			scoredDatum := &ScoredDatum{
+			scoredDatum := &pb.ScoredDatum{
 				Datum: datum,
 				Score: score,
 			}
@@ -93,7 +94,7 @@ func (c *Collector) Send(list *bpb.KVList) error {
 		} else if (c.HigherIsBetter && score > c.List[len(c.List)-1].Score) ||
 			(!c.HigherIsBetter && score < c.List[len(c.List)-1].Score) {
 			datum, _ := ToDatum(item.Key, item.Value)
-			scoredDatum := &ScoredDatum{
+			scoredDatum := &pb.ScoredDatum{
 				Datum: datum,
 				Score: score,
 			}
@@ -116,14 +117,19 @@ func (c *Collector) Send(list *bpb.KVList) error {
 	return nil
 }
 
+var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) float64{
+	"VectorDistance":       VectorDistance,
+	"VectorMultiplication": VectorMultiplication,
+}
+
 // Search does a search based on distances of keys
-func (dt *Data) Search(datum *Datum, config *SearchConfig) *Collector {
+func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 	if config == nil {
 		config = DefaultSearchConfig()
 	}
 	c := &Collector{}
 	c.DatumKey = datum.Key
-	c.ScoreFunc = config.ScoreFunc
+	c.ScoreFunc = vectorComparisonFuncs[config.ScoreFuncName]
 	c.HigherIsBetter = config.HigherIsBetter
 	c.N = config.Limit
 	stream := dt.DB.NewStream()
@@ -157,7 +163,7 @@ func (dt *Data) Search(datum *Datum, config *SearchConfig) *Collector {
 }
 
 // StreamSearch does a search based on distances of keys
-func (dt *Data) StreamSearch(datum *Datum, scoredDatumStream chan<- *ScoredDatum, queryWaitGroup *sync.WaitGroup, config *SearchConfig) error {
+func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	collector := dt.Search(datum, config)
 	for _, i := range collector.List {
 		scoredDatumStream <- i
@@ -166,8 +172,8 @@ func (dt *Data) StreamSearch(datum *Datum, scoredDatumStream chan<- *ScoredDatum
 	return nil
 }
 
-func GetSearchKey(datum *Datum, config *SearchConfig) string {
-	keyByte, err := datum.GetKey()
+func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
+	keyByte, err := GetKeyAsBytes(datum)
 	signature := EncodeSearchConfig(config)
 	if err != nil {
 		return string(signature)
@@ -176,8 +182,8 @@ func GetSearchKey(datum *Datum, config *SearchConfig) string {
 }
 
 // SuperSearch searches and merges other resources
-func (dt *Data) SuperSearch(datum *Datum, scoredDatumStreamOutput chan<- *ScoredDatum, config *SearchConfig) error {
-	duration := config.Duration
+func (dt *Data) SuperSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, config *pb.SearchConfig) error {
+	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
 	queryKey := GetSearchKey(datum, config)
 	if result, ok := dt.QueryCache.Get(queryKey); ok {
@@ -188,7 +194,7 @@ func (dt *Data) SuperSearch(datum *Datum, scoredDatumStreamOutput chan<- *Scored
 		return nil
 	}
 	// Search Start
-	scoredDatumStream := make(chan *ScoredDatum, 100)
+	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
 	var queryWaitGroup sync.WaitGroup
 	waitChannel := make(chan struct{})
 	go func() {
@@ -208,7 +214,7 @@ func (dt *Data) SuperSearch(datum *Datum, scoredDatumStreamOutput chan<- *Scored
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
 	// stream merge
-	temp, _ := NewTempData("...")
+	temp, _ := NewTempData()
 	defer temp.Close()
 	dataAvailable := true
 	for dataAvailable {

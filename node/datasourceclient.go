@@ -4,16 +4,15 @@ import (
 	"context"
 	"log"
 	"sync"
-	"time"
 
+	data "github.com/bgokden/veri/data"
 	pb "github.com/bgokden/veri/veriservice"
-	data "github.com/bgoken/veri/data"
 	"google.golang.org/grpc"
 )
 
-func (p *Peer) GetDataSourceClient(name string) data.DataSource {
+func GetDataSourceClient(p *pb.Peer, name string) data.DataSource {
 	return &DataSourceClient{
-		Ids:  p.Ids,
+		Ids:  p.AddressList,
 		Name: name,
 	}
 }
@@ -35,15 +34,16 @@ func (dcs *DataSourceClient) GetVeriServiceClient() (pb.VeriServiceClient, *grpc
 	return client, conn, nil
 }
 
-func (dcs *DataSourceClient) StreamSearch(datum *data.Datum, scoredDatumStream chan<- *data.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *data.SearchConfig) error {
+func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	client, _, err := dcs.GetVeriServiceClient()
 	if err != nil {
 		return err
 	}
-	protoDatum := ConvertDataDatumToProtoDatum(datum)
-	protoConfig := ConvertDataSearchConfigToProtoSearchConfig(config)
-	searchRequest := &pb.searchRequest{}
-	stream, err = client.StreamSearch(context.Background(), searchRequest)
+	searchRequest := &pb.SearchRequest{
+		Datum:  datum,
+		Config: config,
+	}
+	stream, err := client.SearchStream(context.Background(), searchRequest)
 	if err != nil {
 		return err
 	}
@@ -53,27 +53,25 @@ func (dcs *DataSourceClient) StreamSearch(datum *data.Datum, scoredDatumStream c
 			log.Printf("Error: (%v)", err)
 			break
 		}
-		scoredDatumStream <- ConvertProtoScoredDatumToDataScoredDatum(protoScoredDatum)
+		scoredDatumStream <- protoScoredDatum
 	}
 	return err
 }
 
-func (dcs *DataSourceClient) StreamInsert(datumStream <-chan *data.InsertDatumWithConfig) error {
-	return nil
-}
-func (dcs *DataSourceClient) Insert(datum *data.Datum, config *data.InsertConfig) error {
+func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	client, _, err := dcs.GetVeriServiceClient()
 	if err != nil {
 		return err
 	}
 	request := &pb.InsertionRequest{
-		Config: ConvertDataInsertConfigToProtoInsertConfig(config),
-		Datum:  ConvertDataDatumToProtoDatum(datum),
+		Config: config,
+		Datum:  datum,
 	}
 	_, err = client.Insert(context.Background(), request)
 	return err
 }
-func (dcs *DataSourceClient) GetDataInfo() *data.DataInfo {
+
+func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
 	client, _, err := dcs.GetVeriServiceClient()
 	if err != nil {
 		return nil
@@ -85,42 +83,43 @@ func (dcs *DataSourceClient) GetDataInfo() *data.DataInfo {
 	if err != nil {
 		return nil
 	}
-	return ConvertProtoDataInfoToDataInfo(dataInfo)
+	return dataInfo
 }
+
 func (dcs *DataSourceClient) GetID() string {
 	return dcs.Name
 }
 
-func ConvertDataInsertConfigToProtoInsertConfig(config *data.InsertConfig) *pb.InsertConfig {
-	return &pb.InsertConfig{
-		Ttl: uint64(config.TTL.Seconds()),
-	}
-}
+// func ConvertDataInsertConfigToProtoInsertConfig(config *data.InsertConfig) *pb.InsertConfig {
+// 	return &pb.InsertConfig{
+// 		Ttl: uint64(config.TTL.Seconds()),
+// 	}
+// }
 
-func ConvertProtoInsertConfigToDataInsertConfig(config *pb.InsertConfig) *data.InsertConfig {
-	return &data.InsertConfig{
-		TTL: time.Duration(config.GetTtl()) * time.Second,
-	}
-}
+// func ConvertProtoInsertConfigToDataInsertConfig(config *pb.InsertConfig) *data.InsertConfig {
+// 	return &data.InsertConfig{
+// 		TTL: time.Duration(config.GetTtl()) * time.Second,
+// 	}
+// }
 
-func ConvertProtoDataInfoToDataInfo(dataInfo *pb.DataInfo) *data.DataInfo {
-	return &data.DataInfo{
-		Name:      dataInfo.Name,
-		Timestamp: dataInfo.Timestamp,
-		Version:   dataInfo.Version,
-		Avg:       dataInfo.Avg,
-		Hist:      dataInfo.Hist,
-		N:         dataInfo.N,
-	}
-}
+// func ConvertProtoDataInfoToDataInfo(dataInfo *pb.DataInfo) *data.DataInfo {
+// 	return &data.DataInfo{
+// 		Name:      dataInfo.Name,
+// 		Timestamp: dataInfo.Timestamp,
+// 		Version:   dataInfo.Version,
+// 		Avg:       dataInfo.Avg,
+// 		Hist:      dataInfo.Hist,
+// 		N:         dataInfo.N,
+// 	}
+// }
 
-func ConvertDataInfoToPRotoDataInfo(dataInfo *data.DataInfo) *pb.DataInfo {
-	return &pb.DataInfo{
-		Name:      dataInfo.Name,
-		Timestamp: dataInfo.Timestamp,
-		Version:   dataInfo.Version,
-		Avg:       dataInfo.Avg,
-		Hist:      dataInfo.Hist,
-		N:         dataInfo.N,
-	}
-}
+// func ConvertDataInfoToPRotoDataInfo(dataInfo *data.DataInfo) *pb.DataInfo {
+// 	return &pb.DataInfo{
+// 		Name:      dataInfo.Name,
+// 		Timestamp: dataInfo.Timestamp,
+// 		Version:   dataInfo.Version,
+// 		Avg:       dataInfo.Avg,
+// 		Hist:      dataInfo.Hist,
+// 		N:         dataInfo.N,
+// 	}
+// }
