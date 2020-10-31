@@ -43,7 +43,7 @@ func (n *Node) Insert(ctx context.Context, insertionRequest *pb.InsertionRequest
 }
 
 func (n *Node) Join(ctx context.Context, joinRequest *pb.JoinRequest) (*pb.JoinResponse, error) {
-	peer := joinRequest.GetPeer() //  ConvertJoinRequestToPeer(joinRequest)
+	peer := joinRequest.GetPeer()
 	n.AddPeer(peer)
 	address := ""
 	p, ok := grpcPeer.FromContext(ctx)
@@ -108,81 +108,6 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 	return nil
 }
 
-// func ConvertProtoDatumToDataDatum(datum *pb.Datum) *data.Datum {
-// 	return data.NewDatum(
-// 		datum.GetFeature(),
-// 		datum.GetDim1(),
-// 		datum.GetDim2(),
-// 		datum.GetSize1(),
-// 		datum.GetSize2(),
-// 		datum.GetGroupLabel(),
-// 		datum.GetLabel(),
-// 		datum.GetVersion(),
-// 	)
-// }
-
-// func ConvertDataDatumToProtoDatum(datum *data.Datum) *pb.Datum {
-// 	return &pb.Datum{
-// 		Feature:    datum.Key.Feature,
-// 		Version:    datum.Value.Version,
-// 		Label:      datum.Value.Label,
-// 		GroupLabel: datum.Key.GroupLabel,
-// 		Size1:      datum.Key.Size1,
-// 		Size2:      datum.Key.Size2,
-// 		Dim1:       datum.Key.Dim1,
-// 		Dim2:       datum.Key.Dim2,
-// 	}
-// }
-
-// func ConvertProtoSearchConfigToDataSearchConfig(config *pb.SearchConfig) *data.SearchConfig {
-// 	searchConfig := data.DefaultSearchConfig()
-
-// 	searchConfig.ScoreFuncName = config.GetScoreFuncName()
-// 	searchConfig.ScoreFunc = nil
-// 	searchConfig.HigherIsBetter = config.GetHigherIsBetter()
-// 	searchConfig.Limit = config.GetLimit()
-// 	searchConfig.Duration = time.Duration(config.GetTimeout())
-// 	return searchConfig
-// }
-
-// func ConvertJoinRequestToPeer(joinRequest *pb.JoinRequest) *Peer {
-// 	return ConvertProtoPeerToNodePeer(joinRequest.GetPeer())
-
-// }
-
-// func ConvertProtoPeerToNodePeer(pbPeer *pb.Peer) *Peer {
-// 	nodePeer := &Peer{
-// 		Ids:         pbPeer.GetAddresses(),
-// 		ServiceList: pbPeer.GetServices(),
-// 		PeerList:    make([]Peer, 0),
-// 		DataList:    make([]data.DataConfig, 0),
-// 	}
-// 	for _, pbPeerElement := range pbPeer.GetPeers() {
-// 		nodePeer.PeerList = append(nodePeer.PeerList, *ConvertProtoPeerToNodePeer(pbPeerElement))
-// 	}
-// 	for _, pbConfigElement := range pbPeer.GetData() {
-// 		nodePeer.DataList = append(nodePeer.DataList, *ConvertProtoDataConfigToDataConfig(pbConfigElement))
-// 	}
-// 	return nodePeer
-
-// }
-
-// func ConvertProtoDataConfigToDataConfig(config *pb.DataConfig) *data.DataConfig {
-// 	return &data.DataConfig{
-// 		Name:    config.Name,
-// 		Version: config.Version,
-// 		TargetN: config.TargetN,
-// 	}
-// }
-
-// func ConvertDataConfigToProtoDataConfig(config *data.DataConfig) *pb.DataConfig {
-// 	return &pb.DataConfig{
-// 		Name:    config.Name,
-// 		Version: config.Version,
-// 		TargetN: config.TargetN,
-// 	}
-// }
-
 func (n *Node) Listen() error {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", n.Port))
 	if err != nil {
@@ -231,23 +156,13 @@ func (n *Node) SendJoinRequest(id string) error {
 	return nil
 }
 
-// func ConvertNodePeerToProtoPeer(p *Peer) *pb.Peer {
-// 	pbPeer := &pb.Peer{
-// 		Addresses: p.Ids,
-// 		Version:   p.Version,
-// 		Timestamp: p.Timestamp,
-// 		Data:      make([]*pb.DataConfig, 0),
-// 		Services:  p.ServiceList,
-// 		Peers:     make([]*pb.Peer, 0),
-// 	}
-// 	for _, config := range p.DataList {
-// 		pbPeer.Data = append(pbPeer.Data, ConvertDataConfigToProtoDataConfig(&config))
-// 	}
-// 	for _, nodePeer := range p.PeerList {
-// 		pbPeer.Peers = append(pbPeer.Peers, ConvertNodePeerToProtoPeer(&nodePeer))
-// 	}
-// 	return pbPeer
-// }
+func (n *Node) CreateDataIfNotExists(ctx context.Context, in *pb.DataConfig) (*pb.DataInfo, error) {
+	aData, err := n.Dataset.GetOrCreateIfNotExists(in)
+	if err != nil {
+		return nil, err
+	}
+	return aData.GetDataInfo(), nil
+}
 
 func (n *Node) getClient(address string) (pb.VeriServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())

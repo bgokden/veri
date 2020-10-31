@@ -59,7 +59,7 @@ func RunServer(configMap map[string]interface{}) {
 		AdvertisedIds: broadcastAddresses,
 		ServiceList:   []string{services},
 	}
-	s := node.NewNode(nodeConfig) //NewServer(services, evictable)
+	s := node.NewNode(nodeConfig)
 	pb.RegisterVeriServiceServer(grpcServer, s)
 	go RestApi()
 	log.Printf("Server started.")

@@ -24,13 +24,23 @@ func (dt *Data) SyncAll() error {
 
 func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	info := source.GetDataInfo()
-	localN := dt.GetDataInfo().N
+	localInfo := dt.GetDataInfo()
+	localN := localInfo.N
+	config := dt.GetConfig()
+	lowerThreshold := uint64(float64(localInfo.TargetN) * config.TargetUtilization) // This should be configurable
+	isEvicitionModeOn := false
+	if !config.NoTarget && localN >= lowerThreshold {
+		isEvicitionModeOn = true
+	}
 	diff := (localN - info.N) / 2
 	if diff > 0 {
 		datumStream := make(chan *pb.Datum, 100)
 		go func() {
 			for datum := range datumStream {
-				source.Insert(datum, nil)
+				err := source.Insert(datum, nil)
+				if err != nil && isEvicitionModeOn {
+					dt.Delete(datum)
+				}
 			}
 		}()
 		dt.StreamSample(datumStream, float64(diff)/float64(localN))

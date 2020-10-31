@@ -24,7 +24,7 @@ type DataSource interface {
 
 // Data represents a dataset with similar struture
 type Data struct {
-	Name        string
+	Config      *pb.DataConfig
 	Path        string
 	Avg         []float64
 	N           uint64
@@ -36,42 +36,16 @@ type Data struct {
 	Dirty       bool
 	Sources     *cache.Cache
 	QueryCache  *cache.Cache
-	TargetN     uint64
-	Version     string
 }
 
-// type DataConfig struct {
-// 	Name    string
-// 	TargetN uint64
-// 	Version string
-// }
-
-// // DataInfo is info to share about data
-// type DataInfo struct {
-// 	Name        string
-// 	Avg         []float64
-// 	N           uint64
-// 	MaxDistance float64
-// 	Hist        []float64
-// 	Timestamp   uint64
-// 	Version     string
-// 	TargetN     uint64
-// }
-
 func (d *Data) GetConfig() *pb.DataConfig {
-	return &pb.DataConfig{
-		Name:    d.Name,
-		Version: d.Version,
-		TargetN: d.TargetN,
-	}
+	return d.Config
 }
 
 // NewData creates a data struct
 func NewData(config *pb.DataConfig, path string) (*Data, error) {
 	dt := &Data{
-		Name:    config.Name,
-		Version: config.Version,
-		TargetN: config.TargetN,
+		Config: config,
 	}
 	log.Printf("Create Data\n")
 	dt.DBPath = fmt.Sprintf("%v/%v", path, config.Name)
@@ -101,9 +75,7 @@ func NewData(config *pb.DataConfig, path string) (*Data, error) {
 // NewPreData creates a data struct
 func NewPreData(config *pb.DataConfig, path string) *Data {
 	dt := &Data{
-		Name:    config.Name,
-		Version: config.Version,
-		TargetN: config.TargetN,
+		Config: config,
 	}
 	log.Printf("Create Data\n")
 	dt.DBPath = fmt.Sprintf("%v/%v", path, config.Name)
@@ -136,7 +108,11 @@ func (dt *Data) InitData() error {
 
 // NewTempData return an inmemory badger instance
 func NewTempData() (*Data, error) {
-	dt := &Data{}
+	dt := &Data{
+		Config: &pb.DataConfig{
+			NoTarget: true,
+		},
+	}
 	db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
 	if err != nil {
 		return nil, err
@@ -227,14 +203,16 @@ func (dt *Data) Process(force bool) error {
 // GetDataInfo out of data
 func (dt *Data) GetDataInfo() *pb.DataInfo {
 	return &pb.DataInfo{
-		Avg:         dt.Avg,
-		N:           dt.N,
-		MaxDistance: dt.MaxDistance,
-		Hist:        dt.Hist,
-		Timestamp:   dt.Timestamp,
-		Version:     dt.Version,
-		Name:        dt.Version,
-		TargetN:     dt.TargetN,
+		Avg:               dt.Avg,
+		N:                 dt.N,
+		MaxDistance:       dt.MaxDistance,
+		Hist:              dt.Hist,
+		Timestamp:         dt.Timestamp,
+		Version:           dt.Config.Version,
+		Name:              dt.Config.Name,
+		TargetN:           dt.Config.TargetN,
+		TargetUtilization: dt.Config.TargetUtilization,
+		NoTarget:          dt.Config.NoTarget,
 	}
 }
 
@@ -244,5 +222,5 @@ func (dt *Data) AddSource(dataSource DataSource) {
 }
 
 func (dt *Data) GetID() string {
-	return dt.Name
+	return dt.Config.Name
 }

@@ -9,6 +9,7 @@ service VeriService {
   rpc Insert(InsertionRequest) returns (InsertionResponse) {}
   rpc Join(JoinRequest) returns (JoinResponse) {}
   rpc DataStream(GetDataRequest) returns (stream Datum) {}
+  rpc CreateDataIfNotExists(DataConfig) returns (DataInfo) {}
   rpc GetDataInfo(GetDataRequest) returns (DataInfo) {}
   rpc SearchStream(SearchRequest) returns (stream ScoredDatum) {}
 }
@@ -90,12 +91,16 @@ message DataInfo {
   uint64 n = 6;
   double maxDistance = 7;
   uint64 targetN = 8;
+  double TargetUtilization = 9;
+  bool NoTarget = 10;
 }
 
 message DataConfig {
   string name = 1;
   string version = 2;
   uint64 TargetN = 3;
+  double TargetUtilization = 4;
+  bool NoTarget = 5;
 }
 
 message Peer {

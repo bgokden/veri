@@ -89,37 +89,3 @@ func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
 func (dcs *DataSourceClient) GetID() string {
 	return dcs.Name
 }
-
-// func ConvertDataInsertConfigToProtoInsertConfig(config *data.InsertConfig) *pb.InsertConfig {
-// 	return &pb.InsertConfig{
-// 		Ttl: uint64(config.TTL.Seconds()),
-// 	}
-// }
-
-// func ConvertProtoInsertConfigToDataInsertConfig(config *pb.InsertConfig) *data.InsertConfig {
-// 	return &data.InsertConfig{
-// 		TTL: time.Duration(config.GetTtl()) * time.Second,
-// 	}
-// }
-
-// func ConvertProtoDataInfoToDataInfo(dataInfo *pb.DataInfo) *data.DataInfo {
-// 	return &data.DataInfo{
-// 		Name:      dataInfo.Name,
-// 		Timestamp: dataInfo.Timestamp,
-// 		Version:   dataInfo.Version,
-// 		Avg:       dataInfo.Avg,
-// 		Hist:      dataInfo.Hist,
-// 		N:         dataInfo.N,
-// 	}
-// }
-
-// func ConvertDataInfoToPRotoDataInfo(dataInfo *data.DataInfo) *pb.DataInfo {
-// 	return &pb.DataInfo{
-// 		Name:      dataInfo.Name,
-// 		Timestamp: dataInfo.Timestamp,
-// 		Version:   dataInfo.Version,
-// 		Avg:       dataInfo.Avg,
-// 		Hist:      dataInfo.Hist,
-// 		N:         dataInfo.N,
-// 	}
-// }

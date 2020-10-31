@@ -10,7 +10,7 @@ import (
 
 // Insert inserts data to internal kv store
 func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
-	if dt.N >= dt.TargetN {
+	if dt.Config != nil && !dt.Config.NoTarget && dt.N >= dt.Config.TargetN {
 		return errors.New("Number of elements is over the target")
 	}
 	var ttlDuration *time.Duration
