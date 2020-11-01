@@ -3,10 +3,7 @@ package data
 import (
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	badger "github.com/dgraph-io/badger/v2"
@@ -57,18 +54,6 @@ func NewData(config *pb.DataConfig, path string) (*Data, error) {
 	dt.Sources = cache.New(5*time.Minute, 10*time.Minute)
 	dt.QueryCache = cache.New(5*time.Minute, 10*time.Minute)
 	go dt.Run()
-	go func() {
-		sigint := make(chan os.Signal, 1)
-
-		// interrupt signal sent from terminal
-		signal.Notify(sigint, os.Interrupt)
-		// sigterm signal sent from orchastrator
-		signal.Notify(sigint, syscall.SIGTERM)
-
-		<-sigint
-
-		dt.Close()
-	}()
 	return dt, nil
 }
 
@@ -91,18 +76,6 @@ func (dt *Data) InitData() error {
 	dt.DB = db
 	dt.Sources = cache.New(5*time.Minute, 10*time.Minute)
 	go dt.Run()
-	go func() {
-		sigint := make(chan os.Signal, 1)
-
-		// interrupt signal sent from terminal
-		signal.Notify(sigint, os.Interrupt)
-		// sigterm signal sent from orchastrator
-		signal.Notify(sigint, syscall.SIGTERM)
-
-		<-sigint
-
-		dt.Close()
-	}()
 	return nil
 }
 

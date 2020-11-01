@@ -64,6 +64,10 @@ func (n *Node) AddStaticService(service string) error {
 	return nil
 }
 
+func (n *Node) Close() error {
+	n.Dataset.Close()
+	return nil
+}
 func (n *Node) AddService(service string) error {
 	n.ServiceList.Add(service, true, cache.DefaultExpiration)
 	return nil
@@ -148,6 +152,7 @@ func (n *Node) SyncWithPeers() {
 
 func (n *Node) JoinToPeers() error {
 	serviceList := n.ServiceList.Items()
+	log.Printf("Services: %v\n", serviceList)
 	for id := range serviceList {
 		n.SendJoinRequest(id)
 	}

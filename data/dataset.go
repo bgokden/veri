@@ -81,3 +81,12 @@ func (dts *Dataset) DataConfigList() []*pb.DataConfig {
 	}
 	return configs
 }
+
+func (dts *Dataset) Close() error {
+	sourceList := dts.DataList.Items()
+	for k := range sourceList {
+		data, _ := dts.Get(k)
+		data.Close()
+	}
+	return nil
+}
