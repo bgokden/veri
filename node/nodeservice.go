@@ -157,8 +157,10 @@ func (n *Node) SendJoinRequest(id string) error {
 }
 
 func (n *Node) CreateDataIfNotExists(ctx context.Context, in *pb.DataConfig) (*pb.DataInfo, error) {
+	log.Printf("Config: %v\n", in)
 	aData, err := n.Dataset.GetOrCreateIfNotExists(in)
 	if err != nil {
+		log.Printf("Error: %v\n", err)
 		return nil, err
 	}
 	return aData.GetDataInfo(), nil

@@ -45,7 +45,7 @@ func RunServer(configMap map[string]interface{}) {
 	// 	opts = []grpc.ServerOption{grpc.Creds(creds)}
 	// }
 	// grpcServer := grpc.NewServer(opts...)
-	dir0, err := ioutil.TempDir("tmp", "node")
+	dir0, err := ioutil.TempDir("", "node")
 	os.MkdirAll(dir0, os.ModePerm)
 	if err != nil {
 		log.Fatal(err)

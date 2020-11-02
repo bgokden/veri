@@ -62,13 +62,13 @@ func NewPreData(config *pb.DataConfig, path string) *Data {
 	dt := &Data{
 		Config: config,
 	}
-	log.Printf("Create Data\n")
+	log.Printf("Pre Create Data %v\n", dt.Config)
 	dt.DBPath = fmt.Sprintf("%v/%v", path, config.Name)
 	return dt
 }
 
 func (dt *Data) InitData() error {
-	log.Printf("Create Data\n")
+	log.Printf("Init Data %v\n", dt.Config)
 	db, err := badger.Open(badger.DefaultOptions(dt.DBPath))
 	if err != nil {
 		return err
@@ -175,6 +175,7 @@ func (dt *Data) Process(force bool) error {
 
 // GetDataInfo out of data
 func (dt *Data) GetDataInfo() *pb.DataInfo {
+	log.Printf("Data: %v\n", dt)
 	return &pb.DataInfo{
 		Avg:               dt.Avg,
 		N:                 dt.N,

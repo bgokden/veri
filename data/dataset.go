@@ -35,7 +35,7 @@ func (dts *Dataset) Get(name string) (*Data, error) {
 
 func (dts *Dataset) GetOrCreateIfNotExists(config *pb.DataConfig) (*Data, error) {
 	err := dts.CreateIfNotExists(config)
-	if err == nil {
+	if err != nil {
 		return nil, err
 	}
 	return dts.Get(config.Name)
