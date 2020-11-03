@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	node "github.com/bgokden/veri-node"
+	node "github.com/bgokden/veri/node"
 )
 
 func randomPort() uint32 {

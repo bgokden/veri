@@ -2,6 +2,7 @@ package data
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
@@ -14,7 +15,7 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 		return errors.New("Number of elements is over the target")
 	}
 	var ttlDuration *time.Duration
-	if config != nil {
+	if config != nil && config.GetTTL() > 0 {
 		d := time.Duration(config.GetTTL()) * time.Second
 		ttlDuration = &d
 	}
@@ -28,9 +29,11 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	}
 	err = dt.DB.Update(func(txn *badger.Txn) error {
 		if ttlDuration != nil {
+			log.Printf("Insert Datum: %v ttl: %v\n", datum, ttlDuration)
 			e := badger.NewEntry(keyByte, valueByte).WithTTL(*ttlDuration)
 			return txn.SetEntry(e)
 		}
+		log.Printf("Insert Datum: %v ttl: %v\n", datum, ttlDuration)
 		return txn.Set(keyByte, valueByte)
 	})
 	if err != nil {

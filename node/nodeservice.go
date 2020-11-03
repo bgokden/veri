@@ -97,13 +97,15 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 	searchConfig := searchRequest.GetConfig()
 	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
 	defer close(scoredDatumStream)
+	go func() {
+		for e := range scoredDatumStream {
+			log.Printf("label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
+			stream.Send(e)
+		}
+	}()
 	err = aData.SuperSearch(datum, scoredDatumStream, searchConfig)
 	if err != nil {
 		return err
-	}
-	for e := range scoredDatumStream {
-		log.Printf("label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
-		stream.Send(e)
 	}
 	return nil
 }

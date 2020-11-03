@@ -54,7 +54,7 @@ func TestData(t *testing.T) {
 	}
 
 	config := data.DefaultSearchConfig()
-	config.ScoreFunc = data.VectorMultiplication
+	config.ScoreFuncName = "VectorMultiplication"
 	config.HigherIsBetter = true
 	collector2 := dt.Search(datum, config)
 
@@ -69,8 +69,8 @@ type NewsTitle struct {
 	Embedding []float64
 }
 
-func load_data_from_json(dt *data.Data, fname string) (*data.Datum, error) {
-	var oneDatum *data.Datum
+func load_data_from_json(dt *data.Data, fname string) (*pb.Datum, error) {
+	var oneDatum *pb.Datum
 	f, err := os.Open(fname)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func TestData2(t *testing.T) {
 
 	defer os.RemoveAll(dir) // clean up
 
-	config2 := &data.DataConfig{
+	config2 := &pb.DataConfig{
 		Name:    "data2",
 		Version: "v0",
 		TargetN: 1000,
@@ -125,7 +125,7 @@ func TestData2(t *testing.T) {
 
 	log.Printf("label: %v\n", datum.Value.Label)
 	config := data.DefaultSearchConfig()
-	config.ScoreFunc = data.VectorMultiplication
+	config.ScoreFuncName = "VectorMultiplication"
 	config.HigherIsBetter = true
 	config.Limit = 10
 	collector := dt.Search(datum, config)
@@ -157,7 +157,7 @@ func TestDataStreamSearch(t *testing.T) {
 	datum, err := load_data_from_json(dt01, "./testdata/news_title_embdeddings.json")
 	assert.Nil(t, err)
 
-	config02 := &data.DataConfig{
+	config02 := &pb.DataConfig{
 		Name:    "data02",
 		Version: "v0",
 		TargetN: 1000,
@@ -171,10 +171,10 @@ func TestDataStreamSearch(t *testing.T) {
 	assert.Nil(t, err)
 
 	config := data.DefaultSearchConfig()
-	config.ScoreFunc = data.VectorMultiplication
+	config.ScoreFuncName = "VectorMultiplication"
 	config.HigherIsBetter = true
 	config.Limit = 10
-	scoredDatumStream := make(chan *data.ScoredDatum, 100)
+	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
 	dt01.AddSource(dt02)
 	err = dt01.SuperSearch(datum, scoredDatumStream, config)
 	assert.Nil(t, err)
@@ -184,7 +184,7 @@ func TestDataStreamSearch(t *testing.T) {
 		log.Printf("label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
 	}
 	rand.Seed(42)
-	datumStream := make(chan *data.Datum, 100)
+	datumStream := make(chan *pb.Datum, 100)
 	err = dt01.StreamSample(datumStream, 0.5)
 	assert.Nil(t, err)
 	time.Sleep(1 * time.Second)
@@ -197,7 +197,7 @@ func TestDataStreamSearch(t *testing.T) {
 	}
 	assert.Equal(t, 24, count)
 
-	datumStreamAll := make(chan *data.Datum, 100)
+	datumStreamAll := make(chan *pb.Datum, 100)
 	err = dt01.StreamAll(datumStreamAll)
 	assert.Nil(t, err)
 	time.Sleep(1 * time.Second)

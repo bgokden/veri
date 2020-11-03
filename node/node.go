@@ -152,7 +152,6 @@ func (n *Node) SyncWithPeers() {
 
 func (n *Node) JoinToPeers() error {
 	serviceList := n.ServiceList.Items()
-	log.Printf("Services: %v\n", serviceList)
 	for id := range serviceList {
 		n.SendJoinRequest(id)
 	}

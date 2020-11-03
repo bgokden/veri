@@ -79,6 +79,7 @@ func (c *Collector) Insert(scoredDatum *pb.ScoredDatum) error {
 
 // Send collects the results
 func (c *Collector) Send(list *bpb.KVList) error {
+	log.Printf("Collector Send\n")
 	itemAdded := false
 	for _, item := range list.Kv {
 		datumKey, _ := ToDatumKey(item.Key)
@@ -89,6 +90,7 @@ func (c *Collector) Send(list *bpb.KVList) error {
 				Datum: datum,
 				Score: score,
 			}
+			log.Printf("ScoredDatum %v\n", scoredDatum)
 			c.List = append(c.List, scoredDatum)
 			itemAdded = true
 		} else if (c.HigherIsBetter && score > c.List[len(c.List)-1].Score) ||
@@ -124,6 +126,7 @@ var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) floa
 
 // Search does a search based on distances of keys
 func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
+	log.Printf("Search: %v\n", datum)
 	if config == nil {
 		config = DefaultSearchConfig()
 	}
@@ -166,6 +169,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	collector := dt.Search(datum, config)
 	for _, i := range collector.List {
+		log.Printf("StreamSearch i: %v\n", i)
 		scoredDatumStream <- i
 	}
 	queryWaitGroup.Done()
@@ -185,6 +189,7 @@ func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
 func (dt *Data) SuperSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, config *pb.SearchConfig) error {
 	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
+	log.Printf("DatumKey: %v\n", datum.GetKey())
 	queryKey := GetSearchKey(datum, config)
 	if result, ok := dt.QueryCache.Get(queryKey); ok {
 		cachedCollector := result.(*Collector)
@@ -235,6 +240,7 @@ func (dt *Data) SuperSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.
 			break
 		}
 	}
+	log.Printf("search collected data\n")
 	// Search End
 	collector := temp.Search(datum, config)
 	for _, i := range collector.List {

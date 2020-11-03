@@ -46,13 +46,7 @@ func NewData(config *pb.DataConfig, path string) (*Data, error) {
 	}
 	log.Printf("Create Data\n")
 	dt.DBPath = fmt.Sprintf("%v/%v", path, config.Name)
-	db, err := badger.Open(badger.DefaultOptions(dt.DBPath))
-	if err != nil {
-		return nil, err
-	}
-	dt.DB = db
-	dt.Sources = cache.New(5*time.Minute, 10*time.Minute)
-	dt.QueryCache = cache.New(5*time.Minute, 10*time.Minute)
+	dt.InitData()
 	go dt.Run()
 	return dt, nil
 }
@@ -75,6 +69,7 @@ func (dt *Data) InitData() error {
 	}
 	dt.DB = db
 	dt.Sources = cache.New(5*time.Minute, 10*time.Minute)
+	dt.QueryCache = cache.New(5*time.Minute, 10*time.Minute)
 	go dt.Run()
 	return nil
 }
