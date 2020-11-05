@@ -185,8 +185,8 @@ func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
 	return string(append(keyByte, signature...))
 }
 
-// SuperSearch searches and merges other resources
-func (dt *Data) SuperSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, config *pb.SearchConfig) error {
+// AggregatedSearch searches and merges other resources
+func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, config *pb.SearchConfig) error {
 	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
 	log.Printf("DatumKey: %v\n", datum.GetKey())

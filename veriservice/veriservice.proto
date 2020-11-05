@@ -25,9 +25,12 @@ message SearchConfig {
     bool higherIsBetter = 2;
     uint64 timestamp = 3;
     uint64 timeout = 4;
-    uint32 Limit = 5;
+    uint32 limit = 5;
     uint64 cacheDuration = 6;
     string dataName = 7;
+    uint64 groupLimit = 8;
+    string groupScoreFuncName = 9;
+    repeated string filters = 10;
 }
 
 message GetDataRequest {

@@ -103,7 +103,7 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 			stream.Send(e)
 		}
 	}()
-	err = aData.SuperSearch(datum, scoredDatumStream, searchConfig)
+	err = aData.AggregatedSearch(datum, scoredDatumStream, searchConfig)
 	if err != nil {
 		return err
 	}
