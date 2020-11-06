@@ -219,7 +219,11 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
 	// stream merge
-	temp, _ := NewAggrator(config)
+	isGrouped := false
+	if config.GroupLimit > 0 {
+		isGrouped = true
+	}
+	temp := NewAggrator(config, isGrouped)
 	dataAvailable := true
 	for dataAvailable {
 		select {
@@ -270,7 +274,11 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, scoredDatumStreamOu
 		go dt.AggregatedSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
 	// stream merge
-	temp, _ := NewAggrator(config)
+	isGrouped := false
+	if config.GroupLimit > 0 {
+		isGrouped = true
+	}
+	temp := NewAggrator(config, isGrouped)
 	dataAvailable := true
 	for dataAvailable {
 		select {

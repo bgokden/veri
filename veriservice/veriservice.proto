@@ -17,7 +17,7 @@ service VeriService {
 // Request message for creating a new customer
 message SearchRequest {
     SearchConfig config = 1;
-    Datum datum = 2;
+    repeated Datum datum = 2;
 }
 
 message SearchConfig {
@@ -28,7 +28,7 @@ message SearchConfig {
     uint32 limit = 5;
     uint64 cacheDuration = 6;
     string dataName = 7;
-    uint64 groupLimit = 8;
+    uint32 groupLimit = 8;
     string groupScoreFuncName = 9;
     repeated string filters = 10;
 }

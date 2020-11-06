@@ -93,7 +93,7 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 	if err != nil {
 		return err
 	}
-	datum := searchRequest.GetDatum()
+	datumList := searchRequest.GetDatum()
 	searchConfig := searchRequest.GetConfig()
 	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
 	defer close(scoredDatumStream)
@@ -103,7 +103,7 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 			stream.Send(e)
 		}
 	}()
-	err = aData.AggregatedSearch(datum, scoredDatumStream, nil, searchConfig)
+	err = aData.MultiAggregatedSearch(datumList, scoredDatumStream, searchConfig)
 	if err != nil {
 		return err
 	}

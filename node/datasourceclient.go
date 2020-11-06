@@ -40,7 +40,7 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 		return err
 	}
 	searchRequest := &pb.SearchRequest{
-		Datum:  datum,
+		Datum:  []*pb.Datum{datum},
 		Config: config,
 	}
 	stream, err := client.SearchStream(context.Background(), searchRequest)
