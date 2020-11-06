@@ -192,14 +192,14 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	log.Printf("DatumKey: %v\n", datum.GetKey())
 	queryKey := GetSearchKey(datum, config)
 	if result, ok := dt.QueryCache.Get(queryKey); ok {
-		cachedCollector := result.(*Collector)
-		for _, i := range cachedCollector.List {
+		cachedResult := result.([]*pb.ScoredDatum)
+		for _, i := range cachedResult {
 			scoredDatumStreamOutput <- i
 		}
 		return nil
 	}
 	// Search Start
-	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
+	scoredDatumStream := make(chan *pb.ScoredDatum, config.Limit)
 	var queryWaitGroup sync.WaitGroup
 	waitChannel := make(chan struct{})
 	go func() {
@@ -219,18 +219,17 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
 	// stream merge
-	temp, _ := NewTempData()
-	defer temp.Close()
+	temp, _ := NewAggrator(config)
 	dataAvailable := true
 	for dataAvailable {
 		select {
 		case scoredDatum := <-scoredDatumStream:
-			temp.Insert(scoredDatum.Datum, nil)
+			temp.Insert(scoredDatum)
 		case <-waitChannel:
 			log.Printf("all data finished")
 			close(scoredDatumStream)
 			for scoredDatum := range scoredDatumStream {
-				temp.Insert(scoredDatum.Datum, nil)
+				temp.Insert(scoredDatum)
 			}
 			dataAvailable = false
 			break
@@ -242,12 +241,14 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	}
 	log.Printf("search collected data\n")
 	// Search End
-	collector := temp.Search(datum, config)
-	for _, i := range collector.List {
+	result := temp.Result()
+	for _, i := range result {
 		scoredDatumStreamOutput <- i
 	}
-	upperWaitGroup.Done()
-	dt.QueryCache.Set(queryKey, collector, cache.DefaultExpiration)
+	if upperWaitGroup != nil {
+		upperWaitGroup.Done()
+	}
+	dt.QueryCache.Set(queryKey, result, cache.DefaultExpiration)
 	return nil
 }
 
@@ -264,7 +265,6 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, scoredDatumStreamOu
 		queryWaitGroup.Wait()
 	}()
 	// loop datumList
-	sourceList := dt.Sources.Items()
 	for _, datum := range datumList {
 		queryWaitGroup.Add(1)
 		go dt.AggregatedSearch(datum, scoredDatumStream, &queryWaitGroup, config)
