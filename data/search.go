@@ -186,7 +186,7 @@ func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
 }
 
 // AggregatedSearch searches and merges other resources
-func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, config *pb.SearchConfig) error {
+func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, upperWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
 	log.Printf("DatumKey: %v\n", datum.GetKey())
@@ -246,6 +246,54 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	for _, i := range collector.List {
 		scoredDatumStreamOutput <- i
 	}
+	upperWaitGroup.Done()
 	dt.QueryCache.Set(queryKey, collector, cache.DefaultExpiration)
+	return nil
+}
+
+// MultiAggregatedSearch searches and merges other resources
+func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, config *pb.SearchConfig) error {
+	duration := time.Duration(config.Timeout) * time.Millisecond
+	timeLimit := time.After(duration)
+	// Search Start
+	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
+	var queryWaitGroup sync.WaitGroup
+	waitChannel := make(chan struct{})
+	go func() {
+		defer close(waitChannel)
+		queryWaitGroup.Wait()
+	}()
+	// loop datumList
+	sourceList := dt.Sources.Items()
+	for _, datum := range datumList {
+		queryWaitGroup.Add(1)
+		go dt.AggregatedSearch(datum, scoredDatumStream, &queryWaitGroup, config)
+	}
+	// stream merge
+	temp, _ := NewAggrator(config)
+	dataAvailable := true
+	for dataAvailable {
+		select {
+		case scoredDatum := <-scoredDatumStream:
+			temp.Insert(scoredDatum)
+		case <-waitChannel:
+			log.Printf("all data finished")
+			close(scoredDatumStream)
+			for scoredDatum := range scoredDatumStream {
+				temp.Insert(scoredDatum)
+			}
+			dataAvailable = false
+			break
+		case <-timeLimit:
+			log.Printf("timeout")
+			dataAvailable = false
+			break
+		}
+	}
+	log.Printf("search collected data\n")
+	// Search End
+	for _, i := range temp.Result() {
+		scoredDatumStreamOutput <- i
+	}
 	return nil
 }

@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/bgokden/veri-data v0.0.0-20201010163108-3311a37c8b47
 	github.com/dgraph-io/badger/v2 v2.2007.2
+	github.com/dgraph-io/ristretto v0.0.3-0.20200630154024-f66de99634de
 	github.com/golang/protobuf v1.4.1
 	github.com/gorilla/mux v1.7.2
 	github.com/magneticio/go-common v0.0.1
