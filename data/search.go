@@ -199,7 +199,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		return nil
 	}
 	// Search Start
-	scoredDatumStream := make(chan *pb.ScoredDatum, config.Limit)
+	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
 	var queryWaitGroup sync.WaitGroup
 	waitChannel := make(chan struct{})
 	go func() {
@@ -230,7 +230,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		case scoredDatum := <-scoredDatumStream:
 			temp.Insert(scoredDatum)
 		case <-waitChannel:
-			log.Printf("all data finished")
+			log.Printf("AggregatedSearch: all data finished")
 			close(scoredDatumStream)
 			for scoredDatum := range scoredDatumStream {
 				temp.Insert(scoredDatum)
@@ -253,11 +253,12 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		upperWaitGroup.Done()
 	}
 	dt.QueryCache.Set(queryKey, result, cache.DefaultExpiration)
+	log.Printf("AggregatedSearch: finished")
 	return nil
 }
 
 // MultiAggregatedSearch searches and merges other resources
-func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, config *pb.SearchConfig) error {
+func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchConfig) ([]*pb.ScoredDatum, error) {
 	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
 	// Search Start
@@ -285,7 +286,7 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, scoredDatumStreamOu
 		case scoredDatum := <-scoredDatumStream:
 			temp.Insert(scoredDatum)
 		case <-waitChannel:
-			log.Printf("all data finished")
+			log.Printf("MultiAggregatedSearch: all data finished")
 			close(scoredDatumStream)
 			for scoredDatum := range scoredDatumStream {
 				temp.Insert(scoredDatum)
@@ -300,8 +301,6 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, scoredDatumStreamOu
 	}
 	log.Printf("search collected data\n")
 	// Search End
-	for _, i := range temp.Result() {
-		scoredDatumStreamOutput <- i
-	}
-	return nil
+	log.Printf("MultiAggregatedSearch: finished")
+	return temp.Result(), nil
 }

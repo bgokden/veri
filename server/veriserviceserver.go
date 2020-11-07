@@ -1,7 +1,6 @@
 package veriserviceserver
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -45,13 +44,21 @@ func RunServer(configMap map[string]interface{}) {
 	// 	opts = []grpc.ServerOption{grpc.Creds(creds)}
 	// }
 	// grpcServer := grpc.NewServer(opts...)
-	dir0, err := ioutil.TempDir("", "node")
-	os.MkdirAll(dir0, os.ModePerm)
-	if err != nil {
-		log.Fatal(err)
+	directory := configMap["directory"].(string)
+	if len(directory) == 0 {
+		var err error
+		directory, err = ioutil.TempDir("", "node")
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
-	defer os.RemoveAll(dir0)
-	broadcastAddresses := []string{fmt.Sprintf("localhost:%d", port)}
+	os.MkdirAll(directory, os.ModePerm)
+	defer os.RemoveAll(directory)
+	broadcast := configMap["broadcast"].(string)
+	broadcastAddresses := make([]string, 0)
+	if len(broadcast) > 0 {
+		broadcastAddresses = append(broadcastAddresses, strings.Split(broadcast, ",")...)
+	}
 
 	serviceList := make([]string, 0)
 	if len(services) > 0 {
@@ -59,7 +66,7 @@ func RunServer(configMap map[string]interface{}) {
 	}
 	nodeConfig := &node.NodeConfig{
 		Port:          uint32(port),
-		Folder:        dir0,
+		Folder:        directory,
 		AdvertisedIds: broadcastAddresses,
 		ServiceList:   serviceList,
 	}

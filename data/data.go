@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"log"
+	"path"
 	"sync"
 	"time"
 
@@ -52,12 +53,12 @@ func NewData(config *pb.DataConfig, path string) (*Data, error) {
 }
 
 // NewPreData creates a data struct
-func NewPreData(config *pb.DataConfig, path string) *Data {
+func NewPreData(config *pb.DataConfig, dataPath string) *Data {
 	dt := &Data{
 		Config: config,
 	}
 	log.Printf("Pre Create Data %v\n", dt.Config)
-	dt.DBPath = fmt.Sprintf("%v/%v", path, config.Name)
+	dt.DBPath = path.Join(dataPath, config.Name)
 	return dt
 }
 

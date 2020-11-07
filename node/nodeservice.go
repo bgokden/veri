@@ -65,13 +65,22 @@ func (n *Node) DataStream(getDataRequest *pb.GetDataRequest, stream pb.VeriServi
 		return err
 	}
 	datumStreamAll := make(chan *pb.Datum, 100)
+	go func() {
+		for datum := range datumStreamAll {
+			log.Printf("Send label: %v\n", string(datum.Value.Label))
+			stream.Send(datum)
+		}
+	}()
 	err = dt.StreamAll(datumStreamAll)
 	if err != nil {
 		return err
 	}
+	close(datumStreamAll)
 	for datum := range datumStreamAll {
+		log.Printf("Flush - Send label: %v\n", string(datum.Value.Label))
 		stream.Send(datum)
 	}
+	log.Printf("DataStream finished\n")
 	return nil
 }
 
@@ -95,17 +104,14 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 	}
 	datumList := searchRequest.GetDatum()
 	searchConfig := searchRequest.GetConfig()
-	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
-	defer close(scoredDatumStream)
-	go func() {
-		for e := range scoredDatumStream {
-			log.Printf("label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
-			stream.Send(e)
-		}
-	}()
-	err = aData.MultiAggregatedSearch(datumList, scoredDatumStream, searchConfig)
+	result, err := aData.MultiAggregatedSearch(datumList, searchConfig)
 	if err != nil {
 		return err
+	}
+	log.Printf("SearchStream: finished")
+	for _, e := range result {
+		log.Printf("Send label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
+		stream.Send(e)
 	}
 	return nil
 }
