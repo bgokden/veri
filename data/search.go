@@ -127,7 +127,7 @@ var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) floa
 
 // Search does a search based on distances of keys
 func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
-	log.Printf("Search: %v\n", datum)
+	// log.Printf("Search: %v\n", datum)
 	if config == nil {
 		config = DefaultSearchConfig()
 	}
@@ -190,7 +190,7 @@ func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
 func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, upperWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
-	log.Printf("DatumKey: %v\n", datum.GetKey())
+	// log.Printf("DatumKey: %v\n", datum.GetKey())
 	queryKey := GetSearchKey(datum, config)
 	if result, ok := dt.QueryCache.Get(queryKey); ok {
 		cachedResult := result.([]*pb.ScoredDatum)

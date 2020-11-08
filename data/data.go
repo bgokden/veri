@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"log"
 	"path"
 	"sync"
@@ -41,12 +40,12 @@ func (d *Data) GetConfig() *pb.DataConfig {
 }
 
 // NewData creates a data struct
-func NewData(config *pb.DataConfig, path string) (*Data, error) {
+func NewData(config *pb.DataConfig, dataPath string) (*Data, error) {
 	dt := &Data{
 		Config: config,
 	}
 	log.Printf("Create Data\n")
-	dt.DBPath = fmt.Sprintf("%v/%v", path, config.Name)
+	dt.DBPath = path.Join(dataPath, config.Name)
 	dt.InitData()
 	go dt.Run()
 	return dt, nil
