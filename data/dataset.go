@@ -122,7 +122,7 @@ func (dts *Dataset) LoadIndex() error {
 func (dts *Dataset) SaveIndex() error {
 	indexPath := path.Join(dts.Path, "index.save")
 	sourceList := dts.DataList.Items()
-	file, err := os.OpenFile(indexPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(indexPath, os.O_TRUNC|os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}

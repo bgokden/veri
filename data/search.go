@@ -79,7 +79,7 @@ func (c *Collector) Insert(scoredDatum *pb.ScoredDatum) error {
 
 // Send collects the results
 func (c *Collector) Send(list *bpb.KVList) error {
-	log.Printf("Collector Send\n")
+	// log.Printf("Collector Send\n")
 	itemAdded := false
 	for _, item := range list.Kv {
 		datumKey, _ := ToDatumKey(item.Key)
@@ -90,7 +90,7 @@ func (c *Collector) Send(list *bpb.KVList) error {
 				Datum: datum,
 				Score: score,
 			}
-			log.Printf("ScoredDatum %v\n", scoredDatum)
+			// log.Printf("ScoredDatum %v\n", scoredDatum)
 			c.List = append(c.List, scoredDatum)
 			itemAdded = true
 		} else if (c.HigherIsBetter && score > c.List[len(c.List)-1].Score) ||
@@ -122,6 +122,7 @@ func (c *Collector) Send(list *bpb.KVList) error {
 var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) float64{
 	"VectorDistance":       VectorDistance,
 	"VectorMultiplication": VectorMultiplication,
+	"CosineSimilarity":     CosineSimilarity,
 }
 
 // Search does a search based on distances of keys
@@ -169,7 +170,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	collector := dt.Search(datum, config)
 	for _, i := range collector.List {
-		log.Printf("StreamSearch i: %v\n", i)
+		// log.Printf("StreamSearch i: %v\n", i)
 		scoredDatumStream <- i
 	}
 	queryWaitGroup.Done()

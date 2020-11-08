@@ -67,7 +67,7 @@ func (n *Node) DataStream(getDataRequest *pb.GetDataRequest, stream pb.VeriServi
 	datumStreamAll := make(chan *pb.Datum, 100)
 	go func() {
 		for datum := range datumStreamAll {
-			log.Printf("Send label: %v\n", string(datum.Value.Label))
+			// log.Printf("Send label: %v\n", string(datum.Value.Label))
 			stream.Send(datum)
 		}
 	}()
@@ -77,7 +77,7 @@ func (n *Node) DataStream(getDataRequest *pb.GetDataRequest, stream pb.VeriServi
 	}
 	close(datumStreamAll)
 	for datum := range datumStreamAll {
-		log.Printf("Flush - Send label: %v\n", string(datum.Value.Label))
+		// log.Printf("Flush - Send label: %v\n", string(datum.Value.Label))
 		stream.Send(datum)
 	}
 	log.Printf("DataStream finished\n")
@@ -108,11 +108,12 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 	if err != nil {
 		return err
 	}
-	log.Printf("SearchStream: finished")
+	log.Printf("SearchStream: finished with len(%v)", len(result))
 	for _, e := range result {
-		log.Printf("Send label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
+		// log.Printf("Send label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
 		stream.Send(e)
 	}
+	log.Printf("SearchStream: finished sending of len(%v)", len(result))
 	return nil
 }
 
