@@ -1,92 +1,122 @@
 syntax = "proto3";
 package veriservice;
+// option go_package="github.com/bgokden/veri/veriservice";
 
 // protoc -I veriservice/ veriservice/veriservice.proto --go_out=plugins=grpc:veriservice
-// The Customer service definition.
+// The Veri service definition.
 service VeriService {
-  // Get all Customers with filter - A server-to-client streaming RPC.
-  // rpc GetCustomers(CustomerFilter) returns (stream CustomerRequest) {}
-  // Create a new Customer - A simple RPC
-  rpc GetKnn(KnnRequest) returns (KnnResponse) {}
+  rpc Search(SearchRequest) returns (SearchResponse) {}
   rpc Insert(InsertionRequest) returns (InsertionResponse) {}
   rpc Join(JoinRequest) returns (JoinResponse) {}
-  rpc ExchangeServices(ServiceMessage) returns (ServiceMessage) {}
-  rpc ExchangePeers(PeerMessage) returns (PeerMessage) {}
-  rpc GetLocalData(GetLocalDataRequest) returns (stream Feature) {}
-
-  rpc GetKnnStream(KnnRequest) returns (stream Feature) {}
-  rpc InsertStream(stream Feature) returns (stream InsertionResponse) {}
+  rpc DataStream(GetDataRequest) returns (stream Datum) {}
+  rpc CreateDataIfNotExists(DataConfig) returns (DataInfo) {}
+  rpc GetDataInfo(GetDataRequest) returns (DataInfo) {}
+  rpc SearchStream(SearchRequest) returns (stream ScoredDatum) {}
 }
 
 // Request message for creating a new customer
-message KnnRequest {
-  string id = 1;  // Unique ID number for a Request.
-  int64 timestamp = 2;
-  int64 timeout = 3;
-  int32 k = 4;
-  repeated double feature = 5;
+message SearchRequest {
+    SearchConfig config = 1;
+    repeated Datum datum = 2;
 }
 
-message GetLocalDataRequest {
+message SearchConfig {
+    string scoreFuncName = 1;
+    bool higherIsBetter = 2;
+    uint64 timestamp = 3;
+    uint64 timeout = 4;
+    uint32 limit = 5;
+    uint64 cacheDuration = 6;
+    string dataName = 7;
+    uint32 groupLimit = 8;
+    string groupScoreFuncName = 9;
+    repeated string filters = 10;
 }
 
-message Feature {
+message GetDataRequest {
+    string name = 1;
+}
+
+message Datum {
+  DatumKey key = 1;
+  DatumValue value = 2;
+}
+
+message DatumKey {
   repeated double feature = 1;
-  int64 timestamp = 2;
-  string label = 3;
-  string grouplabel = 4;
-  int64 sequencelengthone = 5;
-  int64 sequencelengthtwo = 6;
-  int64 sequencedimone = 7;
-  int64 sequencedimtwo = 8;
-  double distance = 9;
+  bytes groupLabel = 2;
+  uint32 size1 = 3;
+  uint32 size2 = 4;
+  uint32 dim1 = 5;
+  uint32 dim2 = 6;
 }
 
-message KnnResponse {
-  string id = 1;
-  repeated Feature features = 2;
+message DatumValue {
+  uint64 version = 1;
+  bytes label = 2;
+}
+
+message ScoredDatum {
+    double score = 1;
+    Datum datum = 2;
+}
+
+message InsertDatumWithConfig{
+    InsertConfig config = 1;
+    Datum datum = 2;
+}
+
+message SearchResponse {
+  repeated ScoredDatum result = 1;
 }
 
 message InsertionRequest {
-  int64 timestamp = 1;
-  string label = 2;
-  string grouplabel = 3;
-  repeated double feature = 4;
-  int64 sequencelengthone = 5;
-  int64 sequencelengthtwo = 6;
-  int64 sequencedimone = 7;
-  int64 sequencedimtwo = 8;
+  InsertConfig config = 1;
+  Datum datum = 2;
+  string dataName = 3;
+}
+
+message InsertConfig {
+    uint64 tTL = 1;
 }
 
 message InsertionResponse {
-  int32 code = 2;
+  int32 code = 1;
 }
 
-message ServiceMessage {
-  repeated string services = 1;
-}
 
-message Peer {
-  string address = 1;
-  int64 timestamp = 2;
+message DataInfo {
+  string name = 1;
+  uint64 timestamp = 2;
   string version = 3;
   repeated double avg = 4;
   repeated double hist = 5;
-  int64 n = 6;
+  uint64 n = 6;
+  double maxDistance = 7;
+  uint64 targetN = 8;
+  double TargetUtilization = 9;
+  bool NoTarget = 10;
 }
 
-message PeerMessage {
-  repeated Peer peers = 1;
+message DataConfig {
+  string name = 1;
+  string version = 2;
+  uint64 TargetN = 3;
+  double TargetUtilization = 4;
+  bool NoTarget = 5;
+}
+
+message Peer {
+  repeated string addressList = 1;
+  string version = 2;
+  uint64 timestamp = 3;
+  repeated DataConfig dataList = 4;
+  repeated string serviceList = 5;
+  repeated Peer peerList = 6;
 }
 
 message JoinRequest {
-  string address = 1; // known address
-  int32 port = 2;
-  repeated double avg = 3; // known avg
-  string version = 4;
-  repeated double hist = 5; // extra features
-  int64 n = 6;
-  int64 timestamp = 7;
+  Peer peer = 1;
 }
 
 message JoinResponse {

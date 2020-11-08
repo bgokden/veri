@@ -26,11 +26,12 @@ import (
 
 var services string
 var port int
-var evictable bool
-var tls bool
-var cert string
-var key string
-var memory uint64
+var broadcastAdresses string
+var directory string
+
+// var tls bool
+// var cert string
+// var key string
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
@@ -45,12 +46,11 @@ var serveCmd = &cobra.Command{
 		configMap := make(map[string]interface{})
 		configMap["services"] = services
 		configMap["port"] = port
-		configMap["evictable"] = evictable
-		configMap["tls"] = tls
-		configMap["cert"] = cert
-		configMap["key"] = key
-		configMap["memory"] = memory
-
+		// configMap["tls"] = tls
+		// configMap["cert"] = cert
+		// configMap["key"] = key
+		configMap["broadcast"] = broadcastAdresses
+		configMap["directory"] = directory
 		veriserviceserver.RunServer(configMap)
 		return nil
 	},
@@ -60,11 +60,12 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 	serveCmd.Flags().StringVarP(&services, "services", "s", "", "services to connect, Comma separated lists are supported")
 	serveCmd.Flags().IntVarP(&port, "port", "p", 10000, "port")
-	serveCmd.Flags().BoolVarP(&evictable, "evictable", "e", false, "enable automatic eviction when lack of resources")
-	serveCmd.Flags().BoolVarP(&tls, "tls", "t", false, "enable tls")
-	serveCmd.Flags().StringVarP(&cert, "cert", "", "", "cert file path")
-	serveCmd.Flags().StringVarP(&key, "key", "", "", "key file path")
-	serveCmd.Flags().Uint64VarP(&memory, "memory", "m", 2048, "maximum memory in MiB")
+	serveCmd.Flags().StringVarP(&broadcastAdresses, "broadcast", "b", "", "broadcast adresses to advertise, Comma separated lists are supported")
+	serveCmd.Flags().StringVarP(&directory, "directory", "d", "", "data directory")
+
+	// serveCmd.Flags().BoolVarP(&tls, "tls", "t", false, "enable tls")
+	// serveCmd.Flags().StringVarP(&cert, "cert", "", "", "cert file path")
+	// serveCmd.Flags().StringVarP(&key, "key", "", "", "key file path")
 
 	//TODO: serveCmd.Flags().StringSliceVarP(&services, "services", "", []string{}, "Services to connect, Comma separated lists are supported")
 }
