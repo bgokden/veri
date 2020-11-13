@@ -19,12 +19,16 @@ type Aggregator struct {
 	List             []*pb.ScoredDatum
 	DeDuplicationMap *cache.Cache
 	Grouped          bool
+	Context          *pb.SearchContext
+	ScoreFunc        func(arr1 []float64, arr2 []float64) float64
 }
 
-func NewAggrator(config *pb.SearchConfig, grouped bool) AggregatorInterface {
+func NewAggrator(config *pb.SearchConfig, grouped bool, context *pb.SearchContext) AggregatorInterface {
 	a := &Aggregator{
-		Config:  config,
-		Grouped: grouped,
+		Config:    config,
+		Grouped:   grouped,
+		Context:   context,
+		ScoreFunc: GetVectorComparisonFunction(config.ScoreFuncName),
 	}
 	a.DeDuplicationMap = cache.New(5*time.Minute, 10*time.Minute)
 	return a
@@ -41,6 +45,20 @@ func (a *Aggregator) IsNewScoredBetter(old, new float64) bool {
 		}
 	}
 	return false
+}
+
+func (a *Aggregator) BestScore(scoredDatum *pb.ScoredDatum) float64 {
+	if a.Context != nil || len(a.Context.GetDatum()) > 0 {
+		current := scoredDatum.GetScore()
+		for _, datum := range a.Context.GetDatum() {
+			newScore := a.ScoreFunc(scoredDatum.Datum.Key.Feature, datum.Key.Feature)
+			if a.IsNewScoredBetter(current, newScore) {
+				current = newScore
+			}
+		}
+		return current
+	}
+	return scoredDatum.GetScore()
 }
 
 func (a *Aggregator) InsertToList(scoredDatum *pb.ScoredDatum) error {
@@ -69,13 +87,14 @@ func (a *Aggregator) InsertToList(scoredDatum *pb.ScoredDatum) error {
 }
 
 func (a *Aggregator) Insert(scoredDatum *pb.ScoredDatum) error {
+	scoredDatum.Score = a.BestScore(scoredDatum)
 	if a.Grouped {
 		keyString := string(scoredDatum.Datum.Key.GroupLabel)
 		if aGroupAggregatorInterface, ok := a.DeDuplicationMap.Get(keyString); ok {
 			aGroupAggregator := aGroupAggregatorInterface.(AggregatorInterface)
 			return aGroupAggregator.Insert(scoredDatum)
 		} else {
-			aGroupAggregator := NewAggrator(a.Config, false)
+			aGroupAggregator := NewAggrator(a.Config, false, nil)
 			a.DeDuplicationMap.Set(keyString, aGroupAggregator, cache.NoExpiration)
 			return aGroupAggregator.Insert(scoredDatum)
 		}
@@ -102,7 +121,7 @@ func (a *Aggregator) Insert(scoredDatum *pb.ScoredDatum) error {
 func (a *Aggregator) Result() []*pb.ScoredDatum {
 	if a.Grouped {
 		groupMap := a.DeDuplicationMap.Items()
-		agg := NewAggrator(a.Config, false)
+		agg := NewAggrator(a.Config, false, a.Context)
 		for _, groupAggObject := range groupMap {
 			groupAgg := groupAggObject.Object.(AggregatorInterface)
 			agg.Insert(groupAgg.One())
