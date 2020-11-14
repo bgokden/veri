@@ -83,6 +83,7 @@ func (c *Collector) Send(list *bpb.KVList) error {
 	itemAdded := false
 	for _, item := range list.Kv {
 		datumKey, _ := ToDatumKey(item.Key)
+		// TODO: implement filters use: https://godoc.org/github.com/PaesslerAG/jsonpath#Get
 		score := c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature)
 		if uint32(len(c.List)) < c.N {
 			datum, _ := ToDatum(item.Key, item.Value)

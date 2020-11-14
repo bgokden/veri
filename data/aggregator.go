@@ -49,13 +49,21 @@ func (a *Aggregator) IsNewScoredBetter(old, new float64) bool {
 
 func (a *Aggregator) BestScore(scoredDatum *pb.ScoredDatum) float64 {
 	if a.Context != nil || len(a.Context.GetDatum()) > 0 {
-		current := scoredDatum.GetScore()
+		var isSet = false
+		var current float64
+		// When Context is crioritized search score is ignored.
+		if !a.Context.Prioritize {
+			current = scoredDatum.GetScore()
+			isSet = true
+		}
 		for _, datum := range a.Context.GetDatum() {
 			newScore := a.ScoreFunc(scoredDatum.Datum.Key.Feature, datum.Key.Feature)
-			if a.IsNewScoredBetter(current, newScore) {
+			if !isSet || a.IsNewScoredBetter(current, newScore) {
 				current = newScore
+				isSet = true
 			}
 		}
+
 		return current
 	}
 	return scoredDatum.GetScore()
