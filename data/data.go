@@ -96,7 +96,7 @@ func (dt *Data) Close() error {
 }
 
 // Delete currently deletes underlying data folder ignores errors.
-func (dt *Data) Delete() error {
+func (dt *Data) DeletePath() error {
 	dt.DB.Close()
 	os.RemoveAll(dt.DBPath)
 	return nil
