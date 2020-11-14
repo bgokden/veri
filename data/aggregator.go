@@ -136,6 +136,9 @@ func (a *Aggregator) Result() []*pb.ScoredDatum {
 		}
 		return agg.Result()
 	} else {
+		if a.Config.ResultLimit > 0 {
+			return a.List[:a.Config.ResultLimit]
+		}
 		return a.List
 	}
 }
