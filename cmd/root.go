@@ -28,12 +28,14 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	semver "github.com/magneticio/vampkubistcli/semver"
 )
 
 var cfgFile string
 
 // Version should be in format vd.d.d where d is a decimal number
-const Version string = "v0.0.21"
+const Version string = semver.Version
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
