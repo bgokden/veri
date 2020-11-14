@@ -2,6 +2,7 @@ package data
 
 import (
 	"log"
+	"os"
 	"path"
 	"sync"
 	"time"
@@ -92,6 +93,13 @@ func NewTempData() (*Data, error) {
 // Close currently closes underlying kv store
 func (dt *Data) Close() error {
 	return dt.DB.Close()
+}
+
+// Delete currently deletes underlying data folder ignores errors.
+func (dt *Data) Delete() error {
+	dt.DB.Close()
+	os.RemoveAll(dt.DBPath)
+	return nil
 }
 
 // Run runs statistical calculation regularly
