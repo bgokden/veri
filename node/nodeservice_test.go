@@ -19,6 +19,7 @@ func randomPort() uint32 {
 }
 
 func TempNode(serviceAddress string) *node.Node {
+	os.MkdirAll("tmp", os.ModePerm)
 	dir0, err := ioutil.TempDir("tmp", "node")
 	if err != nil {
 		log.Fatal(err)
