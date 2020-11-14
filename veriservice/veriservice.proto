@@ -100,8 +100,8 @@ message DataInfo {
   uint64 n = 6;
   double maxDistance = 7;
   uint64 targetN = 8;
-  double TargetUtilization = 9;
-  bool NoTarget = 10;
+  double targetUtilization = 9;
+  bool noTarget = 10;
   uint32 replicationOnInsert = 11;
   bool enforceReplicationOnInsert = 12;
   uint64 retentation = 13;
@@ -110,9 +110,9 @@ message DataInfo {
 message DataConfig {
   string name = 1;
   string version = 2;
-  uint64 TargetN = 3;
-  double TargetUtilization = 4;
-  bool NoTarget = 5;
+  uint64 targetN = 3;
+  double targetUtilization = 4;
+  bool noTarget = 5;
   uint32 replicationOnInsert = 6;
   bool enforceReplicationOnInsert = 7;
   uint64 retentation = 8;
