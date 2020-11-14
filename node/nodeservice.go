@@ -104,7 +104,8 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 	}
 	datumList := searchRequest.GetDatum()
 	searchConfig := searchRequest.GetConfig()
-	result, err := aData.MultiAggregatedSearch(datumList, searchConfig)
+	searchContext := searchRequest.GetContext()
+	result, err := aData.MultiAggregatedSearch(datumList, searchConfig, searchContext)
 	if err != nil {
 		return err
 	}

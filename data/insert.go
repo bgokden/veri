@@ -2,7 +2,6 @@ package data
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
@@ -29,11 +28,11 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	}
 	err = dt.DB.Update(func(txn *badger.Txn) error {
 		if ttlDuration != nil {
-			log.Printf("Insert Datum: %v ttl: %v\n", datum, ttlDuration)
+			// log.Printf("Insert Datum: %v ttl: %v\n", datum, ttlDuration)
 			e := badger.NewEntry(keyByte, valueByte).WithTTL(*ttlDuration)
 			return txn.SetEntry(e)
 		}
-		log.Printf("Insert Datum: %v ttl: %v\n", datum, ttlDuration)
+		// log.Printf("Insert Datum: %v ttl: %v\n", datum, ttlDuration)
 		return txn.Set(keyByte, valueByte)
 	})
 	if err != nil {

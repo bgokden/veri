@@ -16,25 +16,30 @@ service VeriService {
 
 // Request message for creating a new customer
 message SearchRequest {
-    SearchConfig config = 1;
-    repeated Datum datum = 2;
+  SearchConfig config = 1;
+  repeated Datum datum = 2; 
+  SearchContext context = 3;   
 }
 
 message SearchConfig {
-    string scoreFuncName = 1;
-    bool higherIsBetter = 2;
-    uint64 timestamp = 3;
-    uint64 timeout = 4;
-    uint32 limit = 5;
-    uint64 cacheDuration = 6;
-    string dataName = 7;
-    uint32 groupLimit = 8;
-    string groupScoreFuncName = 9;
-    repeated string filters = 10;
+  string scoreFuncName = 1;
+  bool higherIsBetter = 2;
+  uint64 timestamp = 3;
+  uint64 timeout = 4;
+  uint32 limit = 5;
+  uint64 cacheDuration = 6;
+  string dataName = 7;
+  uint32 groupLimit = 8;
+  string groupScoreFuncName = 9;
+  repeated string filters = 10;
+}
+
+message SearchContext {
+  repeated Datum datum = 1;
 }
 
 message GetDataRequest {
-    string name = 1;
+  string name = 1;
 }
 
 message Datum {

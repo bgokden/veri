@@ -9,6 +9,7 @@ require (
 	github.com/golang/protobuf v1.4.1
 	github.com/gorilla/mux v1.7.2
 	github.com/magneticio/go-common v0.0.1
+	github.com/magneticio/vampkubistcli v0.0.63
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.8.1

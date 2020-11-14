@@ -2,67 +2,46 @@ version: 2
 jobs:
   build:
     docker:
-    - image: circleci/golang:1.12.3
+      - image: circleci/golang:1.12.3
     steps:
-    - checkout
-    - run: go test ./...
-    - run: mkdir -p ./artifacts
-    - run: go run main.go version --clean > ./artifacts/version.txt
-    - persist_to_workspace:
-            root: ./artifacts
-            paths:
-            - .
-  releasedev:
-    machine: true
+      - checkout
+      - run: mkdir -p ./artifacts
+      - run: go get golang.org/x/tools/cmd/cover
+      - run: go get github.com/mattn/goveralls@v0.0.3
+      - run: ./test.sh
+      - run: $GOPATH/bin/goveralls -coverprofile=coverage.out -service=circle-ci -repotoken $COVERALLS_TOKEN
+  publish-github-release:
+    docker:
+      - image: circleci/golang:1.15.5
     steps:
-    - checkout
-    - attach_workspace:
-        at: ./artifacts
-    - run:
-        name: "Publish image to docker hub as development release"
-        command: |
-          VERSION=$(cat ./artifacts/version.txt)
-          rm ./artifacts/version.txt
-          docker login -u $DOCKER_USER -p $DOCKER_PASS
-          docker build -t berkgokden/veri-dev:$VERSION-${CIRCLE_SHA1} .
-          docker push berkgokden/veri-dev:$VERSION-${CIRCLE_SHA1}
-          docker tag berkgokden/veri-dev:$VERSION-${CIRCLE_SHA1} berkgokden/veri-dev:latest
-          docker push berkgokden/veri-dev:latest
-  release:
-    machine: true
-    steps:
-    - checkout
-    - attach_workspace:
-        at: ./artifacts
-    - run:
-        name: "Publish image to docker hub"
-        command: |
-          VERSION=$(cat ./artifacts/version.txt)
-          rm ./artifacts/version.txt
-          docker login -u $DOCKER_USER -p $DOCKER_PASS
-          docker build -t berkgokden/veri:$VERSION .
-          docker push berkgokden/veri:$VERSION
+      - checkout
+      - add_ssh_keys
+      - run: ./semver_version.sh -l go -f "./cmd/semver/version.go" -o none
+      - run: ./build.sh local
+      - run: go get -u github.com/tcnksm/ghr
+      - run: mkdir -p ./artifacts
+      - run: cp ./bin/* ./artifacts
+      - run: git config user.email "${GITHUB_EMAIL}"
+      - run: git config user.name "${CIRCLE_PROJECT_USERNAME}"
+      - run: ./semver_version.sh -l text -f ./artifacts/version.txt
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            VERSION=$(cat ./artifacts/version.txt)
+            rm ./artifacts/version.txt
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
 workflows:
   version: 2
   main:
     jobs:
-    - build:
-        filters:
-          tags:
-            only: /^(v)\d+\.\d+\.\d+$/
-    - releasedev:
-        requires:
-        - build
-        filters:
-          branches:
-            only:
-            - master
-            - /rc-.*/
-    - release:
-        requires:
-        - build
-        filters:
-          branches:
-            ignore: /.*/
-          tags:
-            only: /^(v)\d+\.\d+\.\d+$/
+      - build:
+          filters:
+            tags:
+              only: /^(v)\d+\.\d+\.\d+$/
+      - publish-github-release:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - master

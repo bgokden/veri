@@ -125,6 +125,13 @@ var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) floa
 	"CosineSimilarity":     CosineSimilarity,
 }
 
+func GetVectorComparisonFunction(name string) func(arr1 []float64, arr2 []float64) float64 {
+	if function, ok := vectorComparisonFuncs[name]; ok {
+		return function
+	}
+	return VectorDistance
+}
+
 // Search does a search based on distances of keys
 func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 	// log.Printf("Search: %v\n", datum)
@@ -133,7 +140,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 	}
 	c := &Collector{}
 	c.DatumKey = datum.Key
-	c.ScoreFunc = vectorComparisonFuncs[config.ScoreFuncName]
+	c.ScoreFunc = GetVectorComparisonFunction(config.ScoreFuncName)
 	c.HigherIsBetter = config.HigherIsBetter
 	c.N = config.Limit
 	stream := dt.DB.NewStream()
@@ -224,7 +231,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	if config.GroupLimit > 0 {
 		isGrouped = true
 	}
-	temp := NewAggrator(config, isGrouped)
+	temp := NewAggrator(config, isGrouped, nil)
 	dataAvailable := true
 	for dataAvailable {
 		select {
@@ -259,7 +266,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 }
 
 // MultiAggregatedSearch searches and merges other resources
-func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchConfig) ([]*pb.ScoredDatum, error) {
+func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchConfig, context *pb.SearchContext) ([]*pb.ScoredDatum, error) {
 	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
 	// Search Start
@@ -280,7 +287,7 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 	if config.GroupLimit > 0 {
 		isGrouped = true
 	}
-	temp := NewAggrator(config, isGrouped)
+	temp := NewAggrator(config, isGrouped, context)
 	dataAvailable := true
 	for dataAvailable {
 		select {
