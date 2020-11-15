@@ -60,6 +60,10 @@ func (dts *Dataset) CreateIfNotExists(config *pb.DataConfig) error {
 	if err == nil {
 		return preData.InitData()
 	}
+	if err.Error() == fmt.Sprintf("Item %s doesn't exist", config.Name) {
+		return nil
+	}
+	go dts.SaveIndex()
 	return err
 }
 
@@ -72,6 +76,7 @@ func (dts *Dataset) Delete(name string) error {
 		data.Close()
 	}
 	dts.DataList.Delete(name)
+	go dts.SaveIndex()
 	return nil
 }
 
@@ -81,6 +86,7 @@ func (dts *Dataset) List() []string {
 	for k := range sourceList {
 		keys = append(keys, k)
 	}
+	go dts.SaveIndex()
 	return keys
 }
 
