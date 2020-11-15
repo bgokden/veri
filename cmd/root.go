@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	semver "github.com/magneticio/vampkubistcli/semver"
+	semver "github.com/bgokden/veri/semver"
 )
 
 var cfgFile string
