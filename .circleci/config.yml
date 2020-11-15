@@ -16,7 +16,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys
-      - run: ./semver_version.sh -l go -f "./cmd/semver/version.go" -o none
+      - run: ./semver_version.sh -l go -f "./semver/version.go" -o none
       - run: ./build.sh local
       - run: go get -u github.com/tcnksm/ghr
       - run: mkdir -p ./artifacts
