@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bgokden/go-cache"
 	badger "github.com/dgraph-io/badger/v2"
-	"github.com/patrickmn/go-cache"
 
 	pb "github.com/bgokden/veri/veriservice"
 )
@@ -34,6 +34,7 @@ type Data struct {
 	Dirty       bool
 	Sources     *cache.Cache
 	QueryCache  *cache.Cache
+	Initialized bool
 }
 
 func (d *Data) GetConfig() *pb.DataConfig {
@@ -64,14 +65,17 @@ func NewPreData(config *pb.DataConfig, dataPath string) *Data {
 
 func (dt *Data) InitData() error {
 	log.Printf("Init Data %v\n", dt.Config)
-	db, err := badger.Open(badger.DefaultOptions(dt.DBPath))
-	if err != nil {
-		return err
+	if dt.Initialized == false {
+		db, err := badger.Open(badger.DefaultOptions(dt.DBPath))
+		if err != nil {
+			return err
+		}
+		dt.DB = db
+		dt.Sources = cache.New(5*time.Minute, 10*time.Minute)
+		dt.QueryCache = cache.New(5*time.Minute, 10*time.Minute)
+		go dt.Run()
+		dt.Initialized = true
 	}
-	dt.DB = db
-	dt.Sources = cache.New(5*time.Minute, 10*time.Minute)
-	dt.QueryCache = cache.New(5*time.Minute, 10*time.Minute)
-	go dt.Run()
 	return nil
 }
 

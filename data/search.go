@@ -10,7 +10,6 @@ import (
 
 	pb "github.com/bgokden/veri/veriservice"
 	bpb "github.com/dgraph-io/badger/v2/pb"
-	"github.com/patrickmn/go-cache"
 )
 
 // type SearchConfig struct {
@@ -33,6 +32,7 @@ func DefaultSearchConfig() *pb.SearchConfig {
 
 func EncodeSearchConfig(p *pb.SearchConfig) []byte {
 	marshalled, _ := json.Marshal(p)
+	log.Printf("SearchConfig Encoded: %v\n", string(marshalled))
 	return marshalled
 }
 
@@ -200,10 +200,18 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	timeLimit := time.After(duration)
 	// log.Printf("DatumKey: %v\n", datum.GetKey())
 	queryKey := GetSearchKey(datum, config)
+	if dt.QueryCache == nil {
+		dt.InitData()
+	}
 	if result, ok := dt.QueryCache.Get(queryKey); ok {
+		log.Printf("Found in cache\n")
 		cachedResult := result.([]*pb.ScoredDatum)
 		for _, i := range cachedResult {
 			scoredDatumStreamOutput <- i
+		}
+		log.Printf("Returned in cache\n")
+		if upperWaitGroup != nil {
+			upperWaitGroup.Done()
 		}
 		return nil
 	}
@@ -261,8 +269,9 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	if upperWaitGroup != nil {
 		upperWaitGroup.Done()
 	}
-	dt.QueryCache.Set(queryKey, result, cache.DefaultExpiration)
-	log.Printf("AggregatedSearch: finished")
+	cacheDuration := time.Duration(config.CacheDuration) * time.Second
+	dt.QueryCache.Set(queryKey, result, cacheDuration)
+	log.Printf("AggregatedSearch: finished. Cache Duration: %v\n", cacheDuration)
 	return nil
 }
 
