@@ -9,7 +9,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/patrickmn/go-cache"
+	"github.com/bgokden/go-cache"
 	"github.com/pkg/errors"
 
 	pb "github.com/bgokden/veri/veriservice"
@@ -21,16 +21,23 @@ type Dataset struct {
 	DataPath string
 }
 
+func closeData(key string, value interface{}) {
+	if data, ok := value.(*Data); ok {
+		data.Close()
+	}
+}
+
 func NewDataset(datasetPath string) *Dataset {
 	dts := &Dataset{
 		Path: datasetPath,
 	}
-	dts.DataList = cache.New(5*time.Minute, 10*time.Minute)
+	dts.DataList = cache.New(24*time.Hour, 10*time.Minute)
+	dts.DataList.OnEvicted(closeData)
 	dts.DataPath = path.Join(dts.Path, "data")
 	os.MkdirAll(dts.DataPath, os.ModePerm)
 	err := dts.LoadIndex()
 	if err != nil {
-		fmt.Printf("err %v\n", err)
+		log.Printf("Loading error: %v\n", err)
 	}
 	return dts
 }
@@ -41,6 +48,7 @@ func (dts *Dataset) Get(name string) (*Data, error) {
 		return nil, errors.Errorf("Data %v does not exist", name)
 	}
 	if data, ok := item.(*Data); ok {
+		dts.DataList.IncrementExpiration(name, time.Duration(data.GetConfig().Retentation)*time.Second)
 		return data, nil
 	}
 	return nil, errors.Errorf("Data %v is currupt", name)
@@ -56,14 +64,16 @@ func (dts *Dataset) GetOrCreateIfNotExists(config *pb.DataConfig) (*Data, error)
 
 func (dts *Dataset) CreateIfNotExists(config *pb.DataConfig) error {
 	preData := NewPreData(config, dts.DataPath)
-	err := dts.DataList.Add(config.Name, preData, cache.NoExpiration)
+	retentation := time.Duration(config.Retentation) * time.Second
+	log.Printf("Data %v Retentation: %v\n", config.Name, retentation)
+	err := dts.DataList.Add(config.Name, preData, retentation)
 	if err == nil {
+		go dts.SaveIndex()
 		return preData.InitData()
 	}
 	if err.Error() == fmt.Sprintf("Item %s doesn't exist", config.Name) {
 		return nil
 	}
-	go dts.SaveIndex()
 	return err
 }
 
@@ -136,12 +146,7 @@ func (dts *Dataset) SaveIndex() error {
 	for k := range sourceList {
 		data, _ := dts.Get(k)
 		config := data.GetConfig()
-		var jsonData []byte
-		jsonData, err := json.Marshal(config)
-		if err != nil {
-			log.Println(err)
-		}
-
+		jsonData, _ := json.Marshal(config)
 		_, _ = datawriter.WriteString(string(jsonData) + "\n")
 
 	}
@@ -152,10 +157,12 @@ func (dts *Dataset) SaveIndex() error {
 
 func (dts *Dataset) Close() error {
 	dts.SaveIndex()
-	sourceList := dts.DataList.Items()
-	for k := range sourceList {
-		data, _ := dts.Get(k)
-		data.Close()
+	datalist := dts.DataList.Items()
+	for k := range datalist {
+		data, err := dts.Get(k)
+		if err == nil {
+			data.Close()
+		}
 	}
 	return nil
 }

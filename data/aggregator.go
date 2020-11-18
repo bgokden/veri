@@ -4,8 +4,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/bgokden/go-cache"
 	pb "github.com/bgokden/veri/veriservice"
-	"github.com/patrickmn/go-cache"
 )
 
 type AggregatorInterface interface {

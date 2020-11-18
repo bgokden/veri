@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bgokden/go-cache"
 	pb "github.com/bgokden/veri/veriservice"
-	"github.com/patrickmn/go-cache"
 
 	data "github.com/bgokden/veri/data"
 )
@@ -195,5 +195,6 @@ func (n *Node) StopPeriodicTask() {
 func (n *Node) Periodic() error {
 	go n.JoinToPeers()
 	go n.SyncWithPeers()
+	go n.Dataset.SaveIndex()
 	return nil
 }
