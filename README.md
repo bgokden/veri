@@ -15,7 +15,7 @@ Veri also supports creating sub sample spaces of data by default.
 
 Veri works as a cluster that can hold a Vector Space with fixed dimension and allows easy querying of k nearest neighbour search queries and also querying a sample space to be used in a machine learning algorithm.
 
-Veri is currently in Alpha Stage
+Veri is currently in Beta Stage
 
 *Veri means data in Turkish.*
 
@@ -25,7 +25,7 @@ In machine learning, data scientist usually convert data into a feature label ve
 
 I have worked in different roles as a Data Engineer, Data scientist and a Software Developer. In many projects, I wanted a scalable approach to vector space search which is not available. I wanted to optimise the data ingestion and data querying into one tool.
 
-Veri is meant to be scale. Each Veri instance tries to synchronise its data with other peers and keep a statistically identical subset of the general vector space.
+Veri is meant to scale. Each Veri instance tries to synchronise its data with other peers and keep a statistically identical subset of the general vector space.
 
 ## What does statistically identical mean?
 
@@ -34,11 +34,12 @@ Every instance continue, exchanging data as long as their average and histogram 
 
 ## Knn querying
 
-Veri internally has a kd-tree, but it also queries its neighbours and merges the result. It is very similar to map-reduce process done on the fly without planning.
+Veri internally has an internal key-value store, but it also queries its neighbours and merges the result. 
+It is very similar to map-reduce process done on the fly without planning.
 
-When a knn query is stated, veri creates a unique id,
+When a knn query is stated, veri creates a unique hash,
 Starts a timer,
-Then do a local kd-tree search,
+Then do a local knn search locally,
 Then calls its peers to do the same with a smaller timeout,
 Merges results into a map,
 Waits for timeout and then do a refine process on the result map,
@@ -50,19 +51,14 @@ Every knn query has a timeout and timeout defines the precision of the result. U
 
 ## High Availability
 
-Veri has a different way of approaching high availability.
-Veri as a cluster try to use all the memory it is allowed to use.
-If there is enough memory, all the data is replicated to every instance.
-If there is not enough memory, data is split within instances using histogram balancing.
-If memory is nearly full, Veri will reject insertion requests.
-So if you want more high availability, use more instances.
-Currently, it is recommended to use another database for long term storage. Usually vector spaces, change over time and only the original data is kept. So I didn't implement a direct backend into it. Instead, you can regularly insert new data and evict old data. So you will keep your vector space up to date. Veri can respond queries while data being inserted or deleted, unlike most knn search systems.
+Veri replicates the data to its peers periodically and data is persisted to the disk for crahes.
 
 TODO:
-- Add Dump data function to allow machine learning algorithms to get a Sample Space.
-- Add Query Caching and Return Cached Result instead of rejecting result.
-- Add Internal classification endpoint.
+- Test multinode syncranization
 - Authentication.
 - Documentation.
+
+### Note:
+Veri uses [badger](https://github.com/dgraph-io/badger) internally. Many functions are made possible thanks to badger.
 
 Contact me for any questions: berkgokden@gmail.com
