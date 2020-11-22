@@ -8,6 +8,7 @@ require (
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/golang/protobuf v1.4.1
 	github.com/gorilla/mux v1.7.2
+	github.com/jinzhu/copier v0.0.0-20201025035756-632e723a6687
 	github.com/magneticio/go-common v0.0.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.8.1

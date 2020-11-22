@@ -1,11 +1,13 @@
 package data
 
 import (
+	"log"
 	"sort"
 	"time"
 
 	"github.com/bgokden/go-cache"
 	pb "github.com/bgokden/veri/veriservice"
+	"github.com/jinzhu/copier"
 )
 
 type AggregatorInterface interface {
@@ -48,7 +50,7 @@ func (a *Aggregator) IsNewScoredBetter(old, new float64) bool {
 }
 
 func (a *Aggregator) BestScore(scoredDatum *pb.ScoredDatum) float64 {
-	if a.Context != nil || len(a.Context.GetDatum()) > 0 {
+	if a.Context != nil && len(a.Context.GetDatum()) > 0 {
 		var isSet = false
 		var current float64
 		// When Context is crioritized search score is ignored.
@@ -102,7 +104,11 @@ func (a *Aggregator) Insert(scoredDatum *pb.ScoredDatum) error {
 			aGroupAggregator := aGroupAggregatorInterface.(AggregatorInterface)
 			return aGroupAggregator.Insert(scoredDatum)
 		} else {
-			aGroupAggregator := NewAggrator(a.Config, false, nil)
+			var aConfig pb.SearchConfig
+			copier.Copy(&aConfig, a.Config)
+			aConfig.Limit = a.Config.GroupLimit // TODO: find a better solution.
+			log.Printf(">>>>> aConfig: %v\n", aConfig)
+			aGroupAggregator := NewAggrator(&aConfig, false, nil)
 			a.DeDuplicationMap.Set(keyString, aGroupAggregator, cache.NoExpiration)
 			return aGroupAggregator.Insert(scoredDatum)
 		}
