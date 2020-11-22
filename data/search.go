@@ -198,18 +198,15 @@ func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
 func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, upperWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
-	// log.Printf("DatumKey: %v\n", datum.GetKey())
 	queryKey := GetSearchKey(datum, config)
 	if dt.QueryCache == nil {
 		dt.InitData()
 	}
 	if result, ok := dt.QueryCache.Get(queryKey); ok {
-		log.Printf("Found in cache\n")
 		cachedResult := result.([]*pb.ScoredDatum)
 		for _, i := range cachedResult {
 			scoredDatumStreamOutput <- i
 		}
-		log.Printf("Returned in cache\n")
 		if upperWaitGroup != nil {
 			upperWaitGroup.Done()
 		}
@@ -271,6 +268,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	}
 	cacheDuration := time.Duration(config.CacheDuration) * time.Second
 	dt.QueryCache.Set(queryKey, result, cacheDuration)
+	dt.QueryCache.IncrementExpiration(queryKey, cacheDuration)
 	log.Printf("AggregatedSearch: finished. Cache Duration: %v\n", cacheDuration)
 	return nil
 }
