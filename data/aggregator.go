@@ -1,7 +1,6 @@
 package data
 
 import (
-	"log"
 	"sort"
 	"time"
 
@@ -107,7 +106,6 @@ func (a *Aggregator) Insert(scoredDatum *pb.ScoredDatum) error {
 			var aConfig pb.SearchConfig
 			copier.Copy(&aConfig, a.Config)
 			aConfig.Limit = a.Config.GroupLimit // TODO: find a better solution.
-			log.Printf(">>>>> aConfig: %v\n", aConfig)
 			aGroupAggregator := NewAggrator(&aConfig, false, nil)
 			a.DeDuplicationMap.Set(keyString, aGroupAggregator, cache.NoExpiration)
 			return aGroupAggregator.Insert(scoredDatum)
