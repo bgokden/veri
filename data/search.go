@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log"
@@ -10,7 +11,9 @@ import (
 
 	"github.com/jinzhu/copier"
 
+	"github.com/bgokden/veri/data/gencoder"
 	pb "github.com/bgokden/veri/veriservice"
+	badger "github.com/dgraph-io/badger/v2"
 	bpb "github.com/dgraph-io/badger/v2/pb"
 )
 
@@ -84,9 +87,13 @@ func (c *Collector) Send(list *bpb.KVList) error {
 	// log.Printf("Collector Send\n")
 	itemAdded := false
 	for _, item := range list.Kv {
-		datumKey, _ := ToDatumKey(item.Key)
-		// TODO: implement filters use: https://godoc.org/github.com/PaesslerAG/jsonpath#Get
-		score := c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature)
+		datumScore := gencoder.DatumScore{Score: 0}
+		datumScore.Unmarshal(item.UserMeta)
+		// Old way of scoring:
+		// datumKey, _ := ToDatumKey(item.Key)
+		// // TODO: implement filters use: https://godoc.org/github.com/PaesslerAG/jsonpath#Get
+		// score := c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature)
+		score := datumScore.Score
 		if uint32(len(c.List)) < c.N {
 			datum, _ := ToDatum(item.Key, item.Value)
 			scoredDatum := &pb.ScoredDatum{
@@ -122,10 +129,48 @@ func (c *Collector) Send(list *bpb.KVList) error {
 	return nil
 }
 
+// ToList is a default implementation of KeyToList. It picks up all valid versions of the key,
+// skipping over deleted or expired keys.
+func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error) {
+	list := &bpb.KVList{}
+	for ; itr.Valid(); itr.Next() {
+		item := itr.Item()
+		if item.IsDeletedOrExpired() {
+			break
+		}
+		if !bytes.Equal(key, item.Key()) {
+			// Break out on the first encounter with another key.
+			break
+		}
+
+		valCopy, err := item.ValueCopy(nil)
+		if err != nil {
+			return nil, err
+		}
+		keyCopy := item.KeyCopy(nil)
+		datumKey, _ := ToDatumKey(keyCopy)
+		datumScore := &gencoder.DatumScore{
+			Score: c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature),
+		}
+		datumScoreBytes, _ := datumScore.Marshal()
+		kv := &bpb.KV{
+			Key:       keyCopy,
+			Value:     valCopy,
+			UserMeta:  datumScoreBytes,
+			Version:   item.Version(),
+			ExpiresAt: item.ExpiresAt(),
+		}
+		list.Kv = append(list.Kv, kv)
+		break
+	}
+	return list, nil
+}
+
 var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) float64{
 	"VectorDistance":       VectorDistance,
 	"VectorMultiplication": VectorMultiplication,
 	"CosineSimilarity":     CosineSimilarity,
+	"QuickVectorDistance":  QuickVectorDistance,
 }
 
 func GetVectorComparisonFunction(name string) func(arr1 []float64, arr2 []float64) float64 {
@@ -142,6 +187,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 		config = DefaultSearchConfig()
 	}
 	c := &Collector{}
+	c.List = make([]*pb.ScoredDatum, 0, config.Limit)
 	c.DatumKey = datum.Key
 	c.ScoreFunc = GetVectorComparisonFunction(config.ScoreFuncName)
 	c.HigherIsBetter = config.HigherIsBetter
@@ -150,7 +196,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 	// db.NewStreamAt(readTs) for managed mode.
 
 	// -- Optional settings
-	stream.NumGo = 16                     // Set number of goroutines to use for iteration.
+	stream.NumGo = 4                      // Set number of goroutines to use for iteration.
 	stream.Prefix = nil                   // Leave nil for iteration over the whole DB.
 	stream.LogPrefix = "Badger.Streaming" // For identifying stream logs. Outputs to Logger.
 
@@ -160,7 +206,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 	// KeyToList is called concurrently for chosen keys. This can be used to convert
 	// Badger data into custom key-values. If nil, uses stream.ToList, a default
 	// implementation, which picks all valid key-values.
-	stream.KeyToList = nil
+	stream.KeyToList = c.ToList // nil
 
 	// -- End of optional settings.
 
