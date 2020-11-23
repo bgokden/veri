@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jinzhu/copier"
+
 	pb "github.com/bgokden/veri/veriservice"
 	bpb "github.com/dgraph-io/badger/v2/pb"
 )
@@ -204,12 +206,15 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	}
 	if result, ok := dt.QueryCache.Get(queryKey); ok {
 		cachedResult := result.([]*pb.ScoredDatum)
-		for _, i := range cachedResult {
+		resultCopy := CloneResult(cachedResult)
+		for _, i := range resultCopy {
 			scoredDatumStreamOutput <- i
 		}
 		if upperWaitGroup != nil {
 			upperWaitGroup.Done()
 		}
+		cacheDuration := time.Duration(config.CacheDuration) * time.Second
+		dt.QueryCache.IncrementExpiration(queryKey, cacheDuration)
 		return nil
 	}
 	// Search Start
@@ -233,11 +238,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
 	// stream merge
-	isGrouped := false
-	if config.GroupLimit > 0 {
-		isGrouped = true
-	}
-	temp := NewAggrator(config, isGrouped, nil)
+	temp := NewAggrator(config, false, nil)
 	dataAvailable := true
 	for dataAvailable {
 		select {
@@ -260,6 +261,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	log.Printf("search collected data\n")
 	// Search End
 	result := temp.Result()
+	resultCopy := CloneResult(result)
 	for _, i := range result {
 		scoredDatumStreamOutput <- i
 	}
@@ -267,10 +269,19 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		upperWaitGroup.Done()
 	}
 	cacheDuration := time.Duration(config.CacheDuration) * time.Second
-	dt.QueryCache.Set(queryKey, result, cacheDuration)
-	dt.QueryCache.IncrementExpiration(queryKey, cacheDuration)
-	log.Printf("AggregatedSearch: finished. Cache Duration: %v\n", cacheDuration)
+	dt.QueryCache.Set(queryKey, resultCopy, cacheDuration)
+	log.Printf("AggregatedSearch: finished. Set Cache Duration: %v\n", cacheDuration)
 	return nil
+}
+
+func CloneResult(result []*pb.ScoredDatum) []*pb.ScoredDatum {
+	resultCopy := make([]*pb.ScoredDatum, len(result))
+	for i, sd := range result {
+		var scoredDatum pb.ScoredDatum
+		copier.Copy(&scoredDatum, sd)
+		resultCopy[i] = &scoredDatum
+	}
+	return resultCopy
 }
 
 // MultiAggregatedSearch searches and merges other resources
