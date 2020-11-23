@@ -66,7 +66,9 @@ func NewPreData(config *pb.DataConfig, dataPath string) *Data {
 func (dt *Data) InitData() error {
 	log.Printf("Init Data %v\n", dt.Config)
 	if dt.Initialized == false {
-		options := badger.DefaultOptions(dt.DBPath).WithKeepL0InMemory(true)
+		options := badger.DefaultOptions(dt.DBPath).
+			WithKeepL0InMemory(true).
+			WithLoggingLevel(badger.WARNING)
 		db, err := badger.Open(options)
 		if err != nil {
 			return err

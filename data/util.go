@@ -23,6 +23,16 @@ func CalculateAverage(avg []float64, p []float64, n float64) []float64 {
 	return avg
 }
 
+func QuickVectorDistance(arr1 []float64, arr2 []float64) float64 {
+	minLen := min(len(arr1), len(arr2))
+	var ret float64
+	for i := 0; i < minLen; i++ {
+		tmp := arr1[i] - arr2[i]
+		ret += math.Abs(tmp)
+	}
+	return ret
+}
+
 // VectorDistance calculates distance of two vector by euclidean distance
 func VectorDistance(arr1 []float64, arr2 []float64) float64 {
 	minLen := min(len(arr1), len(arr2))

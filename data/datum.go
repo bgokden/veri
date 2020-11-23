@@ -1,11 +1,9 @@
 package data
 
 import (
-	"bytes"
-	"encoding/gob"
-	"log"
-
 	pb "github.com/bgokden/veri/veriservice"
+
+	"github.com/bgokden/veri/data/gencoder"
 )
 
 // NewDatum is an utily function to initialize datum type
@@ -34,32 +32,88 @@ func NewDatum(feature []float64,
 	}
 }
 
+// func GetKeyAsBytes(datum *pb.Datum) ([]byte, error) {
+// 	var byteBuffer bytes.Buffer
+// 	encoder := gob.NewEncoder(&byteBuffer)
+// 	if err := encoder.Encode(*datum.Key); err != nil {
+// 		log.Printf("Encoding error %v\n", err)
+// 		return nil, err
+// 	}
+// 	return byteBuffer.Bytes(), nil
+// }
+
+// func GetValueAsBytes(datum *pb.Datum) ([]byte, error) {
+// 	var byteBuffer bytes.Buffer
+// 	encoder := gob.NewEncoder(&byteBuffer)
+// 	if err := encoder.Encode(*datum.Value); err != nil {
+// 		log.Printf("Encoding error %v\n", err)
+// 		return nil, err
+// 	}
+// 	return byteBuffer.Bytes(), nil
+// }
+
+// func GetKeyAsBytes(datum *pb.Datum) ([]byte, error) {
+// 	return proto.Marshal(datum.Key)
+// }
+
+// func GetValueAsBytes(datum *pb.Datum) ([]byte, error) {
+// 	return proto.Marshal(datum.Value)
+// }
+
+// func ToDatumKey(byteArray []byte) (*pb.DatumKey, error) {
+// 	var element pb.DatumKey
+// 	r := bytes.NewReader(byteArray)
+// 	decoder := gob.NewDecoder(r)
+// 	if err := decoder.Decode(&element); err != nil {
+// 		log.Printf("Decoding error %v\n", err)
+// 		return nil, err
+// 	}
+// 	return &element, nil
+// }
+
+// func ToDatumValue(byteArray []byte) (*pb.DatumValue, error) {
+// 	var element pb.DatumValue
+// 	r := bytes.NewReader(byteArray)
+// 	decoder := gob.NewDecoder(r)
+// 	if err := decoder.Decode(&element); err != nil {
+// 		log.Printf("Decoding error %v\n", err)
+// 		return nil, err
+// 	}
+// 	return &element, nil
+// }
+
+// func ToDatumKey(byteArray []byte) (*pb.DatumKey, error) {
+// 	var element pb.DatumKey
+// 	err := proto.Unmarshal(byteArray, &element)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &element, nil
+// }
+
+// func ToDatumValue(byteArray []byte) (*pb.DatumValue, error) {
+// 	var element pb.DatumValue
+// 	err := proto.Unmarshal(byteArray, &element)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &element, nil
+// }
+
+// Gencode
+
 func GetKeyAsBytes(datum *pb.Datum) ([]byte, error) {
-	var byteBuffer bytes.Buffer
-	encoder := gob.NewEncoder(&byteBuffer)
-	if err := encoder.Encode(*datum.Key); err != nil {
-		log.Printf("Encoding error %v\n", err)
-		return nil, err
-	}
-	return byteBuffer.Bytes(), nil
+	return gencoder.MarshalKey(datum.Key)
 }
 
 func GetValueAsBytes(datum *pb.Datum) ([]byte, error) {
-	var byteBuffer bytes.Buffer
-	encoder := gob.NewEncoder(&byteBuffer)
-	if err := encoder.Encode(*datum.Value); err != nil {
-		log.Printf("Encoding error %v\n", err)
-		return nil, err
-	}
-	return byteBuffer.Bytes(), nil
+	return gencoder.MarshalValue(datum.Value)
 }
 
 func ToDatumKey(byteArray []byte) (*pb.DatumKey, error) {
 	var element pb.DatumKey
-	r := bytes.NewReader(byteArray)
-	decoder := gob.NewDecoder(r)
-	if err := decoder.Decode(&element); err != nil {
-		log.Printf("Decoding error %v\n", err)
+	_, err := gencoder.UnmarshalKey(&element, byteArray)
+	if err != nil {
 		return nil, err
 	}
 	return &element, nil
@@ -67,10 +121,8 @@ func ToDatumKey(byteArray []byte) (*pb.DatumKey, error) {
 
 func ToDatumValue(byteArray []byte) (*pb.DatumValue, error) {
 	var element pb.DatumValue
-	r := bytes.NewReader(byteArray)
-	decoder := gob.NewDecoder(r)
-	if err := decoder.Decode(&element); err != nil {
-		log.Printf("Decoding error %v\n", err)
+	_, err := gencoder.UnmarshalValue(&element, byteArray)
+	if err != nil {
 		return nil, err
 	}
 	return &element, nil

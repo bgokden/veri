@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log"
@@ -8,7 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jinzhu/copier"
+
+	"github.com/bgokden/veri/data/gencoder"
 	pb "github.com/bgokden/veri/veriservice"
+	badger "github.com/dgraph-io/badger/v2"
 	bpb "github.com/dgraph-io/badger/v2/pb"
 )
 
@@ -82,9 +87,13 @@ func (c *Collector) Send(list *bpb.KVList) error {
 	// log.Printf("Collector Send\n")
 	itemAdded := false
 	for _, item := range list.Kv {
-		datumKey, _ := ToDatumKey(item.Key)
-		// TODO: implement filters use: https://godoc.org/github.com/PaesslerAG/jsonpath#Get
-		score := c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature)
+		datumScore := gencoder.DatumScore{Score: 0}
+		datumScore.Unmarshal(item.UserMeta)
+		// Old way of scoring:
+		// datumKey, _ := ToDatumKey(item.Key)
+		// // TODO: implement filters use: https://godoc.org/github.com/PaesslerAG/jsonpath#Get
+		// score := c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature)
+		score := datumScore.Score
 		if uint32(len(c.List)) < c.N {
 			datum, _ := ToDatum(item.Key, item.Value)
 			scoredDatum := &pb.ScoredDatum{
@@ -120,10 +129,48 @@ func (c *Collector) Send(list *bpb.KVList) error {
 	return nil
 }
 
+// ToList is a default implementation of KeyToList. It picks up all valid versions of the key,
+// skipping over deleted or expired keys.
+func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error) {
+	list := &bpb.KVList{}
+	for ; itr.Valid(); itr.Next() {
+		item := itr.Item()
+		if item.IsDeletedOrExpired() {
+			break
+		}
+		if !bytes.Equal(key, item.Key()) {
+			// Break out on the first encounter with another key.
+			break
+		}
+
+		valCopy, err := item.ValueCopy(nil)
+		if err != nil {
+			return nil, err
+		}
+		keyCopy := item.KeyCopy(nil)
+		datumKey, _ := ToDatumKey(keyCopy)
+		datumScore := &gencoder.DatumScore{
+			Score: c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature),
+		}
+		datumScoreBytes, _ := datumScore.Marshal()
+		kv := &bpb.KV{
+			Key:       keyCopy,
+			Value:     valCopy,
+			UserMeta:  datumScoreBytes,
+			Version:   item.Version(),
+			ExpiresAt: item.ExpiresAt(),
+		}
+		list.Kv = append(list.Kv, kv)
+		break
+	}
+	return list, nil
+}
+
 var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) float64{
 	"VectorDistance":       VectorDistance,
 	"VectorMultiplication": VectorMultiplication,
 	"CosineSimilarity":     CosineSimilarity,
+	"QuickVectorDistance":  QuickVectorDistance,
 }
 
 func GetVectorComparisonFunction(name string) func(arr1 []float64, arr2 []float64) float64 {
@@ -140,6 +187,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 		config = DefaultSearchConfig()
 	}
 	c := &Collector{}
+	c.List = make([]*pb.ScoredDatum, 0, config.Limit)
 	c.DatumKey = datum.Key
 	c.ScoreFunc = GetVectorComparisonFunction(config.ScoreFuncName)
 	c.HigherIsBetter = config.HigherIsBetter
@@ -148,7 +196,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 	// db.NewStreamAt(readTs) for managed mode.
 
 	// -- Optional settings
-	stream.NumGo = 16                     // Set number of goroutines to use for iteration.
+	stream.NumGo = 4                      // Set number of goroutines to use for iteration.
 	stream.Prefix = nil                   // Leave nil for iteration over the whole DB.
 	stream.LogPrefix = "Badger.Streaming" // For identifying stream logs. Outputs to Logger.
 
@@ -158,7 +206,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 	// KeyToList is called concurrently for chosen keys. This can be used to convert
 	// Badger data into custom key-values. If nil, uses stream.ToList, a default
 	// implementation, which picks all valid key-values.
-	stream.KeyToList = nil
+	stream.KeyToList = c.ToList // nil
 
 	// -- End of optional settings.
 
@@ -204,12 +252,15 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	}
 	if result, ok := dt.QueryCache.Get(queryKey); ok {
 		cachedResult := result.([]*pb.ScoredDatum)
-		for _, i := range cachedResult {
+		resultCopy := CloneResult(cachedResult)
+		for _, i := range resultCopy {
 			scoredDatumStreamOutput <- i
 		}
 		if upperWaitGroup != nil {
 			upperWaitGroup.Done()
 		}
+		cacheDuration := time.Duration(config.CacheDuration) * time.Second
+		dt.QueryCache.IncrementExpiration(queryKey, cacheDuration)
 		return nil
 	}
 	// Search Start
@@ -233,11 +284,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
 	// stream merge
-	isGrouped := false
-	if config.GroupLimit > 0 {
-		isGrouped = true
-	}
-	temp := NewAggrator(config, isGrouped, nil)
+	temp := NewAggrator(config, false, nil)
 	dataAvailable := true
 	for dataAvailable {
 		select {
@@ -260,6 +307,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	log.Printf("search collected data\n")
 	// Search End
 	result := temp.Result()
+	resultCopy := CloneResult(result)
 	for _, i := range result {
 		scoredDatumStreamOutput <- i
 	}
@@ -267,10 +315,19 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		upperWaitGroup.Done()
 	}
 	cacheDuration := time.Duration(config.CacheDuration) * time.Second
-	dt.QueryCache.Set(queryKey, result, cacheDuration)
-	dt.QueryCache.IncrementExpiration(queryKey, cacheDuration)
-	log.Printf("AggregatedSearch: finished. Cache Duration: %v\n", cacheDuration)
+	dt.QueryCache.Set(queryKey, resultCopy, cacheDuration)
+	log.Printf("AggregatedSearch: finished. Set Cache Duration: %v\n", cacheDuration)
 	return nil
+}
+
+func CloneResult(result []*pb.ScoredDatum) []*pb.ScoredDatum {
+	resultCopy := make([]*pb.ScoredDatum, len(result))
+	for i, sd := range result {
+		var scoredDatum pb.ScoredDatum
+		copier.Copy(&scoredDatum, sd)
+		resultCopy[i] = &scoredDatum
+	}
+	return resultCopy
 }
 
 // MultiAggregatedSearch searches and merges other resources

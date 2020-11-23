@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/bgokden/go-cache v2.1.1+incompatible
 	github.com/bgokden/veri-data v0.0.0-20201010163108-3311a37c8b47
+	github.com/dgraph-io/badger v1.6.2
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/golang/protobuf v1.4.1
 	github.com/gorilla/mux v1.7.2
