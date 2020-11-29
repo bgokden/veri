@@ -15,6 +15,7 @@ import (
 	pb "github.com/bgokden/veri/veriservice"
 	badger "github.com/dgraph-io/badger/v2"
 	bpb "github.com/dgraph-io/badger/v2/pb"
+	"github.com/tidwall/gjson"
 )
 
 // type SearchConfig struct {
@@ -49,6 +50,8 @@ type Collector struct {
 	DatumKey       *pb.DatumKey
 	N              uint32
 	HigherIsBetter bool
+	Filters        []string
+	GroupFilters   []string
 }
 
 // // ScoredDatum helps to keep Data ordered
@@ -152,6 +155,38 @@ func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error
 		datumScore := &gencoder.DatumScore{
 			Score: c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature),
 		}
+
+		if len(c.GroupFilters) > 0 {
+			filterFailed := false
+			jsonLabel := string(datumKey.GroupLabel)
+			for _, filter := range c.Filters {
+				value := gjson.Get(jsonLabel, filter)
+				if !value.Exists() {
+					filterFailed = true
+					break
+				}
+			}
+			if filterFailed {
+				break
+			}
+		}
+
+		if len(c.Filters) > 0 {
+			filterFailed := false
+			datumValue, _ := ToDatumValue(keyCopy)
+			jsonLabel := string(datumValue.Label)
+			for _, filter := range c.Filters {
+				value := gjson.Get(jsonLabel, filter)
+				if !value.Exists() {
+					filterFailed = true
+					break
+				}
+			}
+			if filterFailed {
+				break
+			}
+		}
+
 		datumScoreBytes, _ := datumScore.Marshal()
 		kv := &bpb.KV{
 			Key:       keyCopy,
@@ -192,6 +227,8 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 	c.ScoreFunc = GetVectorComparisonFunction(config.ScoreFuncName)
 	c.HigherIsBetter = config.HigherIsBetter
 	c.N = config.Limit
+	c.Filters = config.Filters
+	c.GroupFilters = config.GroupFilters
 	stream := dt.DB.NewStream()
 	// db.NewStreamAt(readTs) for managed mode.
 

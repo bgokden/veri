@@ -33,6 +33,7 @@ message SearchConfig {
   string groupScoreFuncName = 9;
   repeated string filters = 10;
   uint64 resultLimit = 11;
+  repeated string groupFilters = 12;
 }
 
 message SearchContext {
