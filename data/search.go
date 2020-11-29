@@ -173,7 +173,7 @@ func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error
 
 		if len(c.Filters) > 0 {
 			filterFailed := false
-			datumValue, _ := ToDatumValue(keyCopy)
+			datumValue, _ := ToDatumValue(valCopy)
 			jsonLabel := string(datumValue.Label)
 			for _, filter := range c.Filters {
 				value := gjson.Get(jsonLabel, filter)
