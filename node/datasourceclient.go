@@ -34,7 +34,7 @@ func (dcs *DataSourceClient) GetVeriServiceClient() (pb.VeriServiceClient, *grpc
 	return client, conn, nil
 }
 
-func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
+func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, stopCh <-chan struct{}, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	client, _, err := dcs.GetVeriServiceClient()
 	if err != nil {
 		return err
@@ -53,7 +53,11 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 			log.Printf("Error: (%v)", err)
 			break
 		}
-		scoredDatumStream <- protoScoredDatum
+		select {
+		case <-stopCh:
+			break
+		case scoredDatumStream <- protoScoredDatum:
+		}
 	}
 	return err
 }
