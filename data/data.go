@@ -14,7 +14,7 @@ import (
 )
 
 type DataSource interface {
-	StreamSearch(datumList *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error
+	StreamSearch(datumList *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, stopCh <-chan struct{}, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error
 	Insert(datum *pb.Datum, config *pb.InsertConfig) error
 	GetDataInfo() *pb.DataInfo
 	GetID() string

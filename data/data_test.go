@@ -175,8 +175,9 @@ func TestDataStreamSearch(t *testing.T) {
 	config.HigherIsBetter = true
 	config.Limit = 10
 	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
+	stopCh := make(chan struct{})
 	dt01.AddSource(dt02)
-	err = dt01.AggregatedSearch(datum, scoredDatumStream, nil, config)
+	err = dt01.AggregatedSearch(datum, scoredDatumStream, stopCh, nil, config)
 	assert.Nil(t, err)
 	time.Sleep(1 * time.Second)
 	close(scoredDatumStream)

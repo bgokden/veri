@@ -260,11 +260,16 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 }
 
 // StreamSearch does a search based on distances of keys
-func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
+func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, stopCh <-chan struct{}, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	collector := dt.Search(datum, config)
 	for _, i := range collector.List {
 		// log.Printf("StreamSearch i: %v\n", i)
-		scoredDatumStream <- i
+		select {
+		case <-stopCh:
+			break
+		case scoredDatumStream <- i:
+		}
+
 	}
 	queryWaitGroup.Done()
 	return nil
@@ -280,7 +285,7 @@ func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
 }
 
 // AggregatedSearch searches and merges other resources
-func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, upperWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
+func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<- *pb.ScoredDatum, stopChOutput <-chan struct{}, upperWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
 	queryKey := GetSearchKey(datum, config)
@@ -302,6 +307,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	}
 	// Search Start
 	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
+	stopCh := make(chan struct{})
 	var queryWaitGroup sync.WaitGroup
 	waitChannel := make(chan struct{})
 	go func() {
@@ -311,14 +317,14 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	// internal
 	queryWaitGroup.Add(1)
 	go func() {
-		dt.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
+		dt.StreamSearch(datum, scoredDatumStream, stopCh, &queryWaitGroup, config)
 	}()
 	// external
 	sourceList := dt.Sources.Items()
 	for _, sourceItem := range sourceList {
 		source := sourceItem.Object.(DataSource)
 		queryWaitGroup.Add(1)
-		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
+		go source.StreamSearch(datum, scoredDatumStream, stopCh, &queryWaitGroup, config)
 	}
 	// stream merge
 	temp := NewAggrator(config, false, nil)
@@ -329,10 +335,11 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 			temp.Insert(scoredDatum)
 		case <-waitChannel:
 			log.Printf("AggregatedSearch: all data finished")
-			close(scoredDatumStream)
-			for scoredDatum := range scoredDatumStream {
-				temp.Insert(scoredDatum)
-			}
+			// close(scoredDatumStream)
+			close(stopCh)
+			// for scoredDatum := range scoredDatumStream {
+			// 	temp.Insert(scoredDatum)
+			// }
 			dataAvailable = false
 			break
 		case <-timeLimit:
@@ -346,7 +353,11 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	result := temp.Result()
 	resultCopy := CloneResult(result)
 	for _, i := range result {
-		scoredDatumStreamOutput <- i
+		select {
+		case <-stopChOutput:
+			break
+		case scoredDatumStreamOutput <- i:
+		}
 	}
 	if upperWaitGroup != nil {
 		upperWaitGroup.Done()
@@ -373,6 +384,7 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 	timeLimit := time.After(duration)
 	// Search Start
 	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
+	stopCh := make(chan struct{})
 	var queryWaitGroup sync.WaitGroup
 	waitChannel := make(chan struct{})
 	go func() {
@@ -382,7 +394,7 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 	// loop datumList
 	for _, datum := range datumList {
 		queryWaitGroup.Add(1)
-		go dt.AggregatedSearch(datum, scoredDatumStream, &queryWaitGroup, config)
+		go dt.AggregatedSearch(datum, scoredDatumStream, stopCh, &queryWaitGroup, config)
 	}
 	// stream merge
 	isGrouped := false
@@ -397,10 +409,11 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 			temp.Insert(scoredDatum)
 		case <-waitChannel:
 			log.Printf("MultiAggregatedSearch: all data finished")
-			close(scoredDatumStream)
-			for scoredDatum := range scoredDatumStream {
-				temp.Insert(scoredDatum)
-			}
+			// close(scoredDatumStream)
+			close(stopCh)
+			// for scoredDatum := range scoredDatumStream {
+			// 	temp.Insert(scoredDatum)
+			// }
 			dataAvailable = false
 			break
 		case <-timeLimit:
