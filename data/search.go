@@ -337,9 +337,9 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 			log.Printf("AggregatedSearch: all data finished")
 			// close(scoredDatumStream)
 			close(stopCh)
-			for scoredDatum := range scoredDatumStream {
-				temp.Insert(scoredDatum)
-			}
+			// for scoredDatum := range scoredDatumStream {
+			// 	temp.Insert(scoredDatum)
+			// }
 			dataAvailable = false
 			break
 		case <-timeLimit:
@@ -411,9 +411,9 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 			log.Printf("MultiAggregatedSearch: all data finished")
 			// close(scoredDatumStream)
 			close(stopCh)
-			for scoredDatum := range scoredDatumStream {
-				temp.Insert(scoredDatum)
-			}
+			// for scoredDatum := range scoredDatumStream {
+			// 	temp.Insert(scoredDatum)
+			// }
 			dataAvailable = false
 			break
 		case <-timeLimit:
