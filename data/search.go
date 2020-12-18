@@ -409,7 +409,6 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 			break
 		}
 	}
-	log.Printf("search collected data\n")
 	// Search End
 	log.Printf("MultiAggregatedSearch: finished")
 	return temp.Result(), nil
