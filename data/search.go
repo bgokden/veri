@@ -304,10 +304,6 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
 	var queryWaitGroup sync.WaitGroup
 	waitChannel := make(chan struct{})
-	go func() {
-		defer close(waitChannel)
-		queryWaitGroup.Wait()
-	}()
 	// internal
 	queryWaitGroup.Add(1)
 	go func() {
@@ -320,6 +316,10 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		queryWaitGroup.Add(1)
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
+	go func() {
+		defer close(waitChannel)
+		queryWaitGroup.Wait()
+	}()
 	// stream merge
 	temp := NewAggrator(config, false, nil)
 	dataAvailable := true
@@ -375,15 +375,15 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
 	var queryWaitGroup sync.WaitGroup
 	waitChannel := make(chan struct{})
-	go func() {
-		defer close(waitChannel)
-		queryWaitGroup.Wait()
-	}()
 	// loop datumList
 	for _, datum := range datumList {
 		queryWaitGroup.Add(1)
 		go dt.AggregatedSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
+	go func() {
+		defer close(waitChannel)
+		queryWaitGroup.Wait()
+	}()
 	// stream merge
 	isGrouped := false
 	if config.GroupLimit > 0 {
