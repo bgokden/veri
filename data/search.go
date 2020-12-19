@@ -3,6 +3,7 @@ package data
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 	"sort"
@@ -274,9 +275,9 @@ func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
 	keyByte, err := GetKeyAsBytes(datum)
 	signature := EncodeSearchConfig(config)
 	if err != nil {
-		return string(signature)
+		return hex.EncodeToString(signature)
 	}
-	return string(append(keyByte, signature...))
+	return hex.EncodeToString(append(keyByte, signature...))
 }
 
 // AggregatedSearch searches and merges other resources
@@ -287,18 +288,20 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	if dt.QueryCache == nil {
 		dt.InitData()
 	}
-	if result, ok := dt.QueryCache.Get(queryKey); ok {
-		cachedResult := result.([]*pb.ScoredDatum)
-		resultCopy := CloneResult(cachedResult)
-		for _, i := range resultCopy {
-			scoredDatumStreamOutput <- i
+	if config.CacheDuration > 0 {
+		if result, ok := dt.QueryCache.Get(queryKey); ok {
+			cachedResult := result.([]*pb.ScoredDatum)
+			resultCopy := CloneResult(cachedResult)
+			for _, i := range resultCopy {
+				scoredDatumStreamOutput <- i
+			}
+			if upperWaitGroup != nil {
+				upperWaitGroup.Done()
+			}
+			cacheDuration := time.Duration(config.CacheDuration) * time.Second
+			dt.QueryCache.IncrementExpiration(queryKey, cacheDuration)
+			return nil
 		}
-		if upperWaitGroup != nil {
-			upperWaitGroup.Done()
-		}
-		cacheDuration := time.Duration(config.CacheDuration) * time.Second
-		dt.QueryCache.IncrementExpiration(queryKey, cacheDuration)
-		return nil
 	}
 	// Search Start
 	scoredDatumStream := make(chan *pb.ScoredDatum, 100)
@@ -351,9 +354,11 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	if upperWaitGroup != nil {
 		upperWaitGroup.Done()
 	}
-	cacheDuration := time.Duration(config.CacheDuration) * time.Second
-	dt.QueryCache.Set(queryKey, resultCopy, cacheDuration)
-	log.Printf("AggregatedSearch: finished. Set Cache Duration: %v\n", cacheDuration)
+	if config.CacheDuration > 0 {
+		cacheDuration := time.Duration(config.CacheDuration) * time.Second
+		dt.QueryCache.Set(queryKey, resultCopy, cacheDuration)
+		log.Printf("AggregatedSearch: finished. Set Cache Duration: %v\n", cacheDuration)
+	}
 	return nil
 }
 
