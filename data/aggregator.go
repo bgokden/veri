@@ -1,6 +1,8 @@
 package data
 
 import (
+	"encoding/hex"
+	"log"
 	"sort"
 	"time"
 
@@ -36,6 +38,10 @@ func NewAggrator(config *pb.SearchConfig, grouped bool, context *pb.SearchContex
 }
 
 func (a *Aggregator) IsNewScoredBetter(old, new float64) bool {
+	if old == new {
+		// This is a possible edge case.
+		log.Printf("Same Score: %v\n", old)
+	}
 	if a.Config.HigherIsBetter {
 		if new > old {
 			return true
@@ -52,7 +58,7 @@ func (a *Aggregator) BestScore(scoredDatum *pb.ScoredDatum) float64 {
 	if a.Context != nil && len(a.Context.GetDatum()) > 0 {
 		var isSet = false
 		var current float64
-		// When Context is crioritized search score is ignored.
+		// When Context is prioritized search score is ignored.
 		if !a.Context.Prioritize {
 			current = scoredDatum.GetScore()
 			isSet = true
@@ -98,7 +104,7 @@ func (a *Aggregator) InsertToList(scoredDatum *pb.ScoredDatum) error {
 func (a *Aggregator) Insert(scoredDatum *pb.ScoredDatum) error {
 	scoredDatum.Score = a.BestScore(scoredDatum)
 	if a.Grouped {
-		keyString := string(scoredDatum.Datum.Key.GroupLabel)
+		keyString := hex.EncodeToString(scoredDatum.Datum.Key.GroupLabel)
 		if aGroupAggregatorInterface, ok := a.DeDuplicationMap.Get(keyString); ok {
 			aGroupAggregator := aGroupAggregatorInterface.(AggregatorInterface)
 			return aGroupAggregator.Insert(scoredDatum)
@@ -115,7 +121,7 @@ func (a *Aggregator) Insert(scoredDatum *pb.ScoredDatum) error {
 		if err != nil {
 			return err
 		}
-		keyString := string(keyByte)
+		keyString := hex.EncodeToString(keyByte)
 		if previousScore, ok := a.DeDuplicationMap.Get(keyString); ok {
 			if a.IsNewScoredBetter(previousScore.(float64), scoredDatum.GetScore()) {
 				a.DeDuplicationMap.Set(keyString, scoredDatum.GetScore(), cache.NoExpiration)
