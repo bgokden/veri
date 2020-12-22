@@ -285,6 +285,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	duration := time.Duration(config.Timeout) * time.Millisecond
 	timeLimit := time.After(duration)
 	queryKey := GetSearchKey(datum, config)
+	config.Timeout = uint64(float64(config.Timeout) * 0.9) // Decrase timeout for downstream
 	if dt.QueryCache == nil {
 		dt.InitData()
 	}

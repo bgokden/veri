@@ -35,6 +35,7 @@ func (dcs *DataSourceClient) GetVeriServiceClient() (pb.VeriServiceClient, *grpc
 }
 
 func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
+	defer queryWaitGroup.Done()
 	client, _, err := dcs.GetVeriServiceClient()
 	if err != nil {
 		return err
@@ -53,6 +54,7 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 			log.Printf("Error: (%v)", err)
 			break
 		}
+		log.Printf("Received Score: (%v)", protoScoredDatum.Score)
 		scoredDatumStream <- protoScoredDatum
 	}
 	return err

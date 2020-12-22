@@ -7,7 +7,9 @@ import (
 	"net"
 	"strings"
 
+	"github.com/bgokden/go-cache"
 	pb "github.com/bgokden/veri/veriservice"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	grpcPeer "google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
@@ -98,6 +100,19 @@ func (n *Node) GetDataInfo(ctx context.Context, getDataRequest *pb.GetDataReques
 
 func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriService_SearchStreamServer) error {
 	config := searchRequest.GetConfig()
+	uid := config.GetUuid()
+	if uid == "" {
+		uid, err := uuid.NewRandom()
+		if err != nil {
+			return err
+		}
+		config.Uuid = uid.String()
+	} else {
+		err := n.QueryUUIDCache.Add(uid, true, cache.DefaultExpiration)
+		if err != nil {
+			return err
+		}
+	}
 	aData, err := n.Dataset.Get(config.GetDataName())
 	if err != nil {
 		return err
@@ -136,6 +151,7 @@ func (n *Node) Listen() error {
 }
 
 func (n *Node) SendJoinRequest(id string) error {
+	log.Printf("(Call Join 0) Send Join reques to %v", id)
 	peerInfo := n.GetNodeInfo()
 	request := &pb.JoinRequest{
 		Peer: peerInfo,

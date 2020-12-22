@@ -202,6 +202,9 @@ func (dt *Data) GetDataInfo() *pb.DataInfo {
 
 // AddSource adds a source
 func (dt *Data) AddSource(dataSource DataSource) {
+	if dt.Sources == nil {
+		dt.InitData()
+	}
 	dt.Sources.Set(dataSource.GetID(), dataSource, cache.DefaultExpiration)
 }
 
