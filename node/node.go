@@ -40,6 +40,7 @@ type Node struct {
 	PeerList       *cache.Cache
 	PeriodicTicker *time.Ticker
 	PeriodicDone   chan bool
+	QueryUUIDCache *cache.Cache
 }
 
 func NewNode(config *NodeConfig) *Node {
@@ -50,6 +51,7 @@ func NewNode(config *NodeConfig) *Node {
 	node.Dataset = data.NewDataset(node.Folder)
 	node.PeerList = cache.New(5*time.Minute, 10*time.Minute)
 	node.ServiceList = cache.New(5*time.Minute, 10*time.Minute)
+	node.QueryUUIDCache = cache.New(5*time.Minute, 10*time.Minute)
 	for _, service := range config.ServiceList {
 		node.AddStaticService(service)
 	}
@@ -144,8 +146,12 @@ func (n *Node) SyncWithPeers() {
 			n.AddPeer(peerFromPeer)
 		}
 		for _, dataConfigFromPeer := range peer.DataList {
-			data, _ := n.Dataset.GetOrCreateIfNotExists(dataConfigFromPeer)
-			data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name))
+			data, err := n.Dataset.GetOrCreateIfNotExists(dataConfigFromPeer)
+			if err == nil {
+				data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name))
+			} else {
+				log.Printf("Error data creation: %v\n", err)
+			}
 		}
 	}
 }

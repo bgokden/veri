@@ -34,6 +34,7 @@ message SearchConfig {
   repeated string filters = 10;
   uint64 resultLimit = 11;
   repeated string groupFilters = 12;
+  string uuid = 13;
 }
 
 message SearchContext {
