@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 jobs:
   build:
     docker:
@@ -42,7 +42,7 @@ jobs:
           docker build -t berkgokden/veri:$VERSION .
           docker push berkgokden/veri:$VERSION
 workflows:
-  version: 2
+  version: 2.1
   main:
     jobs:
       - build:
