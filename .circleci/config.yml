@@ -34,13 +34,13 @@ jobs:
           version: 19.03.13
           docker_layer_caching: true
       - run:
-        name: "Publish Release on Docker hub"
-        command: |
-          VERSION=$(cat ./artifacts/version.txt)
-          rm ./artifacts/version.txt
-          docker login -u $DOCKER_USER -p $DOCKER_PASS
-          docker build -t berkgokden/veri:$VERSION .
-          docker push berkgokden/veri:$VERSION
+          name: "Publish Release on Docker hub"
+          command: |
+            VERSION=$(cat ./artifacts/version.txt)
+            rm ./artifacts/version.txt
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker build -t berkgokden/veri:$VERSION .
+            docker push berkgokden/veri:$VERSION
 workflows:
   version: 2.1
   main:
