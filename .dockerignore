@@ -5,3 +5,4 @@ veri
 build.sh
 resetCluster.sh
 bin/
+tmp/

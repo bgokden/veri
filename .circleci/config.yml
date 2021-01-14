@@ -10,7 +10,7 @@ jobs:
       - run: go get github.com/mattn/goveralls@v0.0.3
       - run: ./test.sh
       - run: $GOPATH/bin/goveralls -coverprofile=coverage.out -service=circle-ci -repotoken $COVERALLS_TOKEN
-  publish-github-release:
+  publish-and-release:
     docker:
       - image: circleci/golang:1.15.5
     steps:
@@ -30,6 +30,17 @@ jobs:
             VERSION=$(cat ./artifacts/version.txt)
             rm ./artifacts/version.txt
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
+      - setup_remote_docker:
+          version: 19.03.13
+          docker_layer_caching: true
+      - run:
+        name: "Publish Release on Docker hub"
+        command: |
+          VERSION=$(cat ./artifacts/version.txt)
+          rm ./artifacts/version.txt
+          docker login -u $DOCKER_USER -p $DOCKER_PASS
+          docker build -t berkgokden/veri:$VERSION .
+          docker push berkgokden/veri:$VERSION
 workflows:
   version: 2
   main:
@@ -38,7 +49,7 @@ workflows:
           filters:
             tags:
               only: /^(v)\d+\.\d+\.\d+$/
-      - publish-github-release:
+      - publish-and-release:
           requires:
             - build
           filters:
