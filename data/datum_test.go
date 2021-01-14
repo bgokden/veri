@@ -3,16 +3,16 @@ package data_test
 import (
 	"testing"
 
-	data "github.com/bgokden/veri-data"
+	data "github.com/bgokden/veri/data"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDatum(t *testing.T) {
 	datum := data.NewDatum([]float64{0.1, 0.2, 0.3}, 3, 0, 1, 0, []byte("a"), []byte("a"), 0)
 
-	keyByte, err := datum.GetKey()
+	keyByte, err := data.GetKeyAsBytes(datum)
 	assert.Nil(t, err)
-	valueByte, err := datum.GetValue()
+	valueByte, err := data.GetValueAsBytes(datum)
 	assert.Nil(t, err)
 
 	key2, err := data.ToDatumKey(keyByte)
