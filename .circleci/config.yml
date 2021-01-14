@@ -28,7 +28,6 @@ jobs:
           name: "Publish Release on GitHub"
           command: |
             VERSION=$(cat ./artifacts/version.txt)
-            rm ./artifacts/version.txt
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./artifacts/
       - setup_remote_docker:
           version: 19.03.13
@@ -36,7 +35,6 @@ jobs:
           name: "Publish Release on Docker hub"
           command: |
             VERSION=$(cat ./artifacts/version.txt)
-            rm ./artifacts/version.txt
             docker login -u $DOCKER_USER -p $DOCKER_PASS
             docker build -t berkgokden/veri:$VERSION .
             docker push berkgokden/veri:$VERSION
