@@ -4,13 +4,12 @@ go 1.15
 
 require (
 	github.com/bgokden/go-cache v2.1.1+incompatible
-	github.com/bgokden/veri-data v0.0.0-20201010163108-3311a37c8b47
-	github.com/dgraph-io/badger v1.6.2
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/golang/protobuf v1.4.1
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.7.2
 	github.com/jinzhu/copier v0.0.0-20201025035756-632e723a6687
+	github.com/kr/pretty v0.2.0 // indirect
 	github.com/magneticio/go-common v0.0.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.8.1
