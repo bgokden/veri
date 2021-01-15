@@ -4,6 +4,9 @@ FROM golang:1.16beta1-alpine AS build-env
 RUN apk add --no-cache git
 WORKDIR /src/veri
 COPY . /src/veri
+RUN go mod tidy
+RUN go mod download
+RUN go mod verify
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags='-w -s -extldflags "-static"' -a -o veri
 
 # final stage
