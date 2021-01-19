@@ -52,8 +52,19 @@ func (n *Node) Join(ctx context.Context, joinRequest *pb.JoinRequest) (*pb.JoinR
 	if !ok {
 		log.Printf("Peer can not be get from context %v\n", p)
 	} else {
-		address = strings.Split(p.Addr.String(), ":")[0]
-		if len(address) <= 1 { // problem with [::] interfaces
+		index := strings.LastIndex(p.Addr.String(), ":")
+		if index > 0 {
+			address = p.Addr.String()[:index]
+		} else {
+			address = p.Addr.String()
+		}
+		ipAddress := net.ParseIP(strings.ReplaceAll(strings.ReplaceAll(address, "[", ""), "]", ""))
+		if ipAddress != nil {
+			if ipAddress.IsLoopback() { // problem with [::] interfaces
+				address = "localhost"
+			}
+		}
+		if len(address) <= 1 { // Keep it empty if it is not a reasonable ip
 			address = ""
 		}
 	}
@@ -134,7 +145,7 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 }
 
 func (n *Node) Listen() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", n.Port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", n.Port))
 	if err != nil {
 		log.Printf("failed to listen: %v", err)
 		return err
