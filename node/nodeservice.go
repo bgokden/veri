@@ -162,7 +162,7 @@ func (n *Node) Listen() error {
 }
 
 func (n *Node) SendJoinRequest(id string) error {
-	log.Printf("(Call Join 0) Send Join reques to %v", id)
+	log.Printf("(Call Join 0) Send Join request to %v", id)
 	peerInfo := n.GetNodeInfo()
 	request := &pb.JoinRequest{
 		Peer: peerInfo,
@@ -178,16 +178,17 @@ func (n *Node) SendJoinRequest(id string) error {
 		return err
 	}
 	if resp.GetAddress() != "" {
-		feedbackId := fmt.Sprintf("%v:%v", resp.GetAddress(), n.Port)
+		feedbackID := fmt.Sprintf("%v:%v", resp.GetAddress(), n.Port)
+		log.Printf("(Call Join 3 %v) Feedback ID: %v", n.Port, feedbackID)
 		found := false
 		for _, id := range n.KnownIds {
-			if id == feedbackId {
+			if id == feedbackID {
 				found = true
 				break
 			}
 		}
 		if !found {
-			n.KnownIds = append(n.KnownIds, feedbackId)
+			n.KnownIds = append(n.KnownIds, feedbackID)
 		}
 	}
 	return nil

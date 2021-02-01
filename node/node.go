@@ -72,12 +72,14 @@ func (n *Node) Close() error {
 }
 func (n *Node) AddService(service string) error {
 	n.ServiceList.Add(service, true, cache.DefaultExpiration)
+	n.ServiceList.IncrementExpiration(service, time.Duration(3600)*time.Second)
 	return nil
 }
 
 func (n *Node) AddPeer(peer *pb.Peer) error {
 	if !n.isPeerSimilarToNode(peer.AddressList) {
 		n.PeerList.Set(GetIdOfPeer(peer), peer, cache.DefaultExpiration)
+		n.PeerList.IncrementExpiration(GetIdOfPeer(peer), time.Duration(3600)*time.Second)
 	}
 	return nil
 }
@@ -136,13 +138,16 @@ func (n *Node) isPeerSimilarToNode(ids []string) bool {
 }
 
 func (n *Node) SyncWithPeers() {
+	log.Printf("(0) Node: %v\n", GetIdOfPeer(n.GetNodeInfo()))
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
+		log.Printf("(1) Node: %v -> Peer ID: %v\n", GetIdOfPeer(n.GetNodeInfo()), GetIdOfPeer(peer))
 		for _, serviceFromPeer := range peer.ServiceList {
 			n.AddService(serviceFromPeer)
 		}
 		for _, peerFromPeer := range peer.PeerList {
+			log.Printf("(2) Node: %v -> Peer ID: %v\n", GetIdOfPeer(n.GetNodeInfo()), GetIdOfPeer(peerFromPeer))
 			n.AddPeer(peerFromPeer)
 		}
 		for _, dataConfigFromPeer := range peer.DataList {
