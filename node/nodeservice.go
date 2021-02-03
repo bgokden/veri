@@ -46,7 +46,7 @@ func (n *Node) Insert(ctx context.Context, insertionRequest *pb.InsertionRequest
 
 func (n *Node) Join(ctx context.Context, joinRequest *pb.JoinRequest) (*pb.JoinResponse, error) {
 	peer := joinRequest.GetPeer()
-	n.AddPeer(peer)
+	n.AddPeerElement(peer)
 	address := ""
 	p, ok := grpcPeer.FromContext(ctx)
 	if !ok {
@@ -212,4 +212,43 @@ func (n *Node) getClient(address string) (pb.VeriServiceClient, *grpc.ClientConn
 	}
 	client := pb.NewVeriServiceClient(conn)
 	return client, conn, nil
+}
+
+func (n *Node) AddPeer(ctx context.Context, in *pb.AddPeerRequest) (*pb.AddPeerResponse, error) {
+	return &pb.AddPeerResponse{}, n.AddPeerElement(in.GetPeer())
+}
+
+func (n *Node) SendAddPeerRequest(id string, peerInfo *pb.Peer) error {
+	log.Printf("(Call Add Peer 0) Send Add Peer request to %v", id)
+	request := &pb.AddPeerRequest{
+		Peer: peerInfo,
+	}
+	client, _, err := n.getClient(id)
+	if err != nil {
+		log.Printf("(Call Add Peer 1 %v) There is an error %v", n.Port, err)
+		return err
+	}
+	_, err = client.AddPeer(context.Background(), request)
+	if err != nil {
+		log.Printf("(Call Add Peer 2 %v => %v) There is an error %v", n.Port, id, err)
+		return err
+	}
+	return nil
+}
+
+func (n *Node) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingResponse, error) {
+	return &pb.PingResponse{}, nil
+}
+
+func (n *Node) SendPingRequest(id string) error {
+	request := &pb.PingRequest{}
+	client, _, err := n.getClient(id)
+	if err != nil {
+		return err
+	}
+	_, err = client.Ping(context.Background(), request)
+	if err != nil {
+		return err
+	}
+	return nil
 }

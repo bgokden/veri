@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-func GetDataSourceClient(p *pb.Peer, name string) data.DataSource {
+func GetDataSourceClient(p *pb.Peer, name string, idOfPeer string) data.DataSource {
 	return &DataSourceClient{
-		Ids:  p.AddressList,
+		Ids:  []string{idOfPeer},
 		Name: name,
 	}
 }

@@ -1105,7 +1105,7 @@ type Peer struct {
 	Timestamp   uint64        `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	DataList    []*DataConfig `protobuf:"bytes,4,rep,name=dataList,proto3" json:"dataList,omitempty"`
 	ServiceList []string      `protobuf:"bytes,5,rep,name=serviceList,proto3" json:"serviceList,omitempty"`
-	PeerList    []*Peer       `protobuf:"bytes,6,rep,name=peerList,proto3" json:"peerList,omitempty"`
+	Ping        uint64        `protobuf:"varint,6,opt,name=ping,proto3" json:"ping,omitempty"`
 }
 
 func (x *Peer) Reset() {
@@ -1175,11 +1175,11 @@ func (x *Peer) GetServiceList() []string {
 	return nil
 }
 
-func (x *Peer) GetPeerList() []*Peer {
+func (x *Peer) GetPing() uint64 {
 	if x != nil {
-		return x.PeerList
+		return x.Ping
 	}
-	return nil
+	return 0
 }
 
 type JoinRequest struct {
@@ -1274,6 +1274,193 @@ func (x *JoinResponse) GetAddress() string {
 		return x.Address
 	}
 	return ""
+}
+
+type AddPeerRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Peer *Peer `protobuf:"bytes,1,opt,name=peer,proto3" json:"peer,omitempty"`
+}
+
+func (x *AddPeerRequest) Reset() {
+	*x = AddPeerRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_veriservice_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AddPeerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddPeerRequest) ProtoMessage() {}
+
+func (x *AddPeerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_veriservice_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddPeerRequest.ProtoReflect.Descriptor instead.
+func (*AddPeerRequest) Descriptor() ([]byte, []int) {
+	return file_veriservice_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AddPeerRequest) GetPeer() *Peer {
+	if x != nil {
+		return x.Peer
+	}
+	return nil
+}
+
+type AddPeerResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *AddPeerResponse) Reset() {
+	*x = AddPeerResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_veriservice_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *AddPeerResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddPeerResponse) ProtoMessage() {}
+
+func (x *AddPeerResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_veriservice_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddPeerResponse.ProtoReflect.Descriptor instead.
+func (*AddPeerResponse) Descriptor() ([]byte, []int) {
+	return file_veriservice_proto_rawDescGZIP(), []int{19}
+}
+
+type PingRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Timestamp uint64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+}
+
+func (x *PingRequest) Reset() {
+	*x = PingRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_veriservice_proto_msgTypes[20]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PingRequest) ProtoMessage() {}
+
+func (x *PingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_veriservice_proto_msgTypes[20]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
+func (*PingRequest) Descriptor() ([]byte, []int) {
+	return file_veriservice_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *PingRequest) GetTimestamp() uint64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+type PingResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Timestamp uint64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Duration  uint64 `protobuf:"varint,2,opt,name=duration,proto3" json:"duration,omitempty"`
+}
+
+func (x *PingResponse) Reset() {
+	*x = PingResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_veriservice_proto_msgTypes[21]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PingResponse) ProtoMessage() {}
+
+func (x *PingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_veriservice_proto_msgTypes[21]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
+func (*PingResponse) Descriptor() ([]byte, []int) {
+	return file_veriservice_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *PingResponse) GetTimestamp() uint64 {
+	if x != nil {
+		return x.Timestamp
+	}
+	return 0
+}
+
+func (x *PingResponse) GetDuration() uint64 {
+	if x != nil {
+		return x.Duration
+	}
+	return 0
 }
 
 var File_veriservice_proto protoreflect.FileDescriptor
@@ -1422,7 +1609,7 @@ var file_veriservice_proto_rawDesc = []byte{
 	0x69, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4f, 0x6e, 0x49, 0x6e, 0x73, 0x65, 0x72, 0x74, 0x12,
 	0x20, 0x0a, 0x0b, 0x72, 0x65, 0x74, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x08,
 	0x20, 0x01, 0x28, 0x04, 0x52, 0x0b, 0x72, 0x65, 0x74, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x22, 0xe6, 0x01, 0x0a, 0x04, 0x50, 0x65, 0x65, 0x72, 0x12, 0x20, 0x0a, 0x0b, 0x61, 0x64,
+	0x6e, 0x22, 0xcb, 0x01, 0x0a, 0x04, 0x50, 0x65, 0x65, 0x72, 0x12, 0x20, 0x0a, 0x0b, 0x61, 0x64,
 	0x64, 0x72, 0x65, 0x73, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x18, 0x01, 0x20, 0x03, 0x28, 0x09, 0x52,
 	0x0b, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07,
 	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76,
@@ -1433,29 +1620,44 @@ var file_veriservice_proto_rawDesc = []byte{
 	0x76, 0x69, 0x63, 0x65, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52,
 	0x08, 0x64, 0x61, 0x74, 0x61, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x20, 0x0a, 0x0b, 0x73, 0x65, 0x72,
 	0x76, 0x69, 0x63, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x18, 0x05, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0b,
-	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x2d, 0x0a, 0x08, 0x70,
-	0x65, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x11, 0x2e,
-	0x76, 0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x50, 0x65, 0x65, 0x72,
-	0x52, 0x08, 0x70, 0x65, 0x65, 0x72, 0x4c, 0x69, 0x73, 0x74, 0x22, 0x34, 0x0a, 0x0b, 0x4a, 0x6f,
-	0x69, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x25, 0x0a, 0x04, 0x70, 0x65, 0x65,
-	0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x50, 0x65, 0x65, 0x72, 0x52, 0x04, 0x70, 0x65, 0x65, 0x72,
-	0x22, 0x28, 0x0a, 0x0c, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x32, 0xf9, 0x03, 0x0a, 0x0b, 0x56,
-	0x65, 0x72, 0x69, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x43, 0x0a, 0x06, 0x53, 0x65,
-	0x61, 0x72, 0x63, 0x68, 0x12, 0x1a, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69,
-	0x63, 0x65, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x1b, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x53,
-	0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12,
-	0x49, 0x0a, 0x06, 0x49, 0x6e, 0x73, 0x65, 0x72, 0x74, 0x12, 0x1d, 0x2e, 0x76, 0x65, 0x72, 0x69,
-	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x49, 0x6e, 0x73, 0x65, 0x72, 0x74, 0x69, 0x6f,
-	0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73,
-	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x49, 0x6e, 0x73, 0x65, 0x72, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x3d, 0x0a, 0x04, 0x4a, 0x6f,
-	0x69, 0x6e, 0x12, 0x18, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x76,
-	0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52,
+	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x70,
+	0x69, 0x6e, 0x67, 0x18, 0x06, 0x20, 0x01, 0x28, 0x04, 0x52, 0x04, 0x70, 0x69, 0x6e, 0x67, 0x22,
+	0x34, 0x0a, 0x0b, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x25,
+	0x0a, 0x04, 0x70, 0x65, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x76,
+	0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x50, 0x65, 0x65, 0x72, 0x52,
+	0x04, 0x70, 0x65, 0x65, 0x72, 0x22, 0x28, 0x0a, 0x0c, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x22,
+	0x37, 0x0a, 0x0e, 0x41, 0x64, 0x64, 0x50, 0x65, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x25, 0x0a, 0x04, 0x70, 0x65, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x11, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x50, 0x65,
+	0x65, 0x72, 0x52, 0x04, 0x70, 0x65, 0x65, 0x72, 0x22, 0x11, 0x0a, 0x0f, 0x41, 0x64, 0x64, 0x50,
+	0x65, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2b, 0x0a, 0x0b, 0x50,
+	0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c, 0x0a, 0x09, 0x74, 0x69,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x74,
+	0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x22, 0x48, 0x0a, 0x0c, 0x50, 0x69, 0x6e, 0x67,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x74, 0x69, 0x6d, 0x65,
+	0x73, 0x74, 0x61, 0x6d, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x74, 0x69, 0x6d,
+	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x75, 0x72, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x08, 0x64, 0x75, 0x72, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x32, 0x80, 0x05, 0x0a, 0x0b, 0x56, 0x65, 0x72, 0x69, 0x53, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x12, 0x43, 0x0a, 0x06, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x12, 0x1a, 0x2e, 0x76,
+	0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63,
+	0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63, 0x68, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x49, 0x0a, 0x06, 0x49, 0x6e, 0x73, 0x65, 0x72,
+	0x74, 0x12, 0x1d, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e,
+	0x49, 0x6e, 0x73, 0x65, 0x72, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x1e, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x49,
+	0x6e, 0x73, 0x65, 0x72, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x22, 0x00, 0x12, 0x3d, 0x0a, 0x04, 0x4a, 0x6f, 0x69, 0x6e, 0x12, 0x18, 0x2e, 0x76, 0x65, 0x72,
+	0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x2e, 0x4a, 0x6f, 0x69, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22,
+	0x00, 0x12, 0x46, 0x0a, 0x07, 0x41, 0x64, 0x64, 0x50, 0x65, 0x65, 0x72, 0x12, 0x1b, 0x2e, 0x76,
+	0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x50, 0x65,
+	0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1c, 0x2e, 0x76, 0x65, 0x72, 0x69,
+	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x41, 0x64, 0x64, 0x50, 0x65, 0x65, 0x72, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x41, 0x0a, 0x0a, 0x44, 0x61, 0x74,
 	0x61, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x1b, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65,
 	0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x47, 0x65, 0x74, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71,
@@ -1474,7 +1676,11 @@ var file_veriservice_proto_rawDesc = []byte{
 	0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x53, 0x65, 0x61, 0x72, 0x63,
 	0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73,
 	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x53, 0x63, 0x6f, 0x72, 0x65, 0x64, 0x44, 0x61, 0x74,
-	0x75, 0x6d, 0x22, 0x00, 0x30, 0x01, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x75, 0x6d, 0x22, 0x00, 0x30, 0x01, 0x12, 0x3d, 0x0a, 0x04, 0x50, 0x69, 0x6e, 0x67, 0x12, 0x18,
+	0x2e, 0x76, 0x65, 0x72, 0x69, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x50, 0x69, 0x6e,
+	0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x76, 0x65, 0x72, 0x69, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x50, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x00, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1489,7 +1695,7 @@ func file_veriservice_proto_rawDescGZIP() []byte {
 	return file_veriservice_proto_rawDescData
 }
 
-var file_veriservice_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_veriservice_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_veriservice_proto_goTypes = []interface{}{
 	(*SearchRequest)(nil),         // 0: veriservice.SearchRequest
 	(*SearchConfig)(nil),          // 1: veriservice.SearchConfig
@@ -1509,6 +1715,10 @@ var file_veriservice_proto_goTypes = []interface{}{
 	(*Peer)(nil),                  // 15: veriservice.Peer
 	(*JoinRequest)(nil),           // 16: veriservice.JoinRequest
 	(*JoinResponse)(nil),          // 17: veriservice.JoinResponse
+	(*AddPeerRequest)(nil),        // 18: veriservice.AddPeerRequest
+	(*AddPeerResponse)(nil),       // 19: veriservice.AddPeerResponse
+	(*PingRequest)(nil),           // 20: veriservice.PingRequest
+	(*PingResponse)(nil),          // 21: veriservice.PingResponse
 }
 var file_veriservice_proto_depIdxs = []int32{
 	1,  // 0: veriservice.SearchRequest.config:type_name -> veriservice.SearchConfig
@@ -1524,24 +1734,28 @@ var file_veriservice_proto_depIdxs = []int32{
 	11, // 10: veriservice.InsertionRequest.config:type_name -> veriservice.InsertConfig
 	4,  // 11: veriservice.InsertionRequest.datum:type_name -> veriservice.Datum
 	14, // 12: veriservice.Peer.dataList:type_name -> veriservice.DataConfig
-	15, // 13: veriservice.Peer.peerList:type_name -> veriservice.Peer
-	15, // 14: veriservice.JoinRequest.peer:type_name -> veriservice.Peer
+	15, // 13: veriservice.JoinRequest.peer:type_name -> veriservice.Peer
+	15, // 14: veriservice.AddPeerRequest.peer:type_name -> veriservice.Peer
 	0,  // 15: veriservice.VeriService.Search:input_type -> veriservice.SearchRequest
 	10, // 16: veriservice.VeriService.Insert:input_type -> veriservice.InsertionRequest
 	16, // 17: veriservice.VeriService.Join:input_type -> veriservice.JoinRequest
-	3,  // 18: veriservice.VeriService.DataStream:input_type -> veriservice.GetDataRequest
-	14, // 19: veriservice.VeriService.CreateDataIfNotExists:input_type -> veriservice.DataConfig
-	3,  // 20: veriservice.VeriService.GetDataInfo:input_type -> veriservice.GetDataRequest
-	0,  // 21: veriservice.VeriService.SearchStream:input_type -> veriservice.SearchRequest
-	9,  // 22: veriservice.VeriService.Search:output_type -> veriservice.SearchResponse
-	12, // 23: veriservice.VeriService.Insert:output_type -> veriservice.InsertionResponse
-	17, // 24: veriservice.VeriService.Join:output_type -> veriservice.JoinResponse
-	4,  // 25: veriservice.VeriService.DataStream:output_type -> veriservice.Datum
-	13, // 26: veriservice.VeriService.CreateDataIfNotExists:output_type -> veriservice.DataInfo
-	13, // 27: veriservice.VeriService.GetDataInfo:output_type -> veriservice.DataInfo
-	7,  // 28: veriservice.VeriService.SearchStream:output_type -> veriservice.ScoredDatum
-	22, // [22:29] is the sub-list for method output_type
-	15, // [15:22] is the sub-list for method input_type
+	18, // 18: veriservice.VeriService.AddPeer:input_type -> veriservice.AddPeerRequest
+	3,  // 19: veriservice.VeriService.DataStream:input_type -> veriservice.GetDataRequest
+	14, // 20: veriservice.VeriService.CreateDataIfNotExists:input_type -> veriservice.DataConfig
+	3,  // 21: veriservice.VeriService.GetDataInfo:input_type -> veriservice.GetDataRequest
+	0,  // 22: veriservice.VeriService.SearchStream:input_type -> veriservice.SearchRequest
+	20, // 23: veriservice.VeriService.Ping:input_type -> veriservice.PingRequest
+	9,  // 24: veriservice.VeriService.Search:output_type -> veriservice.SearchResponse
+	12, // 25: veriservice.VeriService.Insert:output_type -> veriservice.InsertionResponse
+	17, // 26: veriservice.VeriService.Join:output_type -> veriservice.JoinResponse
+	19, // 27: veriservice.VeriService.AddPeer:output_type -> veriservice.AddPeerResponse
+	4,  // 28: veriservice.VeriService.DataStream:output_type -> veriservice.Datum
+	13, // 29: veriservice.VeriService.CreateDataIfNotExists:output_type -> veriservice.DataInfo
+	13, // 30: veriservice.VeriService.GetDataInfo:output_type -> veriservice.DataInfo
+	7,  // 31: veriservice.VeriService.SearchStream:output_type -> veriservice.ScoredDatum
+	21, // 32: veriservice.VeriService.Ping:output_type -> veriservice.PingResponse
+	24, // [24:33] is the sub-list for method output_type
+	15, // [15:24] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name
 	15, // [15:15] is the sub-list for extension extendee
 	0,  // [0:15] is the sub-list for field type_name
@@ -1769,6 +1983,54 @@ func file_veriservice_proto_init() {
 				return nil
 			}
 		}
+		file_veriservice_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AddPeerRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_veriservice_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AddPeerResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_veriservice_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PingRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_veriservice_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PingResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1776,7 +2038,7 @@ func file_veriservice_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_veriservice_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1805,10 +2067,12 @@ type VeriServiceClient interface {
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
 	Insert(ctx context.Context, in *InsertionRequest, opts ...grpc.CallOption) (*InsertionResponse, error)
 	Join(ctx context.Context, in *JoinRequest, opts ...grpc.CallOption) (*JoinResponse, error)
+	AddPeer(ctx context.Context, in *AddPeerRequest, opts ...grpc.CallOption) (*AddPeerResponse, error)
 	DataStream(ctx context.Context, in *GetDataRequest, opts ...grpc.CallOption) (VeriService_DataStreamClient, error)
 	CreateDataIfNotExists(ctx context.Context, in *DataConfig, opts ...grpc.CallOption) (*DataInfo, error)
 	GetDataInfo(ctx context.Context, in *GetDataRequest, opts ...grpc.CallOption) (*DataInfo, error)
 	SearchStream(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (VeriService_SearchStreamClient, error)
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type veriServiceClient struct {
@@ -1840,6 +2104,15 @@ func (c *veriServiceClient) Insert(ctx context.Context, in *InsertionRequest, op
 func (c *veriServiceClient) Join(ctx context.Context, in *JoinRequest, opts ...grpc.CallOption) (*JoinResponse, error) {
 	out := new(JoinResponse)
 	err := c.cc.Invoke(ctx, "/veriservice.VeriService/Join", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *veriServiceClient) AddPeer(ctx context.Context, in *AddPeerRequest, opts ...grpc.CallOption) (*AddPeerResponse, error) {
+	out := new(AddPeerResponse)
+	err := c.cc.Invoke(ctx, "/veriservice.VeriService/AddPeer", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1928,15 +2201,26 @@ func (x *veriServiceSearchStreamClient) Recv() (*ScoredDatum, error) {
 	return m, nil
 }
 
+func (c *veriServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, "/veriservice.VeriService/Ping", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VeriServiceServer is the server API for VeriService service.
 type VeriServiceServer interface {
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
 	Insert(context.Context, *InsertionRequest) (*InsertionResponse, error)
 	Join(context.Context, *JoinRequest) (*JoinResponse, error)
+	AddPeer(context.Context, *AddPeerRequest) (*AddPeerResponse, error)
 	DataStream(*GetDataRequest, VeriService_DataStreamServer) error
 	CreateDataIfNotExists(context.Context, *DataConfig) (*DataInfo, error)
 	GetDataInfo(context.Context, *GetDataRequest) (*DataInfo, error)
 	SearchStream(*SearchRequest, VeriService_SearchStreamServer) error
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 }
 
 // UnimplementedVeriServiceServer can be embedded to have forward compatible implementations.
@@ -1952,6 +2236,9 @@ func (*UnimplementedVeriServiceServer) Insert(context.Context, *InsertionRequest
 func (*UnimplementedVeriServiceServer) Join(context.Context, *JoinRequest) (*JoinResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Join not implemented")
 }
+func (*UnimplementedVeriServiceServer) AddPeer(context.Context, *AddPeerRequest) (*AddPeerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddPeer not implemented")
+}
 func (*UnimplementedVeriServiceServer) DataStream(*GetDataRequest, VeriService_DataStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method DataStream not implemented")
 }
@@ -1963,6 +2250,9 @@ func (*UnimplementedVeriServiceServer) GetDataInfo(context.Context, *GetDataRequ
 }
 func (*UnimplementedVeriServiceServer) SearchStream(*SearchRequest, VeriService_SearchStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method SearchStream not implemented")
+}
+func (*UnimplementedVeriServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 
 func RegisterVeriServiceServer(s *grpc.Server, srv VeriServiceServer) {
@@ -2019,6 +2309,24 @@ func _VeriService_Join_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VeriServiceServer).Join(ctx, req.(*JoinRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VeriService_AddPeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddPeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VeriServiceServer).AddPeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/veriservice.VeriService/AddPeer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VeriServiceServer).AddPeer(ctx, req.(*AddPeerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2101,6 +2409,24 @@ func (x *veriServiceSearchStreamServer) Send(m *ScoredDatum) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _VeriService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VeriServiceServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/veriservice.VeriService/Ping",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VeriServiceServer).Ping(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _VeriService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "veriservice.VeriService",
 	HandlerType: (*VeriServiceServer)(nil),
@@ -2118,12 +2444,20 @@ var _VeriService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _VeriService_Join_Handler,
 		},
 		{
+			MethodName: "AddPeer",
+			Handler:    _VeriService_AddPeer_Handler,
+		},
+		{
 			MethodName: "CreateDataIfNotExists",
 			Handler:    _VeriService_CreateDataIfNotExists_Handler,
 		},
 		{
 			MethodName: "GetDataInfo",
 			Handler:    _VeriService_GetDataInfo_Handler,
+		},
+		{
+			MethodName: "Ping",
+			Handler:    _VeriService_Ping_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

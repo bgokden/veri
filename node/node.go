@@ -72,14 +72,14 @@ func (n *Node) Close() error {
 }
 func (n *Node) AddService(service string) error {
 	n.ServiceList.Add(service, true, cache.DefaultExpiration)
-	n.ServiceList.IncrementExpiration(service, time.Duration(3600)*time.Second)
+	n.ServiceList.IncrementExpiration(service, 10*time.Minute)
 	return nil
 }
 
-func (n *Node) AddPeer(peer *pb.Peer) error {
-	if !n.isPeerSimilarToNode(peer.AddressList) {
+func (n *Node) AddPeerElement(peer *pb.Peer) error {
+	if !n.isPeerSimilarToNode(peer) {
 		n.PeerList.Set(GetIdOfPeer(peer), peer, cache.DefaultExpiration)
-		n.PeerList.IncrementExpiration(GetIdOfPeer(peer), time.Duration(3600)*time.Second)
+		n.PeerList.IncrementExpiration(GetIdOfPeer(peer), 10*time.Minute)
 	}
 	return nil
 }
@@ -102,6 +102,7 @@ func (n *Node) PeerListItems() []*pb.Peer {
 	items := make([]*pb.Peer, 0, len(peerList))
 	for _, itemObject := range peerList {
 		item := itemObject.Object.(*pb.Peer)
+		log.Printf("Peer: %v\n", item)
 		items = append(items, item)
 	}
 	return items
@@ -116,12 +117,12 @@ func (n *Node) GetNodeInfo() *pb.Peer {
 		Timestamp:   getCurrentTime(),
 		AddressList: ids,
 		ServiceList: n.ServiceListKeys(),
-		PeerList:    n.PeerListItems(),
 		DataList:    n.Dataset.DataConfigList(),
 	}
 	return p
 }
 
+// This is not working as it supposed to
 func checkSimilar(list0, list1 []string) bool {
 	for _, e0 := range list0 {
 		for _, e1 := range list1 {
@@ -133,8 +134,32 @@ func checkSimilar(list0, list1 []string) bool {
 	return false
 }
 
-func (n *Node) isPeerSimilarToNode(ids []string) bool {
-	return checkSimilar(ids, n.KnownIds) || checkSimilar(ids, n.AdvertisedIds)
+func FirstDifferent(list0, list1 []string) string {
+	for _, e0 := range list0 {
+		found := false
+		for _, e1 := range list1 {
+			if e0 == e1 {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return e0
+		}
+	}
+	return ""
+}
+
+func (n *Node) isPeerSimilarToNode(peer *pb.Peer) bool {
+	id0 := GetIdOfPeer(n.GetNodeInfo())
+	id1 := GetIdOfPeer(peer)
+	return id0 == id1
+	// return checkSimilar(ids, n.KnownIds) || checkSimilar(ids, n.AdvertisedIds)
+}
+
+func (n *Node) GetDifferentAddressOf(peer *pb.Peer) string {
+	aList := n.GetNodeInfo().GetAddressList()
+	return FirstDifferent(aList, peer.GetAddressList())
 }
 
 func (n *Node) SyncWithPeers() {
@@ -142,18 +167,19 @@ func (n *Node) SyncWithPeers() {
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
+		idOfPeer := n.GetDifferentAddressOf(peer)
 		log.Printf("(1) Node: %v -> Peer ID: %v\n", GetIdOfPeer(n.GetNodeInfo()), GetIdOfPeer(peer))
 		for _, serviceFromPeer := range peer.ServiceList {
 			n.AddService(serviceFromPeer)
 		}
-		for _, peerFromPeer := range peer.PeerList {
-			log.Printf("(2) Node: %v -> Peer ID: %v\n", GetIdOfPeer(n.GetNodeInfo()), GetIdOfPeer(peerFromPeer))
-			n.AddPeer(peerFromPeer)
+		for _, itemOfPeer := range peerList {
+			peerOfPeer := itemOfPeer.Object.(*pb.Peer)
+			n.SendAddPeerRequest(idOfPeer, peerOfPeer)
 		}
 		for _, dataConfigFromPeer := range peer.DataList {
 			data, err := n.Dataset.GetOrCreateIfNotExists(dataConfigFromPeer)
 			if err == nil {
-				data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name))
+				data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name, idOfPeer))
 			} else {
 				log.Printf("Error data creation: %v\n", err)
 			}

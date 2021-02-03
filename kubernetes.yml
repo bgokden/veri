@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
         - name: veri
-          image: berkgokden/veri:6
+          image: berkgokden/veri:11
           args: ["serve", "--services=veriservice:10000"]
           imagePullPolicy: IfNotPresent
           ports:
