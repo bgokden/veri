@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -179,7 +180,7 @@ func (n *Node) SendJoinRequest(id string) error {
 	}
 	if resp.GetAddress() != "" {
 		feedbackID := fmt.Sprintf("%v:%v", resp.GetAddress(), n.Port)
-		log.Printf("(Call Join 3 %v) Feedback ID: %v", n.Port, feedbackID)
+		// log.Printf("(Call Join 3 %v) Feedback ID: %v", n.Port, feedbackID)
 		found := false
 		for _, id := range n.KnownIds {
 			if id == feedbackID {
@@ -219,7 +220,10 @@ func (n *Node) AddPeer(ctx context.Context, in *pb.AddPeerRequest) (*pb.AddPeerR
 }
 
 func (n *Node) SendAddPeerRequest(id string, peerInfo *pb.Peer) error {
-	log.Printf("(Call Add Peer 0) Send Add Peer request to %v", id)
+	if FirstDifferent(peerInfo.GetAddressList(), []string{id}) == "" {
+		return errors.New("Peer and target node is the same node")
+	}
+	log.Printf("(Call Add Peer 0) Send Add Peer request to %v for (%v)", id, GetIdOfPeer(peerInfo))
 	request := &pb.AddPeerRequest{
 		Peer: peerInfo,
 	}

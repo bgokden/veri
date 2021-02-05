@@ -76,10 +76,16 @@ func (n *Node) AddService(service string) error {
 	return nil
 }
 
+func IsRecent(timestamp uint64) bool {
+	return timestamp+60 > getCurrentTime()
+}
+
 func (n *Node) AddPeerElement(peer *pb.Peer) error {
-	if !n.isPeerSimilarToNode(peer) {
+	if !n.isPeerSimilarToNode(peer) && IsRecent(peer.GetTimestamp()) {
 		n.PeerList.Set(GetIdOfPeer(peer), peer, cache.DefaultExpiration)
 		n.PeerList.IncrementExpiration(GetIdOfPeer(peer), 10*time.Minute)
+	} else {
+		n.PeerList.Delete(GetIdOfPeer(peer))
 	}
 	return nil
 }
@@ -108,10 +114,23 @@ func (n *Node) PeerListItems() []*pb.Peer {
 	return items
 }
 
+func unique(strSlice []string) []string {
+	keys := make(map[string]bool)
+	list := []string{}
+	for _, entry := range strSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
 func (n *Node) GetNodeInfo() *pb.Peer {
 	ids := make([]string, 0)
 	ids = append(ids, n.KnownIds...)
 	ids = append(ids, n.AdvertisedIds...)
+	ids = unique(ids)
 	p := &pb.Peer{
 		Version:     n.Version,
 		Timestamp:   getCurrentTime(),
@@ -135,9 +154,9 @@ func checkSimilar(list0, list1 []string) bool {
 }
 
 func FirstDifferent(list0, list1 []string) string {
-	for _, e0 := range list0 {
+	for _, e0 := range list1 {
 		found := false
-		for _, e1 := range list1 {
+		for _, e1 := range list0 {
 			if e0 == e1 {
 				found = true
 				break
@@ -163,12 +182,16 @@ func (n *Node) GetDifferentAddressOf(peer *pb.Peer) string {
 }
 
 func (n *Node) SyncWithPeers() {
-	log.Printf("(0) Node: %v\n", GetIdOfPeer(n.GetNodeInfo()))
+	nodeId := GetIdOfPeer(n.GetNodeInfo())
+	log.Printf("(0) Node: %v\n", nodeId)
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
 		idOfPeer := n.GetDifferentAddressOf(peer)
-		log.Printf("(1) Node: %v -> Peer ID: %v\n", GetIdOfPeer(n.GetNodeInfo()), GetIdOfPeer(peer))
+		if idOfPeer == "" {
+			continue
+		}
+		log.Printf("(1) Node: %v -> Peer ID: %v\n", nodeId, idOfPeer)
 		for _, serviceFromPeer := range peer.ServiceList {
 			n.AddService(serviceFromPeer)
 		}
@@ -187,7 +210,17 @@ func (n *Node) SyncWithPeers() {
 	}
 }
 
+func Find(slice []string, val string) bool {
+	for _, item := range slice {
+		if item == val {
+			return true
+		}
+	}
+	return false
+}
+
 func (n *Node) JoinToPeers() error {
+	idList := n.GetNodeInfo().GetAddressList()
 	serviceList := n.ServiceList.Items()
 	for id := range serviceList {
 		n.SendJoinRequest(id)
@@ -196,7 +229,9 @@ func (n *Node) JoinToPeers() error {
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
 		for _, id := range peer.AddressList {
-			n.SendJoinRequest(id)
+			if !Find(idList, id) {
+				n.SendJoinRequest(id)
+			}
 		}
 	}
 	return nil
