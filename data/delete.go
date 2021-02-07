@@ -2,7 +2,7 @@ package data
 
 import (
 	pb "github.com/bgokden/veri/veriservice"
-	badger "github.com/dgraph-io/badger/v2"
+	badger "github.com/dgraph-io/badger/v3"
 )
 
 // Delete delete data to internal kv store

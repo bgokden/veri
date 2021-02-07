@@ -6,8 +6,9 @@ import (
 	"sync"
 
 	pb "github.com/bgokden/veri/veriservice"
-	"github.com/dgraph-io/badger/v2"
-	bpb "github.com/dgraph-io/badger/v2/pb"
+	"github.com/dgraph-io/badger/v3"
+	pbp "github.com/dgraph-io/badger/v3/pb"
+	"github.com/dgraph-io/ristretto/z"
 )
 
 func (dt *Data) SyncAll() error {
@@ -100,13 +101,25 @@ func (dt *Data) StreamSample(datumStream chan<- *pb.Datum, fraction float64) err
 }
 
 // Send collects the results
-func (c *StreamCollector) Send(list *bpb.KVList) error {
-	for _, item := range list.Kv {
-		datum, _ := ToDatum(item.Key, item.Value)
-		c.DatumStream <- datum
+func (c *StreamCollector) Send(buf *z.Buffer) error {
+	err := buf.SliceIterate(func(s []byte) error {
+		kv := new(pbp.KV)
+		if err := kv.Unmarshal(s); err != nil {
+			return err
+		}
 
-	}
-	return nil
+		if kv.StreamDone == true {
+			return nil
+		}
+
+		datum, errInner := ToDatum(kv.Key, kv.Value)
+		if errInner != nil {
+			return errInner
+		}
+		c.DatumStream <- datum
+		return nil
+	})
+	return err
 }
 
 // InsertStreamCollector collects results
@@ -155,20 +168,32 @@ func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig,
 }
 
 // Send collects the results
-func (c *InsertStreamCollector) Send(list *bpb.KVList) error {
-	for _, item := range list.Kv {
-		config := InsertConfigFromExpireAt(item.ExpiresAt)
-		if config.TTL < 10 {
-			continue
+func (c *InsertStreamCollector) Send(buf *z.Buffer) error {
+	err := buf.SliceIterate(func(s []byte) error {
+		kv := new(pbp.KV)
+		if err := kv.Unmarshal(s); err != nil {
+			return err
 		}
-		datum, _ := ToDatum(item.Key, item.Value)
+
+		if kv.StreamDone == true {
+			return nil
+		}
+
+		config := InsertConfigFromExpireAt(kv.ExpiresAt)
+		if config.TTL < 10 {
+			return nil
+		}
+		datum, errInner := ToDatum(kv.Key, kv.Value)
+		if errInner != nil {
+			return errInner
+		}
 		c.DatumStream <- &pb.InsertDatumWithConfig{
 			Datum:  datum,
 			Config: config,
 		}
-
-	}
-	return nil
+		return nil
+	})
+	return err
 }
 
 func InsertConfigFromExpireAt(expiresAt uint64) *pb.InsertConfig {

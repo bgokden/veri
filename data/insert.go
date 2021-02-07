@@ -5,7 +5,7 @@ import (
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
-	badger "github.com/dgraph-io/badger/v2"
+	badger "github.com/dgraph-io/badger/v3"
 )
 
 // Insert inserts data to internal kv store

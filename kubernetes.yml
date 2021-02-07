@@ -15,6 +15,19 @@ spec:
  - port: 10000
    targetPort: 10000
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: veriservice-external
+  namespace: veri
+spec:
+  selector:
+    app: veri
+  ports:
+  - port: 5678
+    targetPort: 10000
+  type: LoadBalancer
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -34,7 +47,7 @@ spec:
     spec:
       containers:
         - name: veri
-          image: berkgokden/veri:v0.0.42
+          image: berkgokden/veri:v0.0.42-35
           args: ["serve", "--services=veriservice:10000"]
           imagePullPolicy: IfNotPresent
           ports:

@@ -14,8 +14,10 @@ import (
 
 	"github.com/bgokden/veri/data/gencoder"
 	pb "github.com/bgokden/veri/veriservice"
-	badger "github.com/dgraph-io/badger/v2"
-	bpb "github.com/dgraph-io/badger/v2/pb"
+	badger "github.com/dgraph-io/badger/v3"
+	bpb "github.com/dgraph-io/badger/v3/pb"
+	pbp "github.com/dgraph-io/badger/v3/pb"
+	"github.com/dgraph-io/ristretto/z"
 	"github.com/tidwall/gjson"
 )
 
@@ -87,19 +89,26 @@ func (c *Collector) Insert(scoredDatum *pb.ScoredDatum) error {
 }
 
 // Send collects the results
-func (c *Collector) Send(list *bpb.KVList) error {
-	// log.Printf("Collector Send\n")
-	itemAdded := false
-	for _, item := range list.Kv {
+func (c *Collector) Send(buf *z.Buffer) error {
+	err := buf.SliceIterate(func(s []byte) error {
+		kv := new(pbp.KV)
+		if err := kv.Unmarshal(s); err != nil {
+			return err
+		}
+		if kv.StreamDone == true {
+			return nil
+		}
+		/////
 		datumScore := gencoder.DatumScore{Score: 0}
-		datumScore.Unmarshal(item.UserMeta)
+		datumScore.Unmarshal(kv.UserMeta)
 		// Old way of scoring:
 		// datumKey, _ := ToDatumKey(item.Key)
 		// // TODO: implement filters use: https://godoc.org/github.com/PaesslerAG/jsonpath#Get
 		// score := c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature)
 		score := datumScore.Score
+		itemAdded := false
 		if uint32(len(c.List)) < c.N {
-			datum, _ := ToDatum(item.Key, item.Value)
+			datum, _ := ToDatum(kv.Key, kv.Value)
 			scoredDatum := &pb.ScoredDatum{
 				Datum: datum,
 				Score: score,
@@ -109,7 +118,7 @@ func (c *Collector) Send(list *bpb.KVList) error {
 			itemAdded = true
 		} else if (c.HigherIsBetter && score > c.List[len(c.List)-1].Score) ||
 			(!c.HigherIsBetter && score < c.List[len(c.List)-1].Score) {
-			datum, _ := ToDatum(item.Key, item.Value)
+			datum, _ := ToDatum(kv.Key, kv.Value)
 			scoredDatum := &pb.ScoredDatum{
 				Datum: datum,
 				Score: score,
@@ -127,10 +136,11 @@ func (c *Collector) Send(list *bpb.KVList) error {
 					return c.List[i].Score < c.List[j].Score
 				})
 			}
-			itemAdded = false
 		}
-	}
-	return nil
+		/////
+		return nil
+	})
+	return err
 }
 
 // ToList is a default implementation of KeyToList. It picks up all valid versions of the key,

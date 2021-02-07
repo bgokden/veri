@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/bgokden/go-cache"
-	badger "github.com/dgraph-io/badger/v2"
+	badger "github.com/dgraph-io/badger/v3"
 
 	pb "github.com/bgokden/veri/veriservice"
 )
@@ -67,7 +67,6 @@ func (dt *Data) InitData() error {
 	log.Printf("Init Data %v\n", dt.Config)
 	if dt.Initialized == false {
 		options := badger.DefaultOptions(dt.DBPath).
-			WithKeepL0InMemory(true).
 			WithLoggingLevel(badger.WARNING)
 		db, err := badger.Open(options)
 		if err != nil {
