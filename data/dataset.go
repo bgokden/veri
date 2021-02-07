@@ -31,7 +31,7 @@ func NewDataset(datasetPath string) *Dataset {
 	dts := &Dataset{
 		Path: datasetPath,
 	}
-	dts.DataList = cache.New(24*time.Hour, 10*time.Minute)
+	dts.DataList = cache.New(24*time.Hour, 1*time.Minute)
 	dts.DataList.OnEvicted(closeData)
 	dts.DataPath = path.Join(dts.Path, "data")
 	os.MkdirAll(dts.DataPath, os.ModePerm)

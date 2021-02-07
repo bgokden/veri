@@ -168,7 +168,8 @@ func (n *Node) SendJoinRequest(id string) error {
 	request := &pb.JoinRequest{
 		Peer: peerInfo,
 	}
-	client, _, err := n.getClient(id)
+	client, conn, err := n.getClient(id)
+	defer conn.Close()
 	if err != nil {
 		log.Printf("(Call Join 1 %v) There is an error %v", n.Port, err)
 		return err
@@ -227,7 +228,8 @@ func (n *Node) SendAddPeerRequest(id string, peerInfo *pb.Peer) error {
 	request := &pb.AddPeerRequest{
 		Peer: peerInfo,
 	}
-	client, _, err := n.getClient(id)
+	client, conn, err := n.getClient(id)
+	defer conn.Close()
 	if err != nil {
 		log.Printf("(Call Add Peer 1 %v) There is an error %v", n.Port, err)
 		return err
@@ -246,7 +248,8 @@ func (n *Node) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingResponse, 
 
 func (n *Node) SendPingRequest(id string) error {
 	request := &pb.PingRequest{}
-	client, _, err := n.getClient(id)
+	client, conn, err := n.getClient(id)
+	defer conn.Close()
 	if err != nil {
 		return err
 	}

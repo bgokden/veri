@@ -49,15 +49,16 @@ func NewNode(config *NodeConfig) *Node {
 	node.Folder = config.Folder
 	node.AdvertisedIds = config.AdvertisedIds
 	node.Dataset = data.NewDataset(node.Folder)
-	node.PeerList = cache.New(5*time.Minute, 10*time.Minute)
-	node.ServiceList = cache.New(5*time.Minute, 10*time.Minute)
-	node.QueryUUIDCache = cache.New(5*time.Minute, 10*time.Minute)
+	node.PeerList = cache.New(5*time.Minute, 1*time.Minute)
+	node.ServiceList = cache.New(5*time.Minute, 1*time.Minute)
+	node.QueryUUIDCache = cache.New(5*time.Minute, 1*time.Minute)
 	for _, service := range config.ServiceList {
 		node.AddStaticService(service)
 	}
 	go node.JoinToPeers()
 	go node.SyncWithPeers()
 	node.SetPeriodicTask()
+
 	return node
 }
 

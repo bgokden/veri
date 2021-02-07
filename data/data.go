@@ -74,8 +74,8 @@ func (dt *Data) InitData() error {
 			return err
 		}
 		dt.DB = db
-		dt.Sources = cache.New(5*time.Minute, 10*time.Minute)
-		dt.QueryCache = cache.New(5*time.Minute, 10*time.Minute)
+		dt.Sources = cache.New(5*time.Minute, 1*time.Minute)
+		dt.QueryCache = cache.New(5*time.Minute, 1*time.Minute)
 		go dt.Run()
 		dt.Initialized = true
 	}

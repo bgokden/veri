@@ -36,7 +36,8 @@ func (dcs *DataSourceClient) GetVeriServiceClient() (pb.VeriServiceClient, *grpc
 
 func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	defer queryWaitGroup.Done()
-	client, _, err := dcs.GetVeriServiceClient()
+	client, conn, err := dcs.GetVeriServiceClient()
+	defer conn.Close()
 	if err != nil {
 		return err
 	}
@@ -61,7 +62,8 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 }
 
 func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
-	client, _, err := dcs.GetVeriServiceClient()
+	client, conn, err := dcs.GetVeriServiceClient()
+	defer conn.Close()
 	if err != nil {
 		return err
 	}
@@ -74,7 +76,8 @@ func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) er
 }
 
 func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
-	client, _, err := dcs.GetVeriServiceClient()
+	client, conn, err := dcs.GetVeriServiceClient()
+	defer conn.Close()
 	if err != nil {
 		return nil
 	}
