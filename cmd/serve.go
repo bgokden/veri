@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"log"
+
 	veriserviceserver "github.com/bgokden/veri/server"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var services string
@@ -30,6 +33,10 @@ var serveCmd = &cobra.Command{
 		// configMap["tls"] = tls
 		// configMap["cert"] = cert
 		// configMap["key"] = key
+		if ba, ok := viper.Get("broadcast").(string); ok {
+			broadcastAdresses = ba
+		}
+		log.Printf("broadcastAdresses: %v\n", broadcastAdresses)
 		configMap["broadcast"] = broadcastAdresses
 		configMap["directory"] = directory
 		veriserviceserver.RunServer(configMap)
@@ -42,6 +49,7 @@ func init() {
 	serveCmd.Flags().StringVarP(&services, "services", "s", "", "services to connect, Comma separated lists are supported")
 	serveCmd.Flags().IntVarP(&port, "port", "p", 10000, "port")
 	serveCmd.Flags().StringVarP(&broadcastAdresses, "broadcast", "b", "", "broadcast adresses to advertise, Comma separated lists are supported")
+	viper.BindPFlag("broadcast", serveCmd.Flags().Lookup("broadcast"))
 	serveCmd.Flags().StringVarP(&directory, "directory", "d", "", "data directory")
 
 	// serveCmd.Flags().BoolVarP(&tls, "tls", "t", false, "enable tls")

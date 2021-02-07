@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -46,14 +47,25 @@ func (n *Node) Insert(ctx context.Context, insertionRequest *pb.InsertionRequest
 
 func (n *Node) Join(ctx context.Context, joinRequest *pb.JoinRequest) (*pb.JoinResponse, error) {
 	peer := joinRequest.GetPeer()
-	n.AddPeer(peer)
+	n.AddPeerElement(peer)
 	address := ""
 	p, ok := grpcPeer.FromContext(ctx)
 	if !ok {
 		log.Printf("Peer can not be get from context %v\n", p)
 	} else {
-		address = strings.Split(p.Addr.String(), ":")[0]
-		if len(address) <= 1 { // problem with [::] interfaces
+		index := strings.LastIndex(p.Addr.String(), ":")
+		if index > 0 {
+			address = p.Addr.String()[:index]
+		} else {
+			address = p.Addr.String()
+		}
+		ipAddress := net.ParseIP(strings.ReplaceAll(strings.ReplaceAll(address, "[", ""), "]", ""))
+		if ipAddress != nil {
+			if ipAddress.IsLoopback() { // problem with [::] interfaces
+				address = "localhost"
+			}
+		}
+		if len(address) <= 1 { // Keep it empty if it is not a reasonable ip
 			address = ""
 		}
 	}
@@ -134,7 +146,7 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 }
 
 func (n *Node) Listen() error {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", n.Port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", n.Port))
 	if err != nil {
 		log.Printf("failed to listen: %v", err)
 		return err
@@ -151,12 +163,13 @@ func (n *Node) Listen() error {
 }
 
 func (n *Node) SendJoinRequest(id string) error {
-	log.Printf("(Call Join 0) Send Join reques to %v", id)
+	log.Printf("(Call Join 0) Send Join request to %v", id)
 	peerInfo := n.GetNodeInfo()
 	request := &pb.JoinRequest{
 		Peer: peerInfo,
 	}
-	client, _, err := n.getClient(id)
+	client, conn, err := n.getClient(id)
+	defer conn.Close()
 	if err != nil {
 		log.Printf("(Call Join 1 %v) There is an error %v", n.Port, err)
 		return err
@@ -167,16 +180,17 @@ func (n *Node) SendJoinRequest(id string) error {
 		return err
 	}
 	if resp.GetAddress() != "" {
-		feedbackId := fmt.Sprintf("%v:%v", resp.GetAddress(), n.Port)
+		feedbackID := fmt.Sprintf("%v:%v", resp.GetAddress(), n.Port)
+		// log.Printf("(Call Join 3 %v) Feedback ID: %v", n.Port, feedbackID)
 		found := false
 		for _, id := range n.KnownIds {
-			if id == feedbackId {
+			if id == feedbackID {
 				found = true
 				break
 			}
 		}
 		if !found {
-			n.KnownIds = append(n.KnownIds, feedbackId)
+			n.KnownIds = append(n.KnownIds, feedbackID)
 		}
 	}
 	return nil
@@ -200,4 +214,48 @@ func (n *Node) getClient(address string) (pb.VeriServiceClient, *grpc.ClientConn
 	}
 	client := pb.NewVeriServiceClient(conn)
 	return client, conn, nil
+}
+
+func (n *Node) AddPeer(ctx context.Context, in *pb.AddPeerRequest) (*pb.AddPeerResponse, error) {
+	return &pb.AddPeerResponse{}, n.AddPeerElement(in.GetPeer())
+}
+
+func (n *Node) SendAddPeerRequest(id string, peerInfo *pb.Peer) error {
+	if FirstDifferent(peerInfo.GetAddressList(), []string{id}) == "" {
+		return errors.New("Peer and target node is the same node")
+	}
+	log.Printf("(Call Add Peer 0) Send Add Peer request to %v for (%v)", id, GetIdOfPeer(peerInfo))
+	request := &pb.AddPeerRequest{
+		Peer: peerInfo,
+	}
+	client, conn, err := n.getClient(id)
+	defer conn.Close()
+	if err != nil {
+		log.Printf("(Call Add Peer 1 %v) There is an error %v", n.Port, err)
+		return err
+	}
+	_, err = client.AddPeer(context.Background(), request)
+	if err != nil {
+		log.Printf("(Call Add Peer 2 %v => %v) There is an error %v", n.Port, id, err)
+		return err
+	}
+	return nil
+}
+
+func (n *Node) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingResponse, error) {
+	return &pb.PingResponse{}, nil
+}
+
+func (n *Node) SendPingRequest(id string) error {
+	request := &pb.PingRequest{}
+	client, conn, err := n.getClient(id)
+	defer conn.Close()
+	if err != nil {
+		return err
+	}
+	_, err = client.Ping(context.Background(), request)
+	if err != nil {
+		return err
+	}
+	return nil
 }

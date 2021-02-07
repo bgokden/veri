@@ -3,6 +3,7 @@ module github.com/bgokden/veri
 go 1.15
 
 require (
+	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf
 	github.com/bgokden/go-cache v2.1.1+incompatible
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/golang/protobuf v1.4.1

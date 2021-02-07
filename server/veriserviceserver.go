@@ -1,6 +1,7 @@
 package veriserviceserver
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -58,6 +59,11 @@ func RunServer(configMap map[string]interface{}) {
 	broadcastAddresses := make([]string, 0)
 	if len(broadcast) > 0 {
 		broadcastAddresses = append(broadcastAddresses, strings.Split(broadcast, ",")...)
+	}
+	for i, address := range broadcastAddresses {
+		if !strings.Contains(address, ":") {
+			broadcastAddresses[i] = fmt.Sprintf("%v:%v", address, port)
+		}
 	}
 
 	serviceList := make([]string, 0)

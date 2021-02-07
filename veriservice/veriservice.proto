@@ -8,10 +8,12 @@ service VeriService {
   rpc Search(SearchRequest) returns (SearchResponse) {}
   rpc Insert(InsertionRequest) returns (InsertionResponse) {}
   rpc Join(JoinRequest) returns (JoinResponse) {}
+  rpc AddPeer(AddPeerRequest) returns (AddPeerResponse) {}
   rpc DataStream(GetDataRequest) returns (stream Datum) {}
   rpc CreateDataIfNotExists(DataConfig) returns (DataInfo) {}
   rpc GetDataInfo(GetDataRequest) returns (DataInfo) {}
   rpc SearchStream(SearchRequest) returns (stream ScoredDatum) {}
+  rpc Ping(PingRequest) returns (PingResponse) {}
 }
 
 // Request message for creating a new customer
@@ -127,7 +129,7 @@ message Peer {
   uint64 timestamp = 3;
   repeated DataConfig dataList = 4;
   repeated string serviceList = 5;
-  repeated Peer peerList = 6;
+  uint64 ping = 6;
 }
 
 message JoinRequest {
@@ -136,4 +138,21 @@ message JoinRequest {
 
 message JoinResponse {
   string address = 1; // received address
+}
+
+
+message AddPeerRequest {
+  Peer peer = 1;
+}
+
+message AddPeerResponse {
+}
+
+message PingRequest {
+  uint64 timestamp = 1;
+}
+
+message PingResponse {
+  uint64 timestamp = 1;
+  uint64 duration = 2;
 }
