@@ -145,6 +145,7 @@ func (c *Collector) Send(buf *z.Buffer) error {
 
 // ToList is a default implementation of KeyToList. It picks up all valid versions of the key,
 // skipping over deleted or expired keys.
+// TODO: update to bagder/v3 allocators
 func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error) {
 	list := &bpb.KVList{}
 	for ; itr.Valid(); itr.Next() {
