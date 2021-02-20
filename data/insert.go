@@ -38,5 +38,6 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	if err != nil {
 		return err
 	}
+	dt.Dirty = true
 	return nil
 }

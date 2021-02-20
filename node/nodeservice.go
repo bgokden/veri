@@ -122,6 +122,9 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 	} else {
 		err := n.QueryUUIDCache.Add(uid, true, cache.DefaultExpiration)
 		if err != nil {
+			if strings.Contains(err.Error(), "already exists") {
+				return nil
+			}
 			return err
 		}
 	}
