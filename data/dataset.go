@@ -42,13 +42,27 @@ func NewDataset(datasetPath string) *Dataset {
 	return dts
 }
 
+func GetDefaultConfig(name string) *pb.DataConfig {
+	return &pb.DataConfig{
+		Name:                       name,
+		Version:                    0,
+		TargetN:                    1000,
+		TargetUtilization:          0.9,
+		NoTarget:                   false,
+		ReplicationOnInsert:        2,
+		EnforceReplicationOnInsert: true,
+		Retention:                  0,
+	}
+}
+
 func (dts *Dataset) Get(name string) (*Data, error) {
 	item, ok := dts.DataList.Get(name)
 	if !ok {
-		return nil, errors.Errorf("Data %v does not exist", name)
+		// return nil, errors.Errorf("Data %v does not exist", name)
+		return dts.GetOrCreateIfNotExists(GetDefaultConfig(name))
 	}
 	if data, ok := item.(*Data); ok {
-		dts.DataList.IncrementExpiration(name, time.Duration(data.GetConfig().Retentation)*time.Second)
+		dts.DataList.IncrementExpiration(name, time.Duration(data.GetConfig().Retention)*time.Second)
 		return data, nil
 	}
 	return nil, errors.Errorf("Data %v is currupt", name)
@@ -64,9 +78,9 @@ func (dts *Dataset) GetOrCreateIfNotExists(config *pb.DataConfig) (*Data, error)
 
 func (dts *Dataset) CreateIfNotExists(config *pb.DataConfig) error {
 	preData := NewPreData(config, dts.DataPath)
-	retentation := time.Duration(config.Retentation) * time.Second
-	log.Printf("Data %v Retentation: %v\n", config.Name, retentation)
-	err := dts.DataList.Add(config.Name, preData, retentation)
+	retention := time.Duration(config.Retention) * time.Second
+	log.Printf("Data %v Retention: %v\n", config.Name, retention)
+	err := dts.DataList.Add(config.Name, preData, retention)
 	if err == nil {
 		go dts.SaveIndex()
 		return preData.InitData()

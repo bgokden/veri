@@ -89,6 +89,7 @@ message InsertionRequest {
 
 message InsertConfig {
     uint64 tTL = 1;
+    uint64 count = 2;
 }
 
 message InsertionResponse {
@@ -99,7 +100,7 @@ message InsertionResponse {
 message DataInfo {
   string name = 1;
   uint64 timestamp = 2;
-  string version = 3;
+  uint64 version = 3;
   repeated double avg = 4;
   repeated double hist = 5;
   uint64 n = 6;
@@ -109,18 +110,18 @@ message DataInfo {
   bool noTarget = 10;
   uint32 replicationOnInsert = 11;
   bool enforceReplicationOnInsert = 12;
-  uint64 retentation = 13;
+  uint64 retention = 13;
 }
 
 message DataConfig {
   string name = 1;
-  string version = 2;
+  uint64 version = 2;
   uint64 targetN = 3;
   double targetUtilization = 4;
   bool noTarget = 5;
   uint32 replicationOnInsert = 6;
   bool enforceReplicationOnInsert = 7;
-  uint64 retentation = 8;
+  uint64 retention = 8;
 }
 
 message Peer {
