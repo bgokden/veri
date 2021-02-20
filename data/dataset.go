@@ -86,6 +86,12 @@ func (dts *Dataset) CreateIfNotExists(config *pb.DataConfig) error {
 		return preData.InitData()
 	}
 	if err.Error() == fmt.Sprintf("Item %s already exists", config.Name) {
+		data, err := dts.Get(config.Name)
+		if err != nil {
+			if config.Version > data.Config.Version {
+				data.Config = config
+			}
+		}
 		return nil
 	}
 	return err
