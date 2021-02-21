@@ -47,7 +47,7 @@ spec:
     spec:
       containers:
         - name: veri
-          image: berkgokden/veri:v0.0.42-39
+          image: berkgokden/veri:v0.0.43
           args: ["serve", "--services=veriservice:10000"]
           imagePullPolicy: IfNotPresent
           ports:
@@ -63,5 +63,5 @@ spec:
               memory: "64Mi"
               cpu: "250m"
             limits:
-              memory: "256Mi"
+              memory: "768Mi"
               cpu: "500m"
