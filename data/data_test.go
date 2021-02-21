@@ -26,7 +26,7 @@ func TestData(t *testing.T) {
 
 	config1 := &pb.DataConfig{
 		Name:    "data1",
-		Version: "v0",
+		Version: 0,
 		TargetN: 1000,
 	}
 
@@ -107,7 +107,7 @@ func TestData2(t *testing.T) {
 
 	config2 := &pb.DataConfig{
 		Name:    "data2",
-		Version: "v0",
+		Version: 0,
 		TargetN: 1000,
 	}
 
@@ -146,7 +146,7 @@ func TestDataStreamSearch(t *testing.T) {
 
 	config01 := &pb.DataConfig{
 		Name:    "data01",
-		Version: "v0",
+		Version: 0,
 		TargetN: 1000,
 	}
 
@@ -159,7 +159,7 @@ func TestDataStreamSearch(t *testing.T) {
 
 	config02 := &pb.DataConfig{
 		Name:    "data02",
-		Version: "v0",
+		Version: 0,
 		TargetN: 1000,
 	}
 

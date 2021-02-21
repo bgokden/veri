@@ -1,6 +1,6 @@
 # build stage
 #FROM golang:1.15.6-alpine AS build-env
-FROM golang:1.16rc1-alpine AS build-env
+FROM golang:1.16.0-alpine AS build-env
 RUN apk add --no-cache git
 WORKDIR /src/veri
 COPY . /src/veri

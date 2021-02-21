@@ -5,7 +5,7 @@ import (
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
-	badger "github.com/dgraph-io/badger/v2"
+	badger "github.com/dgraph-io/badger/v3"
 )
 
 // Insert inserts data to internal kv store
@@ -37,6 +37,18 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	})
 	if err != nil {
 		return err
+	}
+	dt.Dirty = true
+	if dt.Config.EnforceReplicationOnInsert && config.Count >= uint64(dt.Config.ReplicationOnInsert) {
+		sourceList := dt.Sources.Items()
+		config.Count++
+		for _, sourceItem := range sourceList {
+			source := sourceItem.Object.(DataSource)
+			err := source.Insert(datum, config)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
