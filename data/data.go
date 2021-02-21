@@ -35,6 +35,7 @@ type Data struct {
 	Sources     *cache.Cache
 	QueryCache  *cache.Cache
 	Initialized bool
+	Alive       bool
 }
 
 func (d *Data) GetConfig() *pb.DataConfig {
@@ -49,7 +50,6 @@ func NewData(config *pb.DataConfig, dataPath string) (*Data, error) {
 	log.Printf("Create Data\n")
 	dt.DBPath = path.Join(dataPath, config.Name)
 	dt.InitData()
-	go dt.Run()
 	return dt, nil
 }
 
@@ -75,6 +75,7 @@ func (dt *Data) InitData() error {
 		dt.DB = db
 		dt.Sources = cache.New(5*time.Minute, 1*time.Minute)
 		dt.QueryCache = cache.New(5*time.Minute, 1*time.Minute)
+		dt.Alive = true
 		go dt.Run()
 		dt.Initialized = true
 	}
@@ -98,6 +99,7 @@ func NewTempData() (*Data, error) {
 
 // Close currently closes underlying kv store
 func (dt *Data) Close() error {
+	dt.Alive = false
 	return dt.DB.Close()
 }
 
@@ -112,6 +114,9 @@ func (dt *Data) DeletePath() error {
 func (dt *Data) Run() error {
 	nextTime := getCurrentTime()
 	for {
+		if !dt.Alive {
+			break
+		}
 		if nextTime <= getCurrentTime() {
 			secondsToSleep := uint64(10) // increment this based on load
 			dt.Process(false)
@@ -121,7 +126,7 @@ func (dt *Data) Run() error {
 		time.Sleep(time.Duration(1000) * time.Millisecond)
 
 	}
-	// return nil
+	return nil
 }
 
 // Process runs through keys and calculates statistics

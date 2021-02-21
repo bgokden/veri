@@ -39,5 +39,16 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 		return err
 	}
 	dt.Dirty = true
+	if dt.Config.EnforceReplicationOnInsert && config.Count >= uint64(dt.Config.ReplicationOnInsert) {
+		sourceList := dt.Sources.Items()
+		config.Count++
+		for _, sourceItem := range sourceList {
+			source := sourceItem.Object.(DataSource)
+			err := source.Insert(datum, config)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }

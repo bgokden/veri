@@ -47,7 +47,7 @@ func GetDefaultConfig(name string) *pb.DataConfig {
 		Name:                       name,
 		Version:                    0,
 		TargetN:                    1000,
-		TargetUtilization:          0.9,
+		TargetUtilization:          0.4,
 		NoTarget:                   false,
 		ReplicationOnInsert:        2,
 		EnforceReplicationOnInsert: true,
@@ -58,11 +58,32 @@ func GetDefaultConfig(name string) *pb.DataConfig {
 func (dts *Dataset) Get(name string) (*Data, error) {
 	item, ok := dts.DataList.Get(name)
 	if !ok {
-		// return nil, errors.Errorf("Data %v does not exist", name)
 		return dts.GetOrCreateIfNotExists(GetDefaultConfig(name))
 	}
 	if data, ok := item.(*Data); ok {
 		dts.DataList.IncrementExpiration(name, time.Duration(data.GetConfig().Retention)*time.Second)
+		return data, nil
+	}
+	return nil, errors.Errorf("Data %v is currupt", name)
+}
+
+func (dts *Dataset) GetNoOp(name string) (*Data, error) {
+	item, ok := dts.DataList.Get(name)
+	if !ok {
+		return dts.GetOrCreateIfNotExists(GetDefaultConfig(name))
+	}
+	if data, ok := item.(*Data); ok {
+		return data, nil
+	}
+	return nil, errors.Errorf("Data %v is currupt", name)
+}
+
+func (dts *Dataset) GetNoCreate(name string) (*Data, error) {
+	item, ok := dts.DataList.Get(name)
+	if !ok {
+		return nil, errors.Errorf("Data %v does not exist. Retry recomended", name)
+	}
+	if data, ok := item.(*Data); ok {
 		return data, nil
 	}
 	return nil, errors.Errorf("Data %v is currupt", name)
@@ -86,7 +107,7 @@ func (dts *Dataset) CreateIfNotExists(config *pb.DataConfig) error {
 		return preData.InitData()
 	}
 	if err.Error() == fmt.Sprintf("Item %s already exists", config.Name) {
-		data, err := dts.Get(config.Name)
+		data, err := dts.GetNoOp(config.Name)
 		if err != nil {
 			if config.Version > data.Config.Version {
 				data.Config = config

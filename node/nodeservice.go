@@ -128,7 +128,7 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 			return err
 		}
 	}
-	aData, err := n.Dataset.Get(config.GetDataName())
+	aData, err := n.Dataset.GetNoCreate(config.GetDataName())
 	if err != nil {
 		return err
 	}
