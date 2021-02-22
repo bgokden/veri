@@ -329,6 +329,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	for _, sourceItem := range sourceList {
 		source := sourceItem.Object.(DataSource)
 		queryWaitGroup.Add(1)
+		log.Printf("Search Source %v\n", source.GetID())
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
 	go func() {

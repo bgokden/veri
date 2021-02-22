@@ -202,7 +202,7 @@ func (n *Node) SyncWithPeers() {
 		}
 		for _, dataConfigFromPeer := range peer.DataList {
 			data, err := n.Dataset.GetOrCreateIfNotExists(dataConfigFromPeer)
-			log.Printf("(2) data: %v peer %v dataConfigFromPeer %v idOfPeer %v\n", data, peer, dataConfigFromPeer, idOfPeer)
+			log.Printf("(2) dataN: %v peer %v dataConfigFromPeer %v idOfPeer %v\n", data.N, peer, dataConfigFromPeer, idOfPeer)
 			if err == nil {
 				data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name, idOfPeer))
 			} else {

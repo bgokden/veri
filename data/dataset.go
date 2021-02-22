@@ -100,16 +100,19 @@ func (dts *Dataset) GetOrCreateIfNotExists(config *pb.DataConfig) (*Data, error)
 func (dts *Dataset) CreateIfNotExists(config *pb.DataConfig) error {
 	preData := NewPreData(config, dts.DataPath)
 	retention := time.Duration(config.Retention) * time.Second
-	log.Printf("Data %v Retention: %v\n", config.Name, retention)
+	log.Printf("Data %v Retention: %v Version: %v\n", config.Name, retention, config.Version)
 	err := dts.DataList.Add(config.Name, preData, retention)
 	if err == nil {
 		go dts.SaveIndex()
 		return preData.InitData()
 	}
+	log.Printf("Data %v Error: %v\n", config.Name, err.Error())
 	if err.Error() == fmt.Sprintf("Item %s already exists", config.Name) {
+		log.Printf("Data %v Config.Version: %v\n", config.Name, config.Version)
 		data, err := dts.GetNoOp(config.Name)
 		if err != nil {
 			if config.Version > data.Config.Version {
+				log.Printf("Update Data %v Config.Version: %v\n", config.Name, config.Version)
 				data.Config = config
 			}
 		}

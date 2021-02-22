@@ -181,6 +181,7 @@ func (dt *Data) Process(force bool) error {
 		dt.MaxDistance = maxDistance
 		dt.N = n
 		dt.Timestamp = getCurrentTime()
+		dt.SyncAll()
 	}
 	dt.Timestamp = getCurrentTime() // update always
 	dt.Dirty = false

@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"errors"
+	"log"
 	"math/rand"
 	"sync"
 
@@ -25,6 +27,10 @@ func (dt *Data) SyncAll() error {
 
 func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	info := source.GetDataInfo()
+	if info == nil {
+		log.Println("Data info can not be get")
+		return errors.New("Data info can not be get")
+	}
 	localInfo := dt.GetDataInfo()
 	localN := localInfo.N
 	config := dt.GetConfig()
@@ -35,16 +41,17 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	}
 	diff := (localN - info.N) / 2
 	if diff > 0 {
-		datumStream := make(chan *pb.Datum, 100)
+		datumStream := make(chan *pb.InsertDatumWithConfig, 100)
 		go func() {
 			for datum := range datumStream {
-				err := source.Insert(datum, nil)
+				log.Printf("Sync Insert\n")
+				err := source.Insert(datum.Datum, datum.Config)
 				if err != nil && isEvicitionModeOn {
-					dt.Delete(datum)
+					dt.Delete(datum.Datum)
 				}
 			}
 		}()
-		dt.StreamSample(datumStream, float64(diff)/float64(localN))
+		dt.InsertStreamSample(datumStream, float64(diff)/float64(localN))
 		close(datumStream)
 	}
 	waitGroup.Done()
