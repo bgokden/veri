@@ -44,7 +44,7 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 		datumStream := make(chan *pb.InsertDatumWithConfig, 100)
 		go func() {
 			for datum := range datumStream {
-				log.Printf("Sync Insert\n")
+				// log.Printf("Sync Insert\n")
 				err := source.Insert(datum.Datum, datum.Config)
 				if err != nil && isEvicitionModeOn {
 					dt.Delete(datum.Datum)

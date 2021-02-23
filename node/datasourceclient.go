@@ -68,8 +68,9 @@ func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) er
 		return err
 	}
 	request := &pb.InsertionRequest{
-		Config: config,
-		Datum:  datum,
+		Config:   config,
+		Datum:    datum,
+		DataName: dcs.Name,
 	}
 	_, err = client.Insert(context.Background(), request)
 	return err

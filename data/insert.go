@@ -2,7 +2,6 @@ package data
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
@@ -46,10 +45,10 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 			Count: 0,
 		}
 	}
-	if dt.Config.EnforceReplicationOnInsert && config.Count >= uint64(dt.Config.ReplicationOnInsert) {
+	if dt.Config.EnforceReplicationOnInsert && config.Count < uint64(dt.Config.ReplicationOnInsert) {
 		sourceList := dt.Sources.Items()
 		config.Count++
-		log.Printf("Sending Insert with config.Count: %v ttl: %v\n", config.Count, ttlDuration)
+		// log.Printf("Sending Insert with config.Count: %v ttl: %v\n", config.Count, config.TTL)
 		for _, sourceItem := range sourceList {
 			source := sourceItem.Object.(DataSource)
 			err := source.Insert(datum, config)

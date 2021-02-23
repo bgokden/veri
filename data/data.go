@@ -190,7 +190,7 @@ func (dt *Data) Process(force bool) error {
 
 // GetDataInfo out of data
 func (dt *Data) GetDataInfo() *pb.DataInfo {
-	log.Printf("Data: %v\n", dt)
+	// log.Printf("Data: %v\n", dt)
 	return &pb.DataInfo{
 		Avg:               dt.Avg,
 		N:                 dt.N,
@@ -206,11 +206,11 @@ func (dt *Data) GetDataInfo() *pb.DataInfo {
 }
 
 // AddSource adds a source
-func (dt *Data) AddSource(dataSource DataSource) {
+func (dt *Data) AddSource(dataSource DataSource) error {
 	if dt.Sources == nil {
 		dt.InitData()
 	}
-	dt.Sources.Set(dataSource.GetID(), dataSource, cache.DefaultExpiration)
+	return dt.Sources.Add(dataSource.GetID(), dataSource, cache.DefaultExpiration)
 }
 
 func (dt *Data) GetID() string {

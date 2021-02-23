@@ -1,6 +1,7 @@
 package node
 
 import (
+	"fmt"
 	"log"
 	"sort"
 	"strings"
@@ -210,6 +211,7 @@ func (n *Node) SyncWithPeers() {
 			}
 		}
 	}
+	fmt.Println(n.Info())
 }
 
 func Find(slice []string, val string) bool {
@@ -271,4 +273,36 @@ func (n *Node) Periodic() error {
 	go n.SyncWithPeers()
 	go n.Dataset.SaveIndex()
 	return nil
+}
+
+func (n *Node) Info() string {
+	var sb strings.Builder
+	nodeId := GetIdOfPeer(n.GetNodeInfo())
+	sb.WriteString("-------------------------------------------------\n")
+	sb.WriteString("Node ID: " + nodeId + "\n")
+	sb.WriteString("DataList:\n")
+	for _, name := range n.Dataset.List() {
+		data, err := n.Dataset.GetNoCreate(name)
+		sb.WriteString(fmt.Sprintf("* Name %v\n", name))
+		if err == nil {
+			config := data.GetConfig()
+			dinfo := data.GetDataInfo()
+			sb.WriteString(fmt.Sprintf("-- Name %v N: %v config %v\n", name, dinfo.N, config))
+		} else {
+			sb.WriteString(fmt.Sprintf("-- Error: %v\n", err.Error()))
+		}
+	}
+	sb.WriteString("Peers:\n")
+	peerList := n.PeerList.Items()
+	for _, item := range peerList {
+		peer := item.Object.(*pb.Peer)
+		idOfPeer := GetIdOfPeer(peer)
+		sb.WriteString(fmt.Sprintf("Peer: %v\n", idOfPeer))
+		sb.WriteString(fmt.Sprintf("DataList of Peer %v:\n", idOfPeer))
+		for _, dataConfigFromPeer := range peer.DataList {
+			sb.WriteString(fmt.Sprintf("* Name %v Version: %v dataConfigFromPeer: %v\n", dataConfigFromPeer.Name, dataConfigFromPeer.Version, dataConfigFromPeer))
+		}
+	}
+	sb.WriteString("-------------------------------------------------\n")
+	return sb.String()
 }

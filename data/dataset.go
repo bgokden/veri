@@ -55,13 +55,20 @@ func GetDefaultConfig(name string) *pb.DataConfig {
 	}
 }
 
+func GetRetention(retention uint64) time.Duration {
+	if retention == 0 {
+		return time.Duration(14*24) * time.Hour
+	}
+	return time.Duration(retention) * time.Second
+}
+
 func (dts *Dataset) Get(name string) (*Data, error) {
 	item, ok := dts.DataList.Get(name)
 	if !ok {
 		return dts.GetOrCreateIfNotExists(GetDefaultConfig(name))
 	}
 	if data, ok := item.(*Data); ok {
-		dts.DataList.IncrementExpiration(name, time.Duration(data.GetConfig().Retention)*time.Second)
+		dts.DataList.IncrementExpiration(name, GetRetention(data.GetConfig().Retention))
 		return data, nil
 	}
 	return nil, errors.Errorf("Data %v is currupt", name)
@@ -99,7 +106,7 @@ func (dts *Dataset) GetOrCreateIfNotExists(config *pb.DataConfig) (*Data, error)
 
 func (dts *Dataset) CreateIfNotExists(config *pb.DataConfig) error {
 	preData := NewPreData(config, dts.DataPath)
-	retention := time.Duration(config.Retention) * time.Second
+	retention := GetRetention(config.Retention)
 	log.Printf("Data %v Retention: %v Version: %v\n", config.Name, retention, config.Version)
 	err := dts.DataList.Add(config.Name, preData, retention)
 	if err == nil {
