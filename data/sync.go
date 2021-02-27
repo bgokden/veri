@@ -15,6 +15,7 @@ import (
 )
 
 func (dt *Data) SyncAll() error {
+	log.Println("SyncAll Called")
 	var waitGroup sync.WaitGroup
 	sourceList := dt.Sources.Items()
 	for _, sourceItem := range sourceList {
@@ -35,6 +36,7 @@ func isEvictionOn(localInfo *pb.DataInfo, config *pb.DataConfig, deleted uint64)
 }
 
 func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
+	log.Println("Sync Called")
 	defer waitGroup.Done()
 	info := source.GetDataInfo()
 	if info == nil {
@@ -48,12 +50,18 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	}
 	config := dt.GetConfig()
 	diff := minUint64(((localN-info.N)/2)+1, 100)
+	if info.N > localN {
+		diff = 1
+	}
+	log.Printf("Data diff:%v localN: %v  remoteN: %v\n", diff, localN, info.N)
 	if diff > 0 {
 		datumStream := make(chan *pb.InsertDatumWithConfig, 100)
 		go func() {
 			deleted := uint64(0)
+			counter := 0
 			for datum := range datumStream {
-				// log.Printf("Sync Insert\n")
+				counter++
+				log.Printf("Sync Insert Count: %v\n", counter)
 				err := source.Insert(datum.Datum, datum.Config)
 				if err != nil {
 					log.Printf("Sync Insertion Error: %v\n", err.Error())
@@ -62,6 +70,7 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 				if err == nil && isEvictionOn(localInfo, config, deleted) {
 					dt.Delete(datum.Datum)
 					deleted++
+					log.Printf("Datum deleted count: %v\n", deleted)
 				}
 				time.Sleep(200 * time.Millisecond)
 			}
@@ -218,7 +227,12 @@ func (c *InsertStreamCollector) Send(buf *z.Buffer) error {
 }
 
 func InsertConfigFromExpireAt(expiresAt uint64) *pb.InsertConfig {
-	timeLeftInSeconds := expiresAt - uint64(getCurrentTime())
+	var timeLeftInSeconds uint64
+	if expiresAt > 0 {
+		timeLeftInSeconds = expiresAt - uint64(getCurrentTime())
+	} else {
+		timeLeftInSeconds = 0
+	}
 	return &pb.InsertConfig{
 		TTL:   timeLeftInSeconds,
 		Count: 1,
