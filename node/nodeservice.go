@@ -7,11 +7,13 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/bgokden/go-cache"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 	grpcPeer "google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
 )
@@ -155,7 +157,38 @@ func (n *Node) Listen() error {
 		return err
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
+		// MaxConnectionIdle is a duration for the amount of time after which an
+		// idle connection would be closed by sending a GoAway. Idleness duration is
+		// defined since the most recent time the number of outstanding RPCs became
+		// zero or the connection establishment.
+		MaxConnectionIdle: 1 * time.Minute, // The current default value is infinity.
+		// MaxConnectionAge is a duration for the maximum amount of time a
+		// connection may exist before it will be closed by sending a GoAway. A
+		// random jitter of +/-10% will be added to MaxConnectionAge to spread out
+		// connection storms.
+		MaxConnectionAge: 20 * time.Minute, // The current default value is infinity.
+		// MaxConnectionAgeGrace is an additive period after MaxConnectionAge after
+		// which the connection will be forcibly closed.
+		MaxConnectionAgeGrace: 25 * time.Minute, // The current default value is infinity.
+		// After a duration of this time if the server doesn't see any activity it
+		// pings the client to see if the transport is still alive.
+		// If set below 1s, a minimum value of 1s will be used instead.
+		Time: 20 * time.Second, // The current default value is 2 hours.
+		// After having pinged for keepalive check, the server waits for a duration
+		// of Timeout and if no activity is seen even after that the connection is
+		// closed.
+		Timeout: 200 * time.Millisecond, // The current default value is 20 seconds.
+	}), grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+		// MinTime is the minimum amount of time a client should wait before sending
+		// a keepalive ping.
+		MinTime: 5 * time.Second, // The current default value is 5 minutes.
+		// If true, server allows keepalive pings even when there are no active
+		// streams(RPCs). If false, and client sends ping when there are no active
+		// streams, server will send GOAWAY and close the connection.
+		PermitWithoutStream: false, // false by default.
+	}))
+
 	pb.RegisterVeriServiceServer(grpcServer, n)
 	reflection.Register(grpcServer)
 	if err := grpcServer.Serve(lis); err != nil {
@@ -166,20 +199,20 @@ func (n *Node) Listen() error {
 }
 
 func (n *Node) SendJoinRequest(id string) error {
-	log.Printf("(Call Join 0) Send Join request to %v", id)
+	// log.Printf("(Call Join 0) Send Join request to %v", id)
 	peerInfo := n.GetNodeInfo()
 	request := &pb.JoinRequest{
 		Peer: peerInfo,
 	}
 	client, conn, err := n.getClient(id)
-	defer conn.Close()
 	if err != nil {
-		log.Printf("(Call Join 1 %v) There is an error %v", n.Port, err)
+		//log.Printf("(Call Join 1 %v) There is an error %v", n.Port, err)
 		return err
 	}
+	defer conn.Close()
 	resp, err := client.Join(context.Background(), request)
 	if err != nil {
-		log.Printf("(Call Join 2 %v => %v) There is an error %v", n.Port, id, err)
+		// log.Printf("(Call Join 2 %v => %v) There is an error %v", n.Port, id, err)
 		return err
 	}
 	if resp.GetAddress() != "" {
@@ -210,7 +243,7 @@ func (n *Node) CreateDataIfNotExists(ctx context.Context, in *pb.DataConfig) (*p
 }
 
 func (n *Node) getClient(address string) (pb.VeriServiceClient, *grpc.ClientConn, error) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(time.Duration(200)*time.Millisecond))
 	if err != nil {
 		log.Printf("fail to dial: %v\n", err)
 		return nil, nil, err
@@ -227,19 +260,19 @@ func (n *Node) SendAddPeerRequest(id string, peerInfo *pb.Peer) error {
 	if FirstDifferent(peerInfo.GetAddressList(), []string{id}) == "" {
 		return errors.New("Peer and target node is the same node")
 	}
-	log.Printf("(Call Add Peer 0) Send Add Peer request to %v for (%v)", id, GetIdOfPeer(peerInfo))
+	// log.Printf("(Call Add Peer 0) Send Add Peer request to %v for (%v)", id, GetIdOfPeer(peerInfo))
 	request := &pb.AddPeerRequest{
 		Peer: peerInfo,
 	}
 	client, conn, err := n.getClient(id)
-	defer conn.Close()
 	if err != nil {
-		log.Printf("(Call Add Peer 1 %v) There is an error %v", n.Port, err)
+		// log.Printf("(Call Add Peer 1 %v) There is an error %v", n.Port, err)
 		return err
 	}
+	defer conn.Close()
 	_, err = client.AddPeer(context.Background(), request)
 	if err != nil {
-		log.Printf("(Call Add Peer 2 %v => %v) There is an error %v", n.Port, id, err)
+		// log.Printf("(Call Add Peer 2 %v => %v) There is an error %v", n.Port, id, err)
 		return err
 	}
 	return nil
@@ -252,10 +285,10 @@ func (n *Node) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingResponse, 
 func (n *Node) SendPingRequest(id string) error {
 	request := &pb.PingRequest{}
 	client, conn, err := n.getClient(id)
-	defer conn.Close()
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 	_, err = client.Ping(context.Background(), request)
 	if err != nil {
 		return err

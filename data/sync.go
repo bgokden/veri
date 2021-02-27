@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"sync"
+	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/dgraph-io/badger/v3"
@@ -19,13 +20,22 @@ func (dt *Data) SyncAll() error {
 	for _, sourceItem := range sourceList {
 		source := sourceItem.Object.(DataSource)
 		waitGroup.Add(1)
-		go dt.Sync(source, &waitGroup)
+		dt.Sync(source, &waitGroup)
 	}
 	waitGroup.Wait()
 	return nil
 }
 
+func isEvictionOn(localInfo *pb.DataInfo, config *pb.DataConfig, deleted uint64) bool {
+	lowerThreshold := uint64(float64(localInfo.TargetN) * config.TargetUtilization) // This should be configurable
+	if !config.NoTarget && (localInfo.N-deleted) >= lowerThreshold {
+		return true
+	}
+	return false
+}
+
 func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
+	defer waitGroup.Done()
 	info := source.GetDataInfo()
 	if info == nil {
 		log.Println("Data info can not be get")
@@ -33,28 +43,32 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	}
 	localInfo := dt.GetDataInfo()
 	localN := localInfo.N
-	config := dt.GetConfig()
-	lowerThreshold := uint64(float64(localInfo.TargetN) * config.TargetUtilization) // This should be configurable
-	isEvicitionModeOn := false
-	if !config.NoTarget && localN >= lowerThreshold {
-		isEvicitionModeOn = true
+	if localN == 0 {
+		return nil // nothing to do
 	}
-	diff := (localN - info.N) / 2
+	config := dt.GetConfig()
+	diff := minUint64(((localN-info.N)/2)+1, 100)
 	if diff > 0 {
 		datumStream := make(chan *pb.InsertDatumWithConfig, 100)
 		go func() {
+			deleted := uint64(0)
 			for datum := range datumStream {
 				// log.Printf("Sync Insert\n")
 				err := source.Insert(datum.Datum, datum.Config)
-				if err != nil && isEvicitionModeOn {
-					dt.Delete(datum.Datum)
+				if err != nil {
+					log.Printf("Sync Insertion Error: %v\n", err.Error())
+					break
 				}
+				if err == nil && isEvictionOn(localInfo, config, deleted) {
+					dt.Delete(datum.Datum)
+					deleted++
+				}
+				time.Sleep(200 * time.Millisecond)
 			}
 		}()
 		dt.InsertStreamSample(datumStream, float64(diff)/float64(localN))
 		close(datumStream)
 	}
-	waitGroup.Done()
 	return nil
 }
 
@@ -206,6 +220,7 @@ func (c *InsertStreamCollector) Send(buf *z.Buffer) error {
 func InsertConfigFromExpireAt(expiresAt uint64) *pb.InsertConfig {
 	timeLeftInSeconds := expiresAt - uint64(getCurrentTime())
 	return &pb.InsertConfig{
-		TTL: timeLeftInSeconds,
+		TTL:   timeLeftInSeconds,
+		Count: 1,
 	}
 }

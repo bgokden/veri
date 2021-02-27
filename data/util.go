@@ -98,6 +98,13 @@ func min(a, b int) int {
 	return b
 }
 
+func minUint64(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 func sum(arr []float64) float64 {
 	sum := 0.0
 	for _, e := range arr {

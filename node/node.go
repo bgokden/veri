@@ -184,8 +184,8 @@ func (n *Node) GetDifferentAddressOf(peer *pb.Peer) string {
 }
 
 func (n *Node) SyncWithPeers() {
-	nodeId := GetIdOfPeer(n.GetNodeInfo())
-	log.Printf("(0) Node: %v\n", nodeId)
+	// nodeId := GetIdOfPeer(n.GetNodeInfo())
+	// log.Printf("(0) Node: %v\n", nodeId)
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
@@ -193,7 +193,7 @@ func (n *Node) SyncWithPeers() {
 		if idOfPeer == "" {
 			continue
 		}
-		log.Printf("(1) Node: %v -> Peer ID: %v\n", nodeId, idOfPeer)
+		// log.Printf("(1) Node: %v -> Peer ID: %v\n", nodeId, idOfPeer)
 		for _, serviceFromPeer := range peer.ServiceList {
 			n.AddService(serviceFromPeer)
 		}
@@ -203,7 +203,7 @@ func (n *Node) SyncWithPeers() {
 		}
 		for _, dataConfigFromPeer := range peer.DataList {
 			data, err := n.Dataset.GetOrCreateIfNotExists(dataConfigFromPeer)
-			log.Printf("(2) dataN: %v peer %v dataConfigFromPeer %v idOfPeer %v\n", data.N, peer, dataConfigFromPeer, idOfPeer)
+			// log.Printf("(2) dataN: %v peer %v dataConfigFromPeer %v idOfPeer %v\n", data.N, peer, dataConfigFromPeer, idOfPeer)
 			if err == nil {
 				data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name, idOfPeer))
 			} else {
@@ -282,14 +282,25 @@ func (n *Node) Info() string {
 	sb.WriteString("Node ID: " + nodeId + "\n")
 	sb.WriteString("DataList:\n")
 	for _, name := range n.Dataset.List() {
-		data, err := n.Dataset.GetNoCreate(name)
-		sb.WriteString(fmt.Sprintf("* Name %v\n", name))
+		dt, err := n.Dataset.GetNoCreate(name)
 		if err == nil {
-			config := data.GetConfig()
-			dinfo := data.GetDataInfo()
-			sb.WriteString(fmt.Sprintf("-- Name %v N: %v config %v\n", name, dinfo.N, config))
+			config := dt.GetConfig()
+			dinfo := dt.GetDataInfo()
+			sb.WriteString(fmt.Sprintf("* Name %v N: %v config %v\n", name, dinfo.N, config))
 		} else {
-			sb.WriteString(fmt.Sprintf("-- Error: %v\n", err.Error()))
+			sb.WriteString(fmt.Sprintf("* Name %v Error: %v\n", name, err.Error()))
+		}
+		sourceList := dt.Sources.Items()
+		for _, sourceItem := range sourceList {
+			source := sourceItem.Object.(data.DataSource)
+			sourceID := source.GetID()
+			sourceInfo := source.GetDataInfo()
+			if sourceInfo != nil {
+				sb.WriteString(fmt.Sprintf("-- sourceID %v Version: %v N: %v\n", sourceID, sourceInfo.Version, sourceInfo.N))
+			} else {
+				sb.WriteString(fmt.Sprintf("-- sourceID %v Info not available\n", sourceID))
+			}
+
 		}
 	}
 	sb.WriteString("Peers:\n")
