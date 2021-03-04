@@ -43,7 +43,7 @@ func NewConnection(address string) *Connection {
 	conn, err := grpc.Dial(address,
 		grpc.WithBlock(),
 		grpc.WithInsecure(),
-		grpc.WithTimeout(time.Duration(200)*time.Millisecond),
+		grpc.WithTimeout(time.Duration(1000)*time.Millisecond),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			// After a duration of this time if the client doesn't see any activity it
 			// pings the server to see if the transport is still alive.

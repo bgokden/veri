@@ -55,6 +55,7 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	}
 	log.Printf("Data diff:%v localN: %v  remoteN: %v\n", diff, localN, info.N)
 	if diff > 0 {
+		log.Printf("Diff larger than 0: %v\n", diff)
 		datumStream := make(chan *pb.InsertDatumWithConfig, 100)
 		go func() {
 			deleted := uint64(0)
@@ -76,6 +77,7 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 			}
 		}()
 		dt.InsertStreamSample(datumStream, float64(diff)/float64(localN))
+		log.Printf("Close stream\n")
 		close(datumStream)
 	}
 	return nil
@@ -158,6 +160,7 @@ type InsertStreamCollector struct {
 }
 
 func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig, fraction float64) error {
+	log.Printf("InsertStreamSample: %v\n", fraction)
 	c := &InsertStreamCollector{
 		DatumStream: datumStream,
 	}
@@ -172,7 +175,9 @@ func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig,
 	// ChooseKey is called concurrently for every key. If left nil, assumes true by default.
 	if fraction < 1 {
 		stream.ChooseKey = func(item *badger.Item) bool {
-			return rand.Float64() < fraction
+			r := rand.Float64()
+			log.Printf("InsertStreamSample: random: %v ? fraction %v\n", r, fraction)
+			return r < fraction
 		}
 	} else {
 		stream.ChooseKey = nil
@@ -199,24 +204,28 @@ func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig,
 
 // Send collects the results
 func (c *InsertStreamCollector) Send(buf *z.Buffer) error {
+	log.Printf("InsertDatumWithConfig Send called\n")
 	err := buf.SliceIterate(func(s []byte) error {
 		kv := new(pbp.KV)
 		if err := kv.Unmarshal(s); err != nil {
+			log.Printf("InsertDatumWithConfig Unmarshal error: %v\n", err.Error())
 			return err
 		}
 
 		if kv.StreamDone == true {
+			log.Printf("InsertDatumWithConfig StreamDone true\n")
 			return nil
 		}
 
 		config := InsertConfigFromExpireAt(kv.ExpiresAt)
-		if config.TTL < 10 {
+		if config.TTL != 0 && config.TTL < 10 {
 			return nil
 		}
 		datum, errInner := ToDatum(kv.Key, kv.Value)
 		if errInner != nil {
 			return errInner
 		}
+		log.Printf("InsertDatumWithConfig pushed: %v\n")
 		c.DatumStream <- &pb.InsertDatumWithConfig{
 			Datum:  datum,
 			Config: config,
