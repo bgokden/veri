@@ -36,7 +36,7 @@ metadata:
   name: veri
   namespace: veri
 spec:
-  replicas: 3
+  replicas: 4
   strategy:
     type: RollingUpdate
     rollingUpdate:
