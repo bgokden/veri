@@ -245,7 +245,7 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 	// db.NewStreamAt(readTs) for managed mode.
 
 	// -- Optional settings
-	stream.NumGo = 4                      // Set number of goroutines to use for iteration.
+	stream.NumGo = 16                     // Set number of goroutines to use for iteration.
 	stream.Prefix = nil                   // Leave nil for iteration over the whole DB.
 	stream.LogPrefix = "Badger.Streaming" // For identifying stream logs. Outputs to Logger.
 
@@ -329,7 +329,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	for _, sourceItem := range sourceList {
 		source := sourceItem.Object.(DataSource)
 		queryWaitGroup.Add(1)
-		log.Printf("Search Source %v\n", source.GetID())
+		// log.Printf("Search Source %v\n", source.GetID())
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}
 	go func() {
@@ -344,7 +344,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		case scoredDatum := <-scoredDatumStream:
 			temp.Insert(scoredDatum)
 		case <-waitChannel:
-			log.Printf("AggregatedSearch: all data finished")
+			// log.Printf("AggregatedSearch: all data finished")
 			close(scoredDatumStream)
 			for scoredDatum := range scoredDatumStream {
 				temp.Insert(scoredDatum)
@@ -352,12 +352,12 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 			dataAvailable = false
 			break
 		case <-timeLimit:
-			log.Printf("timeout")
+			// log.Printf("timeout")
 			dataAvailable = false
 			break
 		}
 	}
-	log.Printf("search collected data\n")
+	// log.Printf("search collected data\n")
 	// Search End
 	result := temp.Result()
 	resultCopy := CloneResult(result)
@@ -370,7 +370,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	if config.CacheDuration > 0 {
 		cacheDuration := time.Duration(config.CacheDuration) * time.Second
 		dt.QueryCache.Set(queryKey, resultCopy, cacheDuration)
-		log.Printf("AggregatedSearch: finished. Set Cache Duration: %v\n", cacheDuration)
+		// log.Printf("AggregatedSearch: finished. Set Cache Duration: %v\n", cacheDuration)
 	}
 	return nil
 }
@@ -414,7 +414,7 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 		case scoredDatum := <-scoredDatumStream:
 			temp.Insert(scoredDatum)
 		case <-waitChannel:
-			log.Printf("MultiAggregatedSearch: all data finished")
+			// log.Printf("MultiAggregatedSearch: all data finished")
 			close(scoredDatumStream)
 			for scoredDatum := range scoredDatumStream {
 				temp.Insert(scoredDatum)
@@ -428,6 +428,6 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 		}
 	}
 	// Search End
-	log.Printf("MultiAggregatedSearch: finished")
+	// log.Printf("MultiAggregatedSearch: finished")
 	return temp.Result(), nil
 }

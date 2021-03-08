@@ -1,15 +1,57 @@
 package util
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
+	goburrow "github.com/goburrow/cache"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/keepalive"
 )
+
+type ConnectionCache struct {
+	Provider goburrow.LoadingCache
+}
+
+func NewConnectionCache() *ConnectionCache {
+	load := func(k goburrow.Key) (goburrow.Value, error) {
+		address := fmt.Sprintf("%s", k)
+		return NewConnectionPool(address), nil
+	}
+	// Create a loading cache
+	c := goburrow.NewLoadingCache(load,
+		goburrow.WithMaximumSize(100),                  // Limit number of entries in the cache.
+		goburrow.WithExpireAfterAccess(10*time.Minute), // Expire entries after 1 minute since last accessed.
+		goburrow.WithRefreshAfterWrite(20*time.Minute), // Expire entries after 2 minutes since last created.
+	)
+
+	cc := &ConnectionCache{
+		Provider: c,
+	}
+
+	return cc
+}
+
+func (cc *ConnectionCache) Get(address string) *Connection {
+	if cpInterface, _ := cc.Provider.Get(address); cpInterface != nil {
+		if cp, ok2 := cpInterface.(*ConnectionPool); ok2 {
+			return cp.Get()
+		}
+	}
+	return nil
+}
+
+func (cc *ConnectionCache) Put(c *Connection) {
+	if cpInterface, _ := cc.Provider.Get(c.Address); cpInterface != nil {
+		if cp, ok2 := cpInterface.(*ConnectionPool); ok2 {
+			cp.PutIfHealthy(c)
+		}
+	}
+}
 
 // Func to init pool
 func NewConnectionPool(address string) *ConnectionPool {
@@ -62,7 +104,7 @@ func NewConnection(address string) *Connection {
 		log.Printf("fail to dial: %v\n", err)
 		return nil
 	}
-	log.Printf("New connection to: %v\n", address)
+	// log.Printf("New connection to: %v\n", address)
 	client := pb.NewVeriServiceClient(conn)
 	return &Connection{
 		Address: address,
@@ -76,7 +118,7 @@ func (cp *ConnectionPool) Get() *Connection {
 }
 
 func (cp *ConnectionPool) GetWithRetry(count int) *Connection {
-	if count > 5 {
+	if count > 3 {
 		return nil
 	}
 	connectionInterface := cp.Pool.Get()

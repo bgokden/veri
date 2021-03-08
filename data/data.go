@@ -131,9 +131,9 @@ func (dt *Data) Run() error {
 
 // Process runs through keys and calculates statistics
 func (dt *Data) Process(force bool) error {
-	log.Printf("Try Running Process (forced: %v) current: %v timestamp: %v diff: %v\n", force, getCurrentTime(), dt.Timestamp, getCurrentTime()-dt.Timestamp)
+	// log.Printf("Try Running Process (forced: %v) current: %v timestamp: %v diff: %v\n", force, getCurrentTime(), dt.Timestamp, getCurrentTime()-dt.Timestamp)
 	if getCurrentTime()-dt.Timestamp >= 60 || force {
-		log.Printf("Running Process (forced: %v)\n", force)
+		// log.Printf("Running Process (forced: %v)\n", force)
 		n := uint64(0)
 		distance := 0.0
 		maxDistance := 0.0

@@ -2,7 +2,6 @@ package data
 
 import (
 	"encoding/hex"
-	"log"
 	"sort"
 	"time"
 
@@ -33,15 +32,15 @@ func NewAggrator(config *pb.SearchConfig, grouped bool, context *pb.SearchContex
 		Context:   context,
 		ScoreFunc: GetVectorComparisonFunction(config.ScoreFuncName),
 	}
-	a.DeDuplicationMap = cache.New(5*time.Minute, 10*time.Minute)
+	a.DeDuplicationMap = cache.New(5*time.Minute, 1*time.Minute)
 	return a
 }
 
 func (a *Aggregator) IsNewScoredBetter(old, new float64) bool {
-	if old == new {
+	/* if old == new {
 		// This is a possible edge case.
 		log.Printf("Same Score: %v\n", old)
-	}
+	} */
 	if a.Config.HigherIsBetter {
 		if new > old {
 			return true

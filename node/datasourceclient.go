@@ -56,10 +56,10 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 	for {
 		protoScoredDatum, err := stream.Recv()
 		if err != nil {
-			log.Printf("Error: (%v)", err)
+			// log.Printf("Error: (%v)", err)
 			break
 		}
-		log.Printf("Received Score: (%v)", protoScoredDatum.Score)
+		// log.Printf("Received Score: (%v)", protoScoredDatum.Score)
 		scoredDatumStream <- protoScoredDatum
 	}
 	return err

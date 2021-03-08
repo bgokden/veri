@@ -141,12 +141,12 @@ func (n *Node) SearchStream(searchRequest *pb.SearchRequest, stream pb.VeriServi
 	if err != nil {
 		return err
 	}
-	log.Printf("SearchStream: finished with len(%v)", len(result))
+	// log.Printf("SearchStream: finished with len(%v)", len(result))
 	for _, e := range result {
 		// log.Printf("Send label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
 		stream.Send(e)
 	}
-	log.Printf("SearchStream: finished sending of len(%v)", len(result))
+	// log.Printf("SearchStream: finished sending of len(%v)", len(result))
 	return nil
 }
 
@@ -204,12 +204,12 @@ func (n *Node) SendJoinRequest(id string) error {
 	request := &pb.JoinRequest{
 		Peer: peerInfo,
 	}
-	client, conn, err := n.getClient(id)
-	if err != nil {
-		//log.Printf("(Call Join 1 %v) There is an error %v", n.Port, err)
-		return err
+	conn := n.ConnectionCache.Get(id)
+	if conn == nil {
+		return errors.New("Connection failure")
 	}
-	defer conn.Close()
+	defer n.ConnectionCache.Put(conn)
+	client := conn.Client
 	resp, err := client.Join(context.Background(), request)
 	if err != nil {
 		// log.Printf("(Call Join 2 %v => %v) There is an error %v", n.Port, id, err)
@@ -264,13 +264,13 @@ func (n *Node) SendAddPeerRequest(id string, peerInfo *pb.Peer) error {
 	request := &pb.AddPeerRequest{
 		Peer: peerInfo,
 	}
-	client, conn, err := n.getClient(id)
-	if err != nil {
-		// log.Printf("(Call Add Peer 1 %v) There is an error %v", n.Port, err)
-		return err
+	conn := n.ConnectionCache.Get(id)
+	if conn == nil {
+		return errors.New("Connection failure")
 	}
-	defer conn.Close()
-	_, err = client.AddPeer(context.Background(), request)
+	defer n.ConnectionCache.Put(conn)
+	client := conn.Client
+	_, err := client.AddPeer(context.Background(), request)
 	if err != nil {
 		// log.Printf("(Call Add Peer 2 %v => %v) There is an error %v", n.Port, id, err)
 		return err
@@ -284,12 +284,13 @@ func (n *Node) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingResponse, 
 
 func (n *Node) SendPingRequest(id string) error {
 	request := &pb.PingRequest{}
-	client, conn, err := n.getClient(id)
-	if err != nil {
-		return err
+	conn := n.ConnectionCache.Get(id)
+	if conn == nil {
+		return errors.New("Connection failure")
 	}
-	defer conn.Close()
-	_, err = client.Ping(context.Background(), request)
+	defer n.ConnectionCache.Put(conn)
+	client := conn.Client
+	_, err := client.Ping(context.Background(), request)
 	if err != nil {
 		return err
 	}

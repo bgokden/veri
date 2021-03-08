@@ -3,11 +3,11 @@ package data
 import (
 	"context"
 	"errors"
-	"log"
 	"math/rand"
 	"sync"
 	"time"
 
+	data "github.com/bgokden/veri-data"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/dgraph-io/badger/v3"
 	pbp "github.com/dgraph-io/badger/v3/pb"
@@ -15,7 +15,7 @@ import (
 )
 
 func (dt *Data) SyncAll() error {
-	log.Println("SyncAll Called")
+	// log.Println("SyncAll Called")
 	var waitGroup sync.WaitGroup
 	sourceList := dt.Sources.Items()
 	for _, sourceItem := range sourceList {
@@ -36,11 +36,12 @@ func isEvictionOn(localInfo *pb.DataInfo, config *pb.DataConfig, deleted uint64)
 }
 
 func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
-	log.Println("Sync Called")
+	// log.Println("Sync Called")
 	defer waitGroup.Done()
 	info := source.GetDataInfo()
 	if info == nil {
-		log.Println("Data info can not be get")
+		// log.Println("Data info can not be get")
+		dt.Sources.Delete(source.GetID()) // This should be more intelligent
 		return errors.New("Data info can not be get")
 	}
 	localInfo := dt.GetDataInfo()
@@ -53,31 +54,34 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	if info.N > localN {
 		diff = 1
 	}
-	log.Printf("Data diff:%v localN: %v  remoteN: %v\n", diff, localN, info.N)
+	if data.VectorDistance(localInfo.Avg, info.Avg)+data.VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
+		diff = 1
+	}
+	// log.Printf("Data diff:%v localN: %v  remoteN: %v\n", diff, localN, info.N)
 	if diff > 0 {
-		log.Printf("Diff larger than 0: %v\n", diff)
+		// log.Printf("Diff larger than 0: %v\n", diff)
 		datumStream := make(chan *pb.InsertDatumWithConfig, 100)
 		go func() {
 			deleted := uint64(0)
 			counter := 0
 			for datum := range datumStream {
 				counter++
-				log.Printf("Sync Insert Count: %v\n", counter)
+				// log.Printf("Sync Insert Count: %v\n", counter)
 				err := source.Insert(datum.Datum, datum.Config)
 				if err != nil {
-					log.Printf("Sync Insertion Error: %v\n", err.Error())
+					// log.Printf("Sync Insertion Error: %v\n", err.Error())
 					break
 				}
 				if err == nil && isEvictionOn(localInfo, config, deleted) {
 					dt.Delete(datum.Datum)
 					deleted++
-					log.Printf("Datum deleted count: %v\n", deleted)
+					// log.Printf("Datum deleted count: %v\n", deleted)
 				}
 				time.Sleep(200 * time.Millisecond)
 			}
 		}()
 		dt.InsertStreamSample(datumStream, float64(diff)/float64(localN))
-		log.Printf("Close stream\n")
+		// log.Printf("Close stream\n")
 		close(datumStream)
 	}
 	return nil
@@ -160,7 +164,7 @@ type InsertStreamCollector struct {
 }
 
 func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig, fraction float64) error {
-	log.Printf("InsertStreamSample: %v\n", fraction)
+	// log.Printf("InsertStreamSample: %v\n", fraction)
 	c := &InsertStreamCollector{
 		DatumStream: datumStream,
 	}
@@ -176,7 +180,7 @@ func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig,
 	if fraction < 1 {
 		stream.ChooseKey = func(item *badger.Item) bool {
 			r := rand.Float64()
-			log.Printf("InsertStreamSample: random: %v ? fraction %v\n", r, fraction)
+			// log.Printf("InsertStreamSample: random: %v ? fraction %v\n", r, fraction)
 			return r < fraction
 		}
 	} else {
@@ -204,16 +208,16 @@ func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig,
 
 // Send collects the results
 func (c *InsertStreamCollector) Send(buf *z.Buffer) error {
-	log.Printf("InsertDatumWithConfig Send called\n")
+	// log.Printf("InsertDatumWithConfig Send called\n")
 	err := buf.SliceIterate(func(s []byte) error {
 		kv := new(pbp.KV)
 		if err := kv.Unmarshal(s); err != nil {
-			log.Printf("InsertDatumWithConfig Unmarshal error: %v\n", err.Error())
+			// log.Printf("InsertDatumWithConfig Unmarshal error: %v\n", err.Error())
 			return err
 		}
 
 		if kv.StreamDone == true {
-			log.Printf("InsertDatumWithConfig StreamDone true\n")
+			// log.Printf("InsertDatumWithConfig StreamDone true\n")
 			return nil
 		}
 
@@ -225,7 +229,7 @@ func (c *InsertStreamCollector) Send(buf *z.Buffer) error {
 		if errInner != nil {
 			return errInner
 		}
-		log.Printf("InsertDatumWithConfig pushed: %v\n")
+		// log.Printf("InsertDatumWithConfig pushed\n")
 		c.DatumStream <- &pb.InsertDatumWithConfig{
 			Datum:  datum,
 			Config: config,

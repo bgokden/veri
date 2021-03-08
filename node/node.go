@@ -3,11 +3,13 @@ package node
 import (
 	"fmt"
 	"log"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/bgokden/go-cache"
+	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 
 	data "github.com/bgokden/veri/data"
@@ -31,17 +33,18 @@ type NodeConfig struct {
 }
 
 type Node struct {
-	Version        string
-	Port           uint32
-	Folder         string
-	KnownIds       []string
-	AdvertisedIds  []string
-	Dataset        *data.Dataset
-	ServiceList    *cache.Cache
-	PeerList       *cache.Cache
-	PeriodicTicker *time.Ticker
-	PeriodicDone   chan bool
-	QueryUUIDCache *cache.Cache
+	Version         string
+	Port            uint32
+	Folder          string
+	KnownIds        []string
+	AdvertisedIds   []string
+	Dataset         *data.Dataset
+	ServiceList     *cache.Cache
+	PeerList        *cache.Cache
+	PeriodicTicker  *time.Ticker
+	PeriodicDone    chan bool
+	QueryUUIDCache  *cache.Cache
+	ConnectionCache *util.ConnectionCache
 }
 
 func NewNode(config *NodeConfig) *Node {
@@ -53,6 +56,7 @@ func NewNode(config *NodeConfig) *Node {
 	node.PeerList = cache.New(5*time.Minute, 1*time.Minute)
 	node.ServiceList = cache.New(5*time.Minute, 1*time.Minute)
 	node.QueryUUIDCache = cache.New(5*time.Minute, 1*time.Minute)
+	node.ConnectionCache = util.NewConnectionCache()
 	for _, service := range config.ServiceList {
 		node.AddStaticService(service)
 	}
@@ -279,7 +283,7 @@ func (n *Node) Info() string {
 	var sb strings.Builder
 	nodeId := GetIdOfPeer(n.GetNodeInfo())
 	sb.WriteString("-------------------------------------------------\n")
-	sb.WriteString("Node ID: " + nodeId + "\n")
+	sb.WriteString(fmt.Sprintf("-- Node ID: %v GOMAXPROCS: %v\n", nodeId, runtime.GOMAXPROCS(-1)))
 	sb.WriteString("DataList:\n")
 	for _, name := range n.Dataset.List() {
 		dt, err := n.Dataset.GetNoCreate(name)

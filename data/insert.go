@@ -16,7 +16,7 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	}
 	var ttlDuration *time.Duration
 	if config != nil && config.GetTTL() > 0 {
-		log.Printf("Insert Datum with ttl config: %v\n", config.GetTTL())
+		// log.Printf("Insert Datum with ttl config: %v\n", config.GetTTL())
 		d := time.Duration(config.GetTTL()) * time.Second
 		ttlDuration = &d
 	}
@@ -30,7 +30,7 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	}
 	err = dt.DB.Update(func(txn *badger.Txn) error {
 		if ttlDuration != nil {
-			log.Printf("Insert Datum with ttl: %v\n", ttlDuration)
+			// log.Printf("Insert Datum with ttl: %v\n", ttlDuration)
 			e := badger.NewEntry(keyByte, valueByte).WithTTL(*ttlDuration)
 			return txn.SetEntry(e)
 		}
