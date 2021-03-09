@@ -49,7 +49,7 @@ func GetDefaultConfig(name string) *pb.DataConfig {
 		TargetN:                    1000,
 		TargetUtilization:          0.4,
 		NoTarget:                   false,
-		ReplicationOnInsert:        2,
+		ReplicationOnInsert:        1,
 		EnforceReplicationOnInsert: true,
 		Retention:                  0,
 	}

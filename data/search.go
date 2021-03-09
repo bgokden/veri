@@ -39,8 +39,11 @@ func DefaultSearchConfig() *pb.SearchConfig {
 	}
 }
 
-func EncodeSearchConfig(p *pb.SearchConfig) []byte {
-	marshalled, _ := json.Marshal(p)
+func EncodeSearchConfig(sc *pb.SearchConfig) []byte {
+	var config pb.SearchConfig
+	copier.Copy(&config, sc)
+	config.Uuid = ""
+	marshalled, _ := json.Marshal(&config)
 	log.Printf("SearchConfig Encoded: %v\n", string(marshalled))
 	return marshalled
 }
@@ -422,7 +425,7 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 			dataAvailable = false
 			break
 		case <-timeLimit:
-			log.Printf("timeout")
+			// log.Printf("timeout")
 			dataAvailable = false
 			break
 		}
