@@ -2,6 +2,7 @@ package data
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
@@ -15,6 +16,7 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	}
 	var ttlDuration *time.Duration
 	if config != nil && config.GetTTL() > 0 {
+		// log.Printf("Insert Datum with ttl config: %v\n", config.GetTTL())
 		d := time.Duration(config.GetTTL()) * time.Second
 		ttlDuration = &d
 	}
@@ -28,7 +30,7 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	}
 	err = dt.DB.Update(func(txn *badger.Txn) error {
 		if ttlDuration != nil {
-			// log.Printf("Insert Datum: %v ttl: %v\n", datum, ttlDuration)
+			// log.Printf("Insert Datum with ttl: %v\n", ttlDuration)
 			e := badger.NewEntry(keyByte, valueByte).WithTTL(*ttlDuration)
 			return txn.SetEntry(e)
 		}
@@ -39,15 +41,31 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 		return err
 	}
 	dt.Dirty = true
-	if dt.Config.EnforceReplicationOnInsert && config.Count >= uint64(dt.Config.ReplicationOnInsert) {
+	if config == nil {
+		config = &pb.InsertConfig{
+			TTL:   0,
+			Count: 0,
+		}
+	}
+	counter := uint32(1)
+	if dt.Config.EnforceReplicationOnInsert && config.Count == 0 {
 		sourceList := dt.Sources.Items()
 		config.Count++
+		// log.Printf("Sending Insert with config.Count: %v ttl: %v\n", config.Count, config.TTL)
 		for _, sourceItem := range sourceList {
 			source := sourceItem.Object.(DataSource)
 			err := source.Insert(datum, config)
 			if err != nil {
-				return err
+				log.Printf("Sending Insert error %v\n", err.Error())
+			} else {
+				counter++
 			}
+			if counter >= dt.Config.ReplicationOnInsert {
+				break
+			}
+		}
+		if counter < dt.Config.ReplicationOnInsert {
+			return errors.New("Replicas is less then Replication Config")
 		}
 	}
 	return nil

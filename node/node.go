@@ -1,12 +1,15 @@
 package node
 
 import (
+	"fmt"
 	"log"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/bgokden/go-cache"
+	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 
 	data "github.com/bgokden/veri/data"
@@ -30,17 +33,18 @@ type NodeConfig struct {
 }
 
 type Node struct {
-	Version        string
-	Port           uint32
-	Folder         string
-	KnownIds       []string
-	AdvertisedIds  []string
-	Dataset        *data.Dataset
-	ServiceList    *cache.Cache
-	PeerList       *cache.Cache
-	PeriodicTicker *time.Ticker
-	PeriodicDone   chan bool
-	QueryUUIDCache *cache.Cache
+	Version         string
+	Port            uint32
+	Folder          string
+	KnownIds        []string
+	AdvertisedIds   []string
+	Dataset         *data.Dataset
+	ServiceList     *cache.Cache
+	PeerList        *cache.Cache
+	PeriodicTicker  *time.Ticker
+	PeriodicDone    chan bool
+	QueryUUIDCache  *cache.Cache
+	ConnectionCache *util.ConnectionCache
 }
 
 func NewNode(config *NodeConfig) *Node {
@@ -52,6 +56,7 @@ func NewNode(config *NodeConfig) *Node {
 	node.PeerList = cache.New(5*time.Minute, 1*time.Minute)
 	node.ServiceList = cache.New(5*time.Minute, 1*time.Minute)
 	node.QueryUUIDCache = cache.New(5*time.Minute, 1*time.Minute)
+	node.ConnectionCache = util.NewConnectionCache()
 	for _, service := range config.ServiceList {
 		node.AddStaticService(service)
 	}
@@ -183,8 +188,8 @@ func (n *Node) GetDifferentAddressOf(peer *pb.Peer) string {
 }
 
 func (n *Node) SyncWithPeers() {
-	nodeId := GetIdOfPeer(n.GetNodeInfo())
-	log.Printf("(0) Node: %v\n", nodeId)
+	// nodeId := GetIdOfPeer(n.GetNodeInfo())
+	// log.Printf("(0) Node: %v\n", nodeId)
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
@@ -192,7 +197,7 @@ func (n *Node) SyncWithPeers() {
 		if idOfPeer == "" {
 			continue
 		}
-		log.Printf("(1) Node: %v -> Peer ID: %v\n", nodeId, idOfPeer)
+		// log.Printf("(1) Node: %v -> Peer ID: %v\n", nodeId, idOfPeer)
 		for _, serviceFromPeer := range peer.ServiceList {
 			n.AddService(serviceFromPeer)
 		}
@@ -202,7 +207,7 @@ func (n *Node) SyncWithPeers() {
 		}
 		for _, dataConfigFromPeer := range peer.DataList {
 			data, err := n.Dataset.GetOrCreateIfNotExists(dataConfigFromPeer)
-			log.Printf("(2) data: %v peer %v dataConfigFromPeer %v idOfPeer %v\n", data, peer, dataConfigFromPeer, idOfPeer)
+			// log.Printf("(2) dataN: %v peer %v dataConfigFromPeer %v idOfPeer %v\n", data.N, peer, dataConfigFromPeer, idOfPeer)
 			if err == nil {
 				data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name, idOfPeer))
 			} else {
@@ -210,6 +215,7 @@ func (n *Node) SyncWithPeers() {
 			}
 		}
 	}
+	fmt.Println(n.Info())
 }
 
 func Find(slice []string, val string) bool {
@@ -271,4 +277,47 @@ func (n *Node) Periodic() error {
 	go n.SyncWithPeers()
 	go n.Dataset.SaveIndex()
 	return nil
+}
+
+func (n *Node) Info() string {
+	var sb strings.Builder
+	nodeId := GetIdOfPeer(n.GetNodeInfo())
+	sb.WriteString("-------------------------------------------------\n")
+	sb.WriteString(fmt.Sprintf("-- Node ID: %v GOMAXPROCS: %v\n", nodeId, runtime.GOMAXPROCS(-1)))
+	sb.WriteString("DataList:\n")
+	for _, name := range n.Dataset.List() {
+		dt, err := n.Dataset.GetNoCreate(name)
+		if err == nil {
+			config := dt.GetConfig()
+			dinfo := dt.GetDataInfo()
+			sb.WriteString(fmt.Sprintf("* Name %v N: %v config %v\n", name, dinfo.N, config))
+		} else {
+			sb.WriteString(fmt.Sprintf("* Name %v Error: %v\n", name, err.Error()))
+		}
+		sourceList := dt.Sources.Items()
+		for _, sourceItem := range sourceList {
+			source := sourceItem.Object.(data.DataSource)
+			sourceID := source.GetID()
+			sourceInfo := source.GetDataInfo()
+			if sourceInfo != nil {
+				sb.WriteString(fmt.Sprintf("-- sourceID %v Version: %v N: %v\n", sourceID, sourceInfo.Version, sourceInfo.N))
+			} else {
+				sb.WriteString(fmt.Sprintf("-- sourceID %v Info not available\n", sourceID))
+			}
+
+		}
+	}
+	sb.WriteString("Peers:\n")
+	peerList := n.PeerList.Items()
+	for _, item := range peerList {
+		peer := item.Object.(*pb.Peer)
+		idOfPeer := GetIdOfPeer(peer)
+		sb.WriteString(fmt.Sprintf("Peer: %v\n", idOfPeer))
+		sb.WriteString(fmt.Sprintf("DataList of Peer %v:\n", idOfPeer))
+		for _, dataConfigFromPeer := range peer.DataList {
+			sb.WriteString(fmt.Sprintf("* Name %v Version: %v dataConfigFromPeer: %v\n", dataConfigFromPeer.Name, dataConfigFromPeer.Version, dataConfigFromPeer))
+		}
+	}
+	sb.WriteString("-------------------------------------------------\n")
+	return sb.String()
 }

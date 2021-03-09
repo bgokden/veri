@@ -2,9 +2,12 @@ package data
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"sync"
+	"time"
 
+	data "github.com/bgokden/veri-data"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/dgraph-io/badger/v3"
 	pbp "github.com/dgraph-io/badger/v3/pb"
@@ -12,42 +15,75 @@ import (
 )
 
 func (dt *Data) SyncAll() error {
+	// log.Println("SyncAll Called")
 	var waitGroup sync.WaitGroup
 	sourceList := dt.Sources.Items()
 	for _, sourceItem := range sourceList {
 		source := sourceItem.Object.(DataSource)
 		waitGroup.Add(1)
-		go dt.Sync(source, &waitGroup)
+		dt.Sync(source, &waitGroup)
 	}
 	waitGroup.Wait()
 	return nil
 }
 
+func isEvictionOn(localInfo *pb.DataInfo, config *pb.DataConfig, deleted uint64) bool {
+	lowerThreshold := uint64(float64(localInfo.TargetN) * config.TargetUtilization) // This should be configurable
+	if !config.NoTarget && (localInfo.N-deleted) >= lowerThreshold {
+		return true
+	}
+	return false
+}
+
 func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
+	// log.Println("Sync Called")
+	defer waitGroup.Done()
 	info := source.GetDataInfo()
+	if info == nil {
+		// log.Println("Data info can not be get")
+		dt.Sources.Delete(source.GetID()) // This should be more intelligent
+		return errors.New("Data info can not be get")
+	}
 	localInfo := dt.GetDataInfo()
 	localN := localInfo.N
-	config := dt.GetConfig()
-	lowerThreshold := uint64(float64(localInfo.TargetN) * config.TargetUtilization) // This should be configurable
-	isEvicitionModeOn := false
-	if !config.NoTarget && localN >= lowerThreshold {
-		isEvicitionModeOn = true
+	if localN == 0 {
+		return nil // nothing to do
 	}
-	diff := (localN - info.N) / 2
+	config := dt.GetConfig()
+	diff := minUint64(((localN-info.N)/2)+1, 100)
+	if info.N > localN {
+		diff = 1
+	}
+	if data.VectorDistance(localInfo.Avg, info.Avg)+data.VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
+		diff = 1
+	}
+	// log.Printf("Data diff:%v localN: %v  remoteN: %v\n", diff, localN, info.N)
 	if diff > 0 {
-		datumStream := make(chan *pb.Datum, 100)
+		// log.Printf("Diff larger than 0: %v\n", diff)
+		datumStream := make(chan *pb.InsertDatumWithConfig, 100)
 		go func() {
+			deleted := uint64(0)
+			counter := 0
 			for datum := range datumStream {
-				err := source.Insert(datum, nil)
-				if err != nil && isEvicitionModeOn {
-					dt.Delete(datum)
+				counter++
+				// log.Printf("Sync Insert Count: %v\n", counter)
+				err := source.Insert(datum.Datum, datum.Config)
+				if err != nil {
+					// log.Printf("Sync Insertion Error: %v\n", err.Error())
+					break
 				}
+				if err == nil && isEvictionOn(localInfo, config, deleted) {
+					dt.Delete(datum.Datum)
+					deleted++
+					// log.Printf("Datum deleted count: %v\n", deleted)
+				}
+				time.Sleep(200 * time.Millisecond)
 			}
 		}()
-		dt.StreamSample(datumStream, float64(diff)/float64(localN))
+		dt.InsertStreamSample(datumStream, float64(diff)/float64(localN))
+		// log.Printf("Close stream\n")
 		close(datumStream)
 	}
-	waitGroup.Done()
 	return nil
 }
 
@@ -128,6 +164,7 @@ type InsertStreamCollector struct {
 }
 
 func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig, fraction float64) error {
+	// log.Printf("InsertStreamSample: %v\n", fraction)
 	c := &InsertStreamCollector{
 		DatumStream: datumStream,
 	}
@@ -142,7 +179,9 @@ func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig,
 	// ChooseKey is called concurrently for every key. If left nil, assumes true by default.
 	if fraction < 1 {
 		stream.ChooseKey = func(item *badger.Item) bool {
-			return rand.Float64() < fraction
+			r := rand.Float64()
+			// log.Printf("InsertStreamSample: random: %v ? fraction %v\n", r, fraction)
+			return r < fraction
 		}
 	} else {
 		stream.ChooseKey = nil
@@ -169,24 +208,28 @@ func (dt *Data) InsertStreamSample(datumStream chan<- *pb.InsertDatumWithConfig,
 
 // Send collects the results
 func (c *InsertStreamCollector) Send(buf *z.Buffer) error {
+	// log.Printf("InsertDatumWithConfig Send called\n")
 	err := buf.SliceIterate(func(s []byte) error {
 		kv := new(pbp.KV)
 		if err := kv.Unmarshal(s); err != nil {
+			// log.Printf("InsertDatumWithConfig Unmarshal error: %v\n", err.Error())
 			return err
 		}
 
 		if kv.StreamDone == true {
+			// log.Printf("InsertDatumWithConfig StreamDone true\n")
 			return nil
 		}
 
 		config := InsertConfigFromExpireAt(kv.ExpiresAt)
-		if config.TTL < 10 {
+		if config.TTL != 0 && config.TTL < 10 {
 			return nil
 		}
 		datum, errInner := ToDatum(kv.Key, kv.Value)
 		if errInner != nil {
 			return errInner
 		}
+		// log.Printf("InsertDatumWithConfig pushed\n")
 		c.DatumStream <- &pb.InsertDatumWithConfig{
 			Datum:  datum,
 			Config: config,
@@ -197,8 +240,14 @@ func (c *InsertStreamCollector) Send(buf *z.Buffer) error {
 }
 
 func InsertConfigFromExpireAt(expiresAt uint64) *pb.InsertConfig {
-	timeLeftInSeconds := expiresAt - uint64(getCurrentTime())
+	var timeLeftInSeconds uint64
+	if expiresAt > 0 {
+		timeLeftInSeconds = expiresAt - uint64(getCurrentTime())
+	} else {
+		timeLeftInSeconds = 0
+	}
 	return &pb.InsertConfig{
-		TTL: timeLeftInSeconds,
+		TTL:   timeLeftInSeconds,
+		Count: 1,
 	}
 }

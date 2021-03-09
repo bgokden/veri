@@ -47,7 +47,7 @@ func NewData(config *pb.DataConfig, dataPath string) (*Data, error) {
 	dt := &Data{
 		Config: config,
 	}
-	log.Printf("Create Data\n")
+	// log.Printf("Create Data\n")
 	dt.DBPath = path.Join(dataPath, config.Name)
 	dt.InitData()
 	return dt, nil
@@ -58,7 +58,7 @@ func NewPreData(config *pb.DataConfig, dataPath string) *Data {
 	dt := &Data{
 		Config: config,
 	}
-	log.Printf("Pre Create Data %v\n", dt.Config)
+	// log.Printf("Pre Create Data %v\n", dt.Config)
 	dt.DBPath = path.Join(dataPath, config.Name)
 	return dt
 }
@@ -131,8 +131,9 @@ func (dt *Data) Run() error {
 
 // Process runs through keys and calculates statistics
 func (dt *Data) Process(force bool) error {
-	if dt.Dirty || getCurrentTime()-dt.Timestamp >= 10000 || force {
-		log.Printf("Running Process (forced: %v)\n", force)
+	// log.Printf("Try Running Process (forced: %v) current: %v timestamp: %v diff: %v\n", force, getCurrentTime(), dt.Timestamp, getCurrentTime()-dt.Timestamp)
+	if getCurrentTime()-dt.Timestamp >= 60 || force {
+		// log.Printf("Running Process (forced: %v)\n", force)
 		n := uint64(0)
 		distance := 0.0
 		maxDistance := 0.0
@@ -181,15 +182,16 @@ func (dt *Data) Process(force bool) error {
 		dt.MaxDistance = maxDistance
 		dt.N = n
 		dt.Timestamp = getCurrentTime()
+		dt.SyncAll()
 	}
-	dt.Timestamp = getCurrentTime() // update always
+	// dt.Timestamp = getCurrentTime() // update always
 	dt.Dirty = false
 	return nil
 }
 
 // GetDataInfo out of data
 func (dt *Data) GetDataInfo() *pb.DataInfo {
-	log.Printf("Data: %v\n", dt)
+	// log.Printf("Data: %v\n", dt)
 	return &pb.DataInfo{
 		Avg:               dt.Avg,
 		N:                 dt.N,
@@ -205,11 +207,11 @@ func (dt *Data) GetDataInfo() *pb.DataInfo {
 }
 
 // AddSource adds a source
-func (dt *Data) AddSource(dataSource DataSource) {
+func (dt *Data) AddSource(dataSource DataSource) error {
 	if dt.Sources == nil {
 		dt.InitData()
 	}
-	dt.Sources.Set(dataSource.GetID(), dataSource, cache.DefaultExpiration)
+	return dt.Sources.Add(dataSource.GetID(), dataSource, cache.DefaultExpiration)
 }
 
 func (dt *Data) GetID() string {
