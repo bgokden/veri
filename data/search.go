@@ -276,7 +276,8 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 
 // StreamSearch does a search based on distances of keys
 func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
-	collector := dt.Search(datum, config)
+	// collector := dt.Search(datum, config)
+	collector := dt.SearchAnnoy(datum, config)
 	for _, i := range collector.List {
 		// log.Printf("StreamSearch i: %v\n", i)
 		scoredDatumStream <- i
@@ -433,4 +434,64 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 	// Search End
 	// log.Printf("MultiAggregatedSearch: finished")
 	return temp.Result(), nil
+}
+
+// Search does a search based on distances of keys
+func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector {
+	if config == nil {
+		config = DefaultSearchConfig()
+	}
+	c := &Collector{}
+	c.List = make([]*pb.ScoredDatum, 0, config.Limit)
+	c.DatumKey = datum.Key
+	c.ScoreFunc = GetVectorComparisonFunction(config.ScoreFuncName)
+	c.HigherIsBetter = config.HigherIsBetter
+	c.N = config.Limit
+	c.Filters = config.Filters
+	c.GroupFilters = config.GroupFilters
+	features32 := make([]float32, len(datum.Key.Feature))
+	for i, f := range datum.Key.Feature {
+		features32[i] = float32(f)
+	}
+	if dt.ActiveIndex == 0 && dt.AnnoyIndexA != nil && dt.IndexA != nil && len(*(dt.IndexA)) > 0 {
+		var result []int
+		var distances []float32
+		index := *(dt.IndexA)
+		dt.AnnoyIndexA.GetNnsByVector(features32, len(index), int(config.Limit), &result, &distances)
+		for i := 0; i < len(result); i++ {
+			datumE := index[result[i]]
+			if datumE != nil {
+				scoredDatum := &pb.ScoredDatum{
+					Datum: datumE,
+					Score: float64(distances[i]),
+				}
+				log.Printf("Result %v d: %v\n", result[i], distances[i])
+				c.List = append(c.List, scoredDatum)
+			} else {
+				log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
+			}
+		}
+	} else if dt.AnnoyIndexB != nil && dt.IndexB != nil && len(*(dt.IndexB)) > 0 {
+		var result []int
+		var distances []float32
+		index := *(dt.IndexB)
+		dt.AnnoyIndexB.GetNnsByVector(features32, len(index), int(config.Limit), &result, &distances)
+		for i := 0; i < len(result); i++ {
+			datumE := index[result[i]]
+			if datumE != nil {
+				scoredDatum := &pb.ScoredDatum{
+					Datum: datumE,
+					Score: float64(distances[i]),
+				}
+				log.Printf("Result %v d: %v\n", result[i], distances[i])
+				c.List = append(c.List, scoredDatum)
+			} else {
+				log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
+			}
+		}
+	} else {
+		log.Println("Fallback to regular search")
+		return dt.Search(datum, config)
+	}
+	return c
 }
