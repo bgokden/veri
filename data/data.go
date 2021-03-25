@@ -216,7 +216,7 @@ func (dt *Data) Process(force bool) error {
 		dt.MaxDistance = maxDistance
 		dt.N = n
 		dt.Timestamp = getCurrentTime()
-		newAnnoyIndex.Build(128)
+		newAnnoyIndex.Build(10)
 		log.Printf("Updating index. len: %v\n", len(newDataIndex))
 		dt.Annoyer.Lock()
 		dt.Annoyer.AnnoyIndex = newAnnoyIndex
