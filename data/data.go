@@ -22,6 +22,12 @@ type DataSource interface {
 	GetID() string
 }
 
+type Annoyer struct {
+	sync.RWMutex
+	DataIndex  *[]*pb.Datum
+	AnnoyIndex annoyindex.AnnoyIndex
+}
+
 // Data represents a dataset with similar struture
 type Data struct {
 	Config      *pb.DataConfig
@@ -43,6 +49,7 @@ type Data struct {
 	AnnoyIndexA annoyindex.AnnoyIndex
 	AnnoyIndexB annoyindex.AnnoyIndex
 	ActiveIndex int32
+	Annoyer     Annoyer
 }
 
 func (d *Data) GetConfig() *pb.DataConfig {
@@ -210,15 +217,22 @@ func (dt *Data) Process(force bool) error {
 		dt.N = n
 		dt.Timestamp = getCurrentTime()
 		newAnnoyIndex.Build(128)
-		if dt.ActiveIndex == 0 {
-			dt.AnnoyIndexB = newAnnoyIndex
-			dt.IndexB = &newDataIndex
-			dt.ActiveIndex = 1
-		} else {
-			dt.AnnoyIndexA = newAnnoyIndex
-			dt.IndexA = &newDataIndex
-			dt.ActiveIndex = 0
-		}
+		log.Printf("Updating index. len: %v\n", len(newDataIndex))
+		dt.Annoyer.Lock()
+		dt.Annoyer.AnnoyIndex = newAnnoyIndex
+		dt.Annoyer.DataIndex = &newDataIndex
+		dt.Annoyer.Unlock()
+		log.Printf("Updated index\n")
+		// if dt.ActiveIndex == 0 {
+		// 	dt.AnnoyIndexB = newAnnoyIndex
+		// 	dt.IndexB = &newDataIndex
+		// 	dt.ActiveIndex = 1
+		// } else {
+		// 	dt.AnnoyIndexA = newAnnoyIndex
+		// 	dt.IndexA = &newDataIndex
+		// 	dt.ActiveIndex = 0
+		// }
+
 		dt.SyncAll()
 	}
 	// dt.Timestamp = getCurrentTime() // update always
