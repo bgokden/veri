@@ -159,8 +159,8 @@ func (dt *Data) Process(force bool) error {
 			nFloat = 1
 		}
 		histUnit := 1 / nFloat
-		newDataIndex := make([]*pb.Datum, int(dt.N))
-		newAnnoyIndex := annoyindex.NewAnnoyIndexAngular(512)
+		newDataIndex := make([]*pb.Datum, max(1000, int(dt.N)))
+		var newAnnoyIndex annoyindex.AnnoyIndex
 		err := dt.DB.View(func(txn *badger.Txn) error {
 			opts := badger.DefaultIteratorOptions
 			opts.PrefetchValues = false
@@ -195,6 +195,9 @@ func (dt *Data) Process(force bool) error {
 						}
 						i := int(n - 1)
 						if i < len(newDataIndex) {
+							if newAnnoyIndex == nil {
+								newAnnoyIndex = annoyindex.NewAnnoyIndexEuclidean(len(features32))
+							}
 							newAnnoyIndex.AddItem(i, features32)
 							newDataIndex[i] = datum
 						}
@@ -216,13 +219,15 @@ func (dt *Data) Process(force bool) error {
 		dt.MaxDistance = maxDistance
 		dt.N = n
 		dt.Timestamp = getCurrentTime()
-		newAnnoyIndex.Build(10)
-		log.Printf("Updating index. len: %v\n", len(newDataIndex))
-		dt.Annoyer.Lock()
-		dt.Annoyer.AnnoyIndex = newAnnoyIndex
-		dt.Annoyer.DataIndex = &newDataIndex
-		dt.Annoyer.Unlock()
-		log.Printf("Updated index\n")
+		if newAnnoyIndex != nil {
+			newAnnoyIndex.Build(10)
+			log.Printf("Updating index. len: %v\n", len(newDataIndex))
+			dt.Annoyer.Lock()
+			dt.Annoyer.AnnoyIndex = newAnnoyIndex
+			dt.Annoyer.DataIndex = &newDataIndex
+			dt.Annoyer.Unlock()
+			log.Printf("Updated index\n")
+		}
 		// if dt.ActiveIndex == 0 {
 		// 	dt.AnnoyIndexB = newAnnoyIndex
 		// 	dt.IndexB = &newDataIndex

@@ -146,6 +146,29 @@ func (c *Collector) Send(buf *z.Buffer) error {
 	return err
 }
 
+func (c *Collector) PassesFilters(datum *pb.Datum) bool {
+	if len(c.GroupFilters) > 0 {
+		jsonLabel := string(datum.Key.GroupLabel)
+		for _, filter := range c.Filters {
+			value := gjson.Get(jsonLabel, filter)
+			if !value.Exists() {
+				return false
+			}
+		}
+	}
+
+	if len(c.Filters) > 0 {
+		jsonLabel := string(datum.Value.Label)
+		for _, filter := range c.Filters {
+			value := gjson.Get(jsonLabel, filter)
+			if !value.Exists() {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 // ToList is a default implementation of KeyToList. It picks up all valid versions of the key,
 // skipping over deleted or expired keys.
 // TODO: update to bagder/v3 allocators
@@ -497,12 +520,12 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 		dt.Annoyer.AnnoyIndex.GetNnsByVector(features32, len(index), int(config.Limit), &result, &distances)
 		for i := 0; i < len(result); i++ {
 			datumE := index[result[i]]
-			if datumE != nil {
+			if datumE != nil && c.PassesFilters(datumE) {
 				scoredDatum := &pb.ScoredDatum{
 					Datum: datumE,
-					Score: float64(distances[i]),
+					Score: c.ScoreFunc(datum.Key.Feature, datumE.Key.Feature),
 				}
-				log.Printf("Result %v d: %v\n", result[i], distances[i])
+				// log.Printf("Result %v d: %v\n", result[i], distances[i])
 				c.List = append(c.List, scoredDatum)
 			} else {
 				log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
