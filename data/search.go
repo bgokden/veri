@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -240,10 +241,12 @@ func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error
 }
 
 var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) float64{
-	"VectorDistance":       VectorDistance,
-	"VectorMultiplication": VectorMultiplication,
-	"CosineSimilarity":     CosineSimilarity,
-	"QuickVectorDistance":  QuickVectorDistance,
+	"AnnoyVectorDistance":   VectorDistance,
+	"AnnoyCosineSimilarity": CosineSimilarity,
+	"VectorDistance":        VectorDistance,
+	"VectorMultiplication":  VectorMultiplication,
+	"CosineSimilarity":      CosineSimilarity,
+	"QuickVectorDistance":   QuickVectorDistance,
 }
 
 func GetVectorComparisonFunction(name string) func(arr1 []float64, arr2 []float64) float64 {
@@ -299,11 +302,20 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 
 // StreamSearch does a search based on distances of keys
 func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
-	// collector := dt.Search(datum, config)
-	collector := dt.SearchAnnoy(datum, config)
-	for _, i := range collector.List {
-		// log.Printf("StreamSearch i: %v\n", i)
-		scoredDatumStream <- i
+	var collector *Collector
+	if config == nil {
+		config = DefaultSearchConfig()
+	}
+	if strings.HasPrefix(config.ScoreFuncName, "Annoy") {
+		collector = dt.SearchAnnoy(datum, config)
+	} else {
+		collector = dt.Search(datum, config)
+	}
+	if collector != nil {
+		for _, i := range collector.List {
+			// log.Printf("StreamSearch i: %v\n", i)
+			scoredDatumStream <- i
+		}
 	}
 	queryWaitGroup.Done()
 	return nil
@@ -476,42 +488,6 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 	for i, f := range datum.Key.Feature {
 		features32[i] = float32(f)
 	}
-	// if dt.ActiveIndex == 0 && dt.AnnoyIndexA != nil && dt.IndexA != nil && len(*(dt.IndexA)) > 0 {
-	// 	var result []int
-	// 	var distances []float32
-	// 	index := *(dt.IndexA)
-	// 	dt.AnnoyIndexA.GetNnsByVector(features32, len(index), int(config.Limit), &result, &distances)
-	// 	for i := 0; i < len(result); i++ {
-	// 		datumE := index[result[i]]
-	// 		if datumE != nil {
-	// 			scoredDatum := &pb.ScoredDatum{
-	// 				Datum: datumE,
-	// 				Score: float64(distances[i]),
-	// 			}
-	// 			log.Printf("Result %v d: %v\n", result[i], distances[i])
-	// 			c.List = append(c.List, scoredDatum)
-	// 		} else {
-	// 			log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
-	// 		}
-	// 	}
-	// } else if dt.AnnoyIndexB != nil && dt.IndexB != nil && len(*(dt.IndexB)) > 0 {
-	// 	var result []int
-	// 	var distances []float32
-	// 	index := *(dt.IndexB)
-	// 	dt.AnnoyIndexB.GetNnsByVector(features32, len(index), int(config.Limit), &result, &distances)
-	// 	for i := 0; i < len(result); i++ {
-	// 		datumE := index[result[i]]
-	// 		if datumE != nil {
-	// 			scoredDatum := &pb.ScoredDatum{
-	// 				Datum: datumE,
-	// 				Score: float64(distances[i]),
-	// 			}
-	// 			log.Printf("Result %v d: %v\n", result[i], distances[i])
-	// 			c.List = append(c.List, scoredDatum)
-	// 		} else {
-	// 			log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
-	// 		}
-	// 	}
 	if dt.Annoyer.AnnoyIndex != nil && dt.Annoyer.DataIndex != nil && len(*(dt.Annoyer.DataIndex)) > 0 {
 		dt.Annoyer.RLock()
 		var result []int
