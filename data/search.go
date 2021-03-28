@@ -365,7 +365,12 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	}()
 	// external
 	sourceList := dt.Sources.Items()
+	sourceLimit := 5 // This should be configurable
 	for _, sourceItem := range sourceList {
+		if sourceLimit < 0 {
+			break
+		}
+		sourceLimit--
 		source := sourceItem.Object.(DataSource)
 		queryWaitGroup.Add(1)
 		// log.Printf("Search Source %v\n", source.GetID())
