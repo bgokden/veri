@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"log"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -146,6 +147,29 @@ func (c *Collector) Send(buf *z.Buffer) error {
 	return err
 }
 
+func (c *Collector) PassesFilters(datum *pb.Datum) bool {
+	if len(c.GroupFilters) > 0 {
+		jsonLabel := string(datum.Key.GroupLabel)
+		for _, filter := range c.Filters {
+			value := gjson.Get(jsonLabel, filter)
+			if !value.Exists() {
+				return false
+			}
+		}
+	}
+
+	if len(c.Filters) > 0 {
+		jsonLabel := string(datum.Value.Label)
+		for _, filter := range c.Filters {
+			value := gjson.Get(jsonLabel, filter)
+			if !value.Exists() {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 // ToList is a default implementation of KeyToList. It picks up all valid versions of the key,
 // skipping over deleted or expired keys.
 // TODO: update to bagder/v3 allocators
@@ -217,10 +241,12 @@ func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error
 }
 
 var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) float64{
-	"VectorDistance":       VectorDistance,
-	"VectorMultiplication": VectorMultiplication,
-	"CosineSimilarity":     CosineSimilarity,
-	"QuickVectorDistance":  QuickVectorDistance,
+	"AnnoyVectorDistance":   VectorDistance,
+	"AnnoyCosineSimilarity": CosineSimilarity,
+	"VectorDistance":        VectorDistance,
+	"VectorMultiplication":  VectorMultiplication,
+	"CosineSimilarity":      CosineSimilarity,
+	"QuickVectorDistance":   QuickVectorDistance,
 }
 
 func GetVectorComparisonFunction(name string) func(arr1 []float64, arr2 []float64) float64 {
@@ -276,10 +302,20 @@ func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
 
 // StreamSearch does a search based on distances of keys
 func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
-	collector := dt.Search(datum, config)
-	for _, i := range collector.List {
-		// log.Printf("StreamSearch i: %v\n", i)
-		scoredDatumStream <- i
+	var collector *Collector
+	if config == nil {
+		config = DefaultSearchConfig()
+	}
+	if strings.HasPrefix(config.ScoreFuncName, "Annoy") {
+		collector = dt.SearchAnnoy(datum, config)
+	} else {
+		collector = dt.Search(datum, config)
+	}
+	if collector != nil {
+		for _, i := range collector.List {
+			// log.Printf("StreamSearch i: %v\n", i)
+			scoredDatumStream <- i
+		}
 	}
 	queryWaitGroup.Done()
 	return nil
@@ -329,7 +365,12 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	}()
 	// external
 	sourceList := dt.Sources.Items()
+	sourceLimit := 5 // This should be configurable
 	for _, sourceItem := range sourceList {
+		if sourceLimit < 0 {
+			break
+		}
+		sourceLimit--
 		source := sourceItem.Object.(DataSource)
 		queryWaitGroup.Add(1)
 		// log.Printf("Search Source %v\n", source.GetID())
@@ -433,4 +474,50 @@ func (dt *Data) MultiAggregatedSearch(datumList []*pb.Datum, config *pb.SearchCo
 	// Search End
 	// log.Printf("MultiAggregatedSearch: finished")
 	return temp.Result(), nil
+}
+
+// Search does a search based on distances of keys
+func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector {
+	if config == nil {
+		config = DefaultSearchConfig()
+	}
+	c := &Collector{}
+	c.List = make([]*pb.ScoredDatum, 0, config.Limit)
+	c.DatumKey = datum.Key
+	c.ScoreFunc = GetVectorComparisonFunction(config.ScoreFuncName)
+	c.HigherIsBetter = config.HigherIsBetter
+	c.N = config.Limit
+	c.Filters = config.Filters
+	c.GroupFilters = config.GroupFilters
+	features32 := make([]float32, len(datum.Key.Feature))
+	for i, f := range datum.Key.Feature {
+		features32[i] = float32(f)
+	}
+	if dt.Annoyer.AnnoyIndex != nil && dt.Annoyer.DataIndex != nil && len(*(dt.Annoyer.DataIndex)) > 0 {
+		dt.Annoyer.RLock()
+		var result []int
+		var distances []float32
+		index := *(dt.Annoyer.DataIndex)
+		dt.Annoyer.AnnoyIndex.GetNnsByVector(features32, len(index), int(config.Limit), &result, &distances)
+		if result != nil {
+			for i := 0; i < len(result); i++ {
+				datumE := index[result[i]]
+				if datumE != nil && c.PassesFilters(datumE) {
+					scoredDatum := &pb.ScoredDatum{
+						Datum: datumE,
+						Score: c.ScoreFunc(datum.Key.Feature, datumE.Key.Feature),
+					}
+					// log.Printf("Result %v d: %v\n", result[i], distances[i])
+					c.List = append(c.List, scoredDatum)
+				} else {
+					log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
+				}
+			}
+		}
+		dt.Annoyer.RUnlock()
+	} else {
+		log.Println("Fallback to regular search")
+		return dt.Search(datum, config)
+	}
+	return c
 }

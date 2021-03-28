@@ -10,6 +10,8 @@ import (
 	"github.com/bgokden/go-cache"
 	badger "github.com/dgraph-io/badger/v3"
 
+	"github.com/bgokden/veri/annoyindex"
+
 	pb "github.com/bgokden/veri/veriservice"
 )
 
@@ -18,6 +20,12 @@ type DataSource interface {
 	Insert(datum *pb.Datum, config *pb.InsertConfig) error
 	GetDataInfo() *pb.DataInfo
 	GetID() string
+}
+
+type Annoyer struct {
+	sync.RWMutex
+	DataIndex  *[]*pb.Datum
+	AnnoyIndex annoyindex.AnnoyIndex
 }
 
 // Data represents a dataset with similar struture
@@ -36,6 +44,7 @@ type Data struct {
 	QueryCache  *cache.Cache
 	Initialized bool
 	Alive       bool
+	Annoyer     Annoyer
 }
 
 func (d *Data) GetConfig() *pb.DataConfig {
@@ -145,7 +154,8 @@ func (dt *Data) Process(force bool) error {
 			nFloat = 1
 		}
 		histUnit := 1 / nFloat
-
+		newDataIndex := make([]*pb.Datum, max(1000, int(dt.N)))
+		var newAnnoyIndex annoyindex.AnnoyIndex
 		err := dt.DB.View(func(txn *badger.Txn) error {
 			opts := badger.DefaultIteratorOptions
 			opts.PrefetchValues = false
@@ -171,6 +181,28 @@ func (dt *Data) Process(force bool) error {
 						hist[index] += histUnit
 					}
 				}
+				err = item.Value(func(v []byte) error {
+					datum, errV := ToDatum(k, v)
+					if errV == nil {
+						features32 := make([]float32, len(datum.Key.Feature))
+						for i, f := range datum.Key.Feature {
+							features32[i] = float32(f)
+						}
+						i := int(n - 1)
+						if i < len(newDataIndex) {
+							if newAnnoyIndex == nil {
+								newAnnoyIndex = annoyindex.NewAnnoyIndexEuclidean(len(features32))
+							}
+							newAnnoyIndex.AddItem(i, features32)
+							newDataIndex[i] = datum
+						}
+						// newDataIndex = append(newDataIndex, datum)
+					}
+					return nil
+				})
+				if err != nil {
+					log.Printf("err: %v\n", err)
+				}
 			}
 			return nil
 		})
@@ -182,6 +214,25 @@ func (dt *Data) Process(force bool) error {
 		dt.MaxDistance = maxDistance
 		dt.N = n
 		dt.Timestamp = getCurrentTime()
+		if newAnnoyIndex != nil {
+			newAnnoyIndex.Build(10)
+			log.Printf("Updating index. len: %v\n", len(newDataIndex))
+			dt.Annoyer.Lock()
+			dt.Annoyer.AnnoyIndex = newAnnoyIndex
+			dt.Annoyer.DataIndex = &newDataIndex
+			dt.Annoyer.Unlock()
+			log.Printf("Updated index\n")
+		}
+		// if dt.ActiveIndex == 0 {
+		// 	dt.AnnoyIndexB = newAnnoyIndex
+		// 	dt.IndexB = &newDataIndex
+		// 	dt.ActiveIndex = 1
+		// } else {
+		// 	dt.AnnoyIndexA = newAnnoyIndex
+		// 	dt.IndexA = &newDataIndex
+		// 	dt.ActiveIndex = 0
+		// }
+
 		dt.SyncAll()
 	}
 	// dt.Timestamp = getCurrentTime() // update always

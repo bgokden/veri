@@ -3,7 +3,7 @@
 
 ![](./resources/verilogo.svg)
 
-Veri is a Feature Label Store.
+Veri is a Distributed Feature Store optimized for Search and Recommendation tasks.
 
 Feature Label store allows storing features as keys and labels as values.
 Querying values is only possible with knn using features.
