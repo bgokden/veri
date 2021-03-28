@@ -17,8 +17,8 @@ jobs:
       - checkout
       - add_ssh_keys
       - run: ./semver_version.sh -l go -f "./semver/version.go" -o none
-      - run: apt-get update && apt-get install -y git bash curl build-essential
-      - run: bash jemalloc.sh
+      - run: sudo apt-get update && sudo apt-get install -y git bash curl build-essential
+      - run: sudo bash jemalloc.sh
       - run: ./build.sh local
       - run: go get -u github.com/tcnksm/ghr
       - run: mkdir -p ./artifacts
