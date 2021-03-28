@@ -13,7 +13,7 @@ if [ "$1" = "local" ]; then
       if [ "$GOOS" = "windows" ]; then
         go get -u github.com/spf13/cobra
       fi
-      CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/veri-$GOOS-$GOARCH
+      go build -tags=jemalloc -a -o bin/veri-$GOOS-$GOARCH
     done
   done
   unset GOOS
@@ -28,7 +28,7 @@ else
       if [ "$GOOS" = "windows" ]; then
         go get -u github.com/spf13/cobra
       fi
-      CGO_ENABLED=0 go build -ldflags="-s -w" -o bin/veri-$GOOS-$GOARCH
+      go build -tags=jemalloc -a -o bin/veri-$GOOS-$GOARCH
     done
   done
   '
