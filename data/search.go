@@ -494,17 +494,19 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 		var distances []float32
 		index := *(dt.Annoyer.DataIndex)
 		dt.Annoyer.AnnoyIndex.GetNnsByVector(features32, len(index), int(config.Limit), &result, &distances)
-		for i := 0; i < len(result); i++ {
-			datumE := index[result[i]]
-			if datumE != nil && c.PassesFilters(datumE) {
-				scoredDatum := &pb.ScoredDatum{
-					Datum: datumE,
-					Score: c.ScoreFunc(datum.Key.Feature, datumE.Key.Feature),
+		if result != nil {
+			for i := 0; i < len(result); i++ {
+				datumE := index[result[i]]
+				if datumE != nil && c.PassesFilters(datumE) {
+					scoredDatum := &pb.ScoredDatum{
+						Datum: datumE,
+						Score: c.ScoreFunc(datum.Key.Feature, datumE.Key.Feature),
+					}
+					// log.Printf("Result %v d: %v\n", result[i], distances[i])
+					c.List = append(c.List, scoredDatum)
+				} else {
+					log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
 				}
-				// log.Printf("Result %v d: %v\n", result[i], distances[i])
-				c.List = append(c.List, scoredDatum)
-			} else {
-				log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
 			}
 		}
 		dt.Annoyer.RUnlock()
