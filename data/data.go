@@ -44,11 +44,6 @@ type Data struct {
 	QueryCache  *cache.Cache
 	Initialized bool
 	Alive       bool
-	IndexA      *[]*pb.Datum
-	IndexB      *[]*pb.Datum
-	AnnoyIndexA annoyindex.AnnoyIndex
-	AnnoyIndexB annoyindex.AnnoyIndex
-	ActiveIndex int32
 	Annoyer     Annoyer
 }
 

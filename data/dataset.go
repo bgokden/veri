@@ -113,15 +113,16 @@ func (dts *Dataset) CreateIfNotExists(config *pb.DataConfig) error {
 		go dts.SaveIndex()
 		return preData.InitData()
 	}
-	// log.Printf("Data %v Error: %v\n", config.Name, err.Error())
+	log.Printf("Data %v Error: %v\n", config.Name, err.Error())
 	if err.Error() == fmt.Sprintf("Item %s already exists", config.Name) {
-		// log.Printf("Data %v Config.Version: %v\n", config.Name, config.Version)
-		data, err := dts.GetNoOp(config.Name)
-		if err != nil {
+		data, errGetNoOp := dts.GetNoOp(config.Name)
+		if errGetNoOp == nil {
 			if config.Version > data.Config.Version {
 				log.Printf("Update Data %v Config.Version: %v\n", config.Name, config.Version)
 				data.Config = config
 			}
+		} else {
+			log.Printf("Error errGetNoOp: %v\n", errGetNoOp.Error())
 		}
 		return nil
 	}
