@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.16.2
+      - image: circleci/golang:1.16.2-buster
     steps:
       - checkout
       - run: mkdir -p ./artifacts
@@ -12,11 +12,13 @@ jobs:
       - run: $GOPATH/bin/goveralls -coverprofile=coverage.out -service=circle-ci -repotoken $COVERALLS_TOKEN
   publish-and-release:
     docker:
-      - image: circleci/golang:1.16.2
+      - image: circleci/golang:1.16.2-buster
     steps:
       - checkout
       - add_ssh_keys
       - run: ./semver_version.sh -l go -f "./semver/version.go" -o none
+      - run: apt-get update && apt-get install -y git bash curl build-essential
+      - run: bash jemalloc.sh
       - run: ./build.sh local
       - run: go get -u github.com/tcnksm/ghr
       - run: mkdir -p ./artifacts
