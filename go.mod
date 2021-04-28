@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/bgokden/go-cache v2.1.1+incompatible
-	github.com/bgokden/veri-data v0.0.0-20201010163108-3311a37c8b47
 	github.com/chewxy/math32 v1.0.8
 	github.com/dgraph-io/badger/v3 v3.2011.1
 	github.com/dgraph-io/ristretto v0.0.4-0.20210122082011-bb5d392ed82d

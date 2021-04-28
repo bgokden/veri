@@ -67,16 +67,16 @@ func CosineSimilarity(a []float32, b []float32) float64 {
 	s2 := float32(0.0)
 	for k := 0; k < count; k++ {
 		if k >= lengthA {
-			s2 += math32.Pow(b[k], 2)
+			s2 += b[k] * b[k] // math32.Pow(b[k], 2)
 			continue
 		}
 		if k >= lengthB {
-			s1 += math32.Pow(a[k], 2)
+			s1 += a[k] * a[k] // math32.Pow(a[k], 2)
 			continue
 		}
 		sumA += a[k] * b[k]
-		s1 += math32.Pow(a[k], 2)
-		s2 += math32.Pow(b[k], 2)
+		s1 += a[k] * a[k] // math32.Pow(a[k], 2)
+		s2 += b[k] * b[k] //math32.Pow(b[k], 2)
 	}
 	if s1 == 0 || s2 == 0 {
 		return 0.0
