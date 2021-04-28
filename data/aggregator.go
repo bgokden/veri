@@ -22,7 +22,7 @@ type Aggregator struct {
 	DeDuplicationMap *cache.Cache
 	Grouped          bool
 	Context          *pb.SearchContext
-	ScoreFunc        func(arr1 []float64, arr2 []float64) float64
+	ScoreFunc        func(arr1 []float32, arr2 []float32) float64
 }
 
 func NewAggrator(config *pb.SearchConfig, grouped bool, context *pb.SearchContext) AggregatorInterface {

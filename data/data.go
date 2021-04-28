@@ -32,10 +32,10 @@ type Annoyer struct {
 type Data struct {
 	Config      *pb.DataConfig
 	Path        string
-	Avg         []float64
+	Avg         []float32
 	N           uint64
 	MaxDistance float64
-	Hist        []float64
+	Hist        []float32
 	Timestamp   uint64
 	DB          *badger.DB
 	DBPath      string
@@ -146,9 +146,9 @@ func (dt *Data) Process(force bool) error {
 		n := uint64(0)
 		distance := 0.0
 		maxDistance := 0.0
-		avg := make([]float64, 0)
-		hist := make([]float64, 64)
-		nFloat := float64(dt.N)
+		avg := make([]float32, 0)
+		hist := make([]float32, 64)
+		nFloat := float32(dt.N)
 		if nFloat == 0 {
 			log.Printf("Data size was 0\n")
 			nFloat = 1
@@ -184,16 +184,16 @@ func (dt *Data) Process(force bool) error {
 				err = item.Value(func(v []byte) error {
 					datum, errV := ToDatum(k, v)
 					if errV == nil {
-						features32 := make([]float32, len(datum.Key.Feature))
-						for i, f := range datum.Key.Feature {
-							features32[i] = float32(f)
-						}
+						// features32 := make([]float32, len(datum.Key.Feature))
+						// for i, f := range datum.Key.Feature {
+						// 	features32[i] = float32(f)
+						// }
 						i := int(n - 1)
 						if i < len(newDataIndex) {
 							if newAnnoyIndex == nil {
-								newAnnoyIndex = annoyindex.NewAnnoyIndexEuclidean(len(features32))
+								newAnnoyIndex = annoyindex.NewAnnoyIndexEuclidean(len(datum.Key.Feature))
 							}
-							newAnnoyIndex.AddItem(i, features32)
+							newAnnoyIndex.AddItem(i, datum.Key.Feature)
 							newDataIndex[i] = datum
 						}
 						// newDataIndex = append(newDataIndex, datum)

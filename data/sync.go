@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	data "github.com/bgokden/veri-data"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/dgraph-io/badger/v3"
 	pbp "github.com/dgraph-io/badger/v3/pb"
@@ -54,7 +53,7 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	if info.N > localN {
 		diff = 1
 	}
-	if data.VectorDistance(localInfo.Avg, info.Avg)+data.VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
+	if VectorDistance(localInfo.Avg, info.Avg)+VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
 		diff = 1
 	}
 	// log.Printf("Data diff:%v localN: %v  remoteN: %v\n", diff, localN, info.N)

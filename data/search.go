@@ -52,7 +52,7 @@ func EncodeSearchConfig(sc *pb.SearchConfig) []byte {
 // Collector collects results
 type Collector struct {
 	List           []*pb.ScoredDatum
-	ScoreFunc      func(arr1 []float64, arr2 []float64) float64
+	ScoreFunc      func(arr1 []float32, arr2 []float32) float64
 	MaxScore       float64
 	DatumKey       *pb.DatumKey
 	N              uint32
@@ -240,7 +240,7 @@ func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error
 	return list, nil
 }
 
-var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) float64{
+var vectorComparisonFuncs = map[string]func(arr1 []float32, arr2 []float32) float64{
 	"AnnoyVectorDistance":   VectorDistance,
 	"AnnoyCosineSimilarity": CosineSimilarity,
 	"VectorDistance":        VectorDistance,
@@ -249,7 +249,7 @@ var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) floa
 	"QuickVectorDistance":   QuickVectorDistance,
 }
 
-func GetVectorComparisonFunction(name string) func(arr1 []float64, arr2 []float64) float64 {
+func GetVectorComparisonFunction(name string) func(arr1 []float32, arr2 []float32) float64 {
 	if function, ok := vectorComparisonFuncs[name]; ok {
 		return function
 	}
@@ -489,16 +489,16 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 	c.N = config.Limit
 	c.Filters = config.Filters
 	c.GroupFilters = config.GroupFilters
-	features32 := make([]float32, len(datum.Key.Feature))
-	for i, f := range datum.Key.Feature {
-		features32[i] = float32(f)
-	}
+	// features32 := make([]float32, len(datum.Key.Feature))
+	// for i, f := range datum.Key.Feature {
+	// 	features32[i] = float32(f)
+	// }
 	if dt.Annoyer.AnnoyIndex != nil && dt.Annoyer.DataIndex != nil && len(*(dt.Annoyer.DataIndex)) > 0 {
 		dt.Annoyer.RLock()
 		var result []int
 		var distances []float32
 		index := *(dt.Annoyer.DataIndex)
-		dt.Annoyer.AnnoyIndex.GetNnsByVector(features32, len(index), int(config.Limit), &result, &distances)
+		dt.Annoyer.AnnoyIndex.GetNnsByVector(datum.Key.Feature, len(index), int(config.Limit), &result, &distances)
 		if result != nil {
 			for i := 0; i < len(result); i++ {
 				datumE := index[result[i]]

@@ -14,6 +14,7 @@ var (
 	_ = time.Now()
 )
 
+//////////
 func SizeKey(d *pb.DatumKey) (s uint64) {
 
 	{
@@ -30,7 +31,7 @@ func SizeKey(d *pb.DatumKey) (s uint64) {
 
 		}
 
-		s += 8 * l
+		s += 4 * l
 
 	}
 	{
@@ -51,6 +52,7 @@ func SizeKey(d *pb.DatumKey) (s uint64) {
 	s += 16
 	return
 }
+
 func MarshalKey(d *pb.DatumKey) ([]byte, error) {
 	size := SizeKey(d)
 	buf := make([]byte, size)
@@ -76,7 +78,7 @@ func MarshalKey(d *pb.DatumKey) ([]byte, error) {
 
 			{
 
-				v := *(*uint64)(unsafe.Pointer(&(d.Feature[k0])))
+				v := *(*uint32)(unsafe.Pointer(&(d.Feature[k0])))
 
 				buf[i+0+0] = byte(v >> 0)
 
@@ -86,17 +88,9 @@ func MarshalKey(d *pb.DatumKey) ([]byte, error) {
 
 				buf[i+3+0] = byte(v >> 24)
 
-				buf[i+4+0] = byte(v >> 32)
-
-				buf[i+5+0] = byte(v >> 40)
-
-				buf[i+6+0] = byte(v >> 48)
-
-				buf[i+7+0] = byte(v >> 56)
-
 			}
 
-			i += 8
+			i += 4
 
 		}
 	}
@@ -189,18 +183,18 @@ func UnmarshalKey(d *pb.DatumKey, buf []byte) (uint64, error) {
 		if uint64(cap(d.Feature)) >= l {
 			d.Feature = d.Feature[:l]
 		} else {
-			d.Feature = make([]float64, l)
+			d.Feature = make([]float32, l)
 		}
 		for k0 := range d.Feature {
 
 			{
 
-				v := 0 | (uint64(buf[i+0+0]) << 0) | (uint64(buf[i+1+0]) << 8) | (uint64(buf[i+2+0]) << 16) | (uint64(buf[i+3+0]) << 24) | (uint64(buf[i+4+0]) << 32) | (uint64(buf[i+5+0]) << 40) | (uint64(buf[i+6+0]) << 48) | (uint64(buf[i+7+0]) << 56)
-				d.Feature[k0] = *(*float64)(unsafe.Pointer(&v))
+				v := 0 | (uint32(buf[i+0+0]) << 0) | (uint32(buf[i+1+0]) << 8) | (uint32(buf[i+2+0]) << 16) | (uint32(buf[i+3+0]) << 24)
+				d.Feature[k0] = *(*float32)(unsafe.Pointer(&v))
 
 			}
 
-			i += 8
+			i += 4
 
 		}
 	}
@@ -251,6 +245,8 @@ func UnmarshalKey(d *pb.DatumKey, buf []byte) (uint64, error) {
 	}
 	return i + 16, nil
 }
+
+////////////////////////
 
 func SizeValue(d *pb.DatumValue) (s uint64) {
 
