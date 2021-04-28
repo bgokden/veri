@@ -82,6 +82,38 @@ func CosineSimilarity(a []float64, b []float64) float64 {
 	return sumA / (math.Sqrt(s1) * math.Sqrt(s2))
 }
 
+// CosineSimilarity for vector similarity
+func CosineSimilarity32(a []float32, b []float32) float32 {
+	count := 0
+	lengthA := len(a)
+	lengthB := len(b)
+	if lengthA > lengthB {
+		count = lengthA
+	} else {
+		count = lengthB
+	}
+	sumA := float32(0.0)
+	s1 := float32(0.0)
+	s2 := float32(0.0)
+	for k := 0; k < count; k++ {
+		if k >= lengthA {
+			s2 += b[k] * b[k]
+			continue
+		}
+		if k >= lengthB {
+			s1 += a[k] * a[k]
+			continue
+		}
+		sumA += a[k] * b[k]
+		s1 += a[k] * a[k]
+		s2 += b[k] * b[k]
+	}
+	if s1 == 0 || s2 == 0 {
+		return 0.0
+	}
+	return sumA / float32(math.Sqrt(float64(s1))*math.Sqrt(float64(s2)))
+}
+
 func euclideanDistance(arr1 []float64, arr2 []float64) float64 {
 	var ret float64
 	for i := 0; i < len(arr1); i++ {
