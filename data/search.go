@@ -364,18 +364,11 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		dt.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}()
 	// external
-	sourceList := dt.Sources.Items()
-	sourceLimit := 5 // This should be configurable
-	for _, sourceItem := range sourceList {
-		if sourceLimit < 0 {
-			break
-		}
-		sourceLimit--
-		source := sourceItem.Object.(DataSource)
+	dt.RunOnRandomSources(func(source DataSource) error {
 		queryWaitGroup.Add(1)
-		// log.Printf("Search Source %v\n", source.GetID())
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
-	}
+		return nil
+	})
 	go func() {
 		defer close(waitChannel)
 		queryWaitGroup.Wait()

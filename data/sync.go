@@ -16,12 +16,17 @@ import (
 func (dt *Data) SyncAll() error {
 	// log.Println("SyncAll Called")
 	var waitGroup sync.WaitGroup
-	sourceList := dt.Sources.Items()
-	for _, sourceItem := range sourceList {
-		source := sourceItem.Object.(DataSource)
+	// sourceList := dt.Sources.Items()
+	// for _, sourceItem := range sourceList {
+	// 	source := sourceItem.Object.(DataSource)
+	// 	waitGroup.Add(1)
+	// 	dt.Sync(source, &waitGroup)
+	// }
+	dt.RunOnRandomSources(func(source DataSource) error {
 		waitGroup.Add(1)
 		dt.Sync(source, &waitGroup)
-	}
+		return nil
+	})
 	waitGroup.Wait()
 	return nil
 }

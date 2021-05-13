@@ -268,3 +268,20 @@ func (dt *Data) AddSource(dataSource DataSource) error {
 func (dt *Data) GetID() string {
 	return dt.Config.Name
 }
+
+func (dt *Data) RunOnRandomSources(sourceFunction func(dataSource DataSource) error) error {
+	sourceList := dt.Sources.Items()
+	sourceLimit := 5                        // This should be configurable
+	for _, sourceItem := range sourceList { // Assumption is that random map runs are random enough
+		if sourceLimit < 0 {
+			break
+		}
+		sourceLimit--
+		source := sourceItem.Object.(DataSource)
+		err := sourceFunction(source)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
