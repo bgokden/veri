@@ -12,6 +12,8 @@ import (
 	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 
+	"github.com/bgokden/veri/state"
+
 	data "github.com/bgokden/veri/data"
 )
 
@@ -215,6 +217,7 @@ func (n *Node) SyncWithPeers() {
 			}
 		}
 	}
+	state.Ready = true
 	fmt.Println(n.Info())
 }
 

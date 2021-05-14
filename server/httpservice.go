@@ -7,15 +7,15 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
+	"github.com/bgokden/veri/state"
 	"github.com/gorilla/mux"
-	"github.com/magneticio/go-common/logging"
 )
 
-var Health = false
-var Ready = false
+// var Health = false
+// var Ready = false
 
 func GetReady(w http.ResponseWriter, r *http.Request) {
-	if Ready {
+	if state.Ready {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{"alive": true}`)
@@ -27,7 +27,7 @@ func GetReady(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetHeath(w http.ResponseWriter, r *http.Request) {
-	if Health {
+	if state.Health {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		io.WriteString(w, `{"alive": true}`)
@@ -51,7 +51,7 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 // RestApi serves common services needed
 func RestApi() {
-	logging.Info("Rest api stared")
+	log.Println("Rest api stared")
 	router := mux.NewRouter()
 	router.HandleFunc("/", GetHeath).Methods("GET")
 	router.HandleFunc("/health", GetHeath).Methods("GET")
@@ -60,5 +60,5 @@ func RestApi() {
 		log.Println(http.ListenAndServe(":6060", nil))
 	}()
 
-	logging.Error("Http Server failure: %v\n", http.ListenAndServe(":8000", router))
+	log.Printf("Http Server failure: %v\n", http.ListenAndServe(":8000", router))
 }

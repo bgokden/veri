@@ -3,6 +3,10 @@ tmp/
 tmp2/
 
 coverage.out
+heap.out
 
 main
 veri
+
+.DS_Store
+.vscode/

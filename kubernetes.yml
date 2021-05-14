@@ -26,6 +26,10 @@ spec:
   ports:
   - port: 5678
     targetPort: 10000
+    name: "grpc"
+  - port: 6060
+    targetPort: 6060
+    name: "pprof"
   type: LoadBalancer
 ---
 apiVersion: apps/v1
@@ -52,12 +56,31 @@ spec:
     spec:
       containers:
         - name: veri
-          image: berkgokden/veri:v0.0.47-1
+          image: berkgokden/veri:v0.0.47-2
           args: ["serve", "--services=veriservice:10000"]
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 10000
+              name: "grpc"
               protocol: TCP
+            - containerPort: 8000
+              name: "http"
+              protocol: TCP
+            - containerPort: 6060
+              name: "pprof"
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 1
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /ready
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
           env:
             - name: BROADCAST
               valueFrom:
