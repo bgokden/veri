@@ -75,6 +75,7 @@ func (n *Node) AddStaticService(service string) error {
 }
 
 func (n *Node) Close() error {
+	state.Ready = false
 	n.Dataset.Close()
 	return nil
 }

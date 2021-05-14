@@ -1,11 +1,11 @@
 package data
 
 import (
-	"encoding/hex"
 	"sort"
 	"time"
 
 	"github.com/bgokden/go-cache"
+	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/jinzhu/copier"
 )
@@ -103,7 +103,7 @@ func (a *Aggregator) InsertToList(scoredDatum *pb.ScoredDatum) error {
 func (a *Aggregator) Insert(scoredDatum *pb.ScoredDatum) error {
 	scoredDatum.Score = a.BestScore(scoredDatum)
 	if a.Grouped {
-		keyString := hex.EncodeToString(scoredDatum.Datum.Key.GroupLabel)
+		keyString := util.EncodeToString(scoredDatum.Datum.Key.GroupLabel)
 		if aGroupAggregatorInterface, ok := a.DeDuplicationMap.Get(keyString); ok {
 			aGroupAggregator := aGroupAggregatorInterface.(AggregatorInterface)
 			return aGroupAggregator.Insert(scoredDatum)
@@ -120,7 +120,7 @@ func (a *Aggregator) Insert(scoredDatum *pb.ScoredDatum) error {
 		if err != nil {
 			return err
 		}
-		keyString := hex.EncodeToString(keyByte)
+		keyString := util.EncodeToString(keyByte)
 		if previousScore, ok := a.DeDuplicationMap.Get(keyString); ok {
 			if a.IsNewScoredBetter(previousScore.(float64), scoredDatum.GetScore()) {
 				a.DeDuplicationMap.Set(keyString, scoredDatum.GetScore(), cache.NoExpiration)

@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: veri
-          image: berkgokden/veri:v0.0.47-2
+          image: berkgokden/veri:v0.0.47-4
           args: ["serve", "--services=veriservice:10000"]
           imagePullPolicy: IfNotPresent
           ports:
@@ -93,3 +93,23 @@ spec:
             limits:
               memory: "768Mi"
               cpu: "500m"
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: veri
+  namespace: veri
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: veri
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 40

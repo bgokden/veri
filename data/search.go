@@ -3,7 +3,6 @@ package data
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"log"
 	"sort"
@@ -14,6 +13,7 @@ import (
 	"github.com/jinzhu/copier"
 
 	"github.com/bgokden/veri/data/gencoder"
+	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 	badger "github.com/dgraph-io/badger/v3"
 	bpb "github.com/dgraph-io/badger/v3/pb"
@@ -45,7 +45,7 @@ func EncodeSearchConfig(sc *pb.SearchConfig) []byte {
 	copier.Copy(&config, sc)
 	config.Uuid = ""
 	marshalled, _ := json.Marshal(&config)
-	log.Printf("SearchConfig Encoded: %v\n", string(marshalled))
+	// log.Printf("SearchConfig Encoded: %v\n", string(marshalled))
 	return marshalled
 }
 
@@ -325,9 +325,9 @@ func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
 	keyByte, err := GetKeyAsBytes(datum)
 	signature := EncodeSearchConfig(config)
 	if err != nil {
-		return hex.EncodeToString(signature)
+		return util.EncodeToString(signature)
 	}
-	return hex.EncodeToString(append(keyByte, signature...))
+	return util.EncodeToString(append(keyByte, signature...))
 }
 
 // AggregatedSearch searches and merges other resources
