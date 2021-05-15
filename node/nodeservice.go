@@ -96,7 +96,7 @@ func (n *Node) DataStream(getDataRequest *pb.GetDataRequest, stream pb.VeriServi
 		// log.Printf("Flush - Send label: %v\n", string(datum.Value.Label))
 		stream.Send(datum)
 	}
-	log.Printf("DataStream finished\n")
+	// log.Printf("DataStream finished\n")
 	return nil
 }
 
@@ -245,7 +245,7 @@ func (n *Node) CreateDataIfNotExists(ctx context.Context, in *pb.DataConfig) (*p
 func (n *Node) getClient(address string) (pb.VeriServiceClient, *grpc.ClientConn, error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(time.Duration(200)*time.Millisecond))
 	if err != nil {
-		log.Printf("fail to dial: %v\n", err)
+		// log.Printf("fail to dial: %v\n", err)
 		return nil, nil, err
 	}
 	client := pb.NewVeriServiceClient(conn)

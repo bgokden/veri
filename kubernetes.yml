@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: veri
-          image: berkgokden/veri:v0.0.47-4
+          image: berkgokden/veri:v0.0.47-9
           args: ["serve", "--services=veriservice:10000"]
           imagePullPolicy: IfNotPresent
           ports:
@@ -73,7 +73,13 @@ spec:
             httpGet:
               path: /health
               port: http
-            failureThreshold: 1
+            failureThreshold: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            failureThreshold: 3
             periodSeconds: 10
           startupProbe:
             httpGet:
@@ -105,11 +111,11 @@ spec:
     kind: Deployment
     name: veri
   minReplicas: 3
-  maxReplicas: 10
+  maxReplicas: 5
   metrics:
   - type: Resource
     resource:
       name: memory
       target:
         type: Utilization
-        averageUtilization: 40
+        averageUtilization: 60

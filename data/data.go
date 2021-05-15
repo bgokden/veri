@@ -150,7 +150,7 @@ func (dt *Data) Process(force bool) error {
 		hist := make([]float32, 64)
 		nFloat := float32(dt.N)
 		if nFloat == 0 {
-			log.Printf("Data size was 0\n")
+			// log.Printf("Data size was 0\n")
 			nFloat = 1
 		}
 		histUnit := 1 / nFloat
@@ -216,12 +216,12 @@ func (dt *Data) Process(force bool) error {
 		dt.Timestamp = getCurrentTime()
 		if newAnnoyIndex != nil {
 			newAnnoyIndex.Build(10)
-			log.Printf("Updating index. len: %v\n", len(newDataIndex))
+			// log.Printf("Updating index. len: %v\n", len(newDataIndex))
 			dt.Annoyer.Lock()
 			dt.Annoyer.AnnoyIndex = newAnnoyIndex
 			dt.Annoyer.DataIndex = &newDataIndex
 			dt.Annoyer.Unlock()
-			log.Printf("Updated index\n")
+			// log.Printf("Updated index\n")
 		}
 		// if dt.ActiveIndex == 0 {
 		// 	dt.AnnoyIndexB = newAnnoyIndex

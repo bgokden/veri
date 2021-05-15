@@ -101,7 +101,8 @@ func NewConnection(address string) *Connection {
 			PermitWithoutStream: false, // false by default.
 		}))
 	if err != nil {
-		log.Printf("fail to dial to %v: %v\n", address, err)
+		// This happens too frequently when scaling down
+		// log.Printf("fail to dial to %v: %v\n", address, err)
 		return nil
 	}
 	// log.Printf("New connection to: %v\n", address)
