@@ -11,3 +11,4 @@ func EncodeToString(b []byte) string {
 	sh := reflect.StringHeader{bh.Data, bh.Len}
 	return *(*string)(unsafe.Pointer(&sh))
 }
+
