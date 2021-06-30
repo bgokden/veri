@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	data "github.com/bgokden/veri-data"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/dgraph-io/badger/v3"
 	pbp "github.com/dgraph-io/badger/v3/pb"
@@ -17,12 +16,17 @@ import (
 func (dt *Data) SyncAll() error {
 	// log.Println("SyncAll Called")
 	var waitGroup sync.WaitGroup
-	sourceList := dt.Sources.Items()
-	for _, sourceItem := range sourceList {
-		source := sourceItem.Object.(DataSource)
+	// sourceList := dt.Sources.Items()
+	// for _, sourceItem := range sourceList {
+	// 	source := sourceItem.Object.(DataSource)
+	// 	waitGroup.Add(1)
+	// 	dt.Sync(source, &waitGroup)
+	// }
+	dt.RunOnRandomSources(func(source DataSource) error {
 		waitGroup.Add(1)
 		dt.Sync(source, &waitGroup)
-	}
+		return nil
+	})
 	waitGroup.Wait()
 	return nil
 }
@@ -54,7 +58,7 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 	if info.N > localN {
 		diff = 1
 	}
-	if data.VectorDistance(localInfo.Avg, info.Avg)+data.VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
+	if VectorDistance(localInfo.Avg, info.Avg)+VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
 		diff = 1
 	}
 	// log.Printf("Data diff:%v localN: %v  remoteN: %v\n", diff, localN, info.N)

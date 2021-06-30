@@ -10,11 +10,12 @@ import (
 	"syscall"
 
 	"github.com/bgokden/veri/node"
+	"github.com/bgokden/veri/state"
 )
 
 func RunServer(configMap map[string]interface{}) {
-	Health = true
-	Ready = true
+	state.Health = true
+	state.Ready = false
 
 	services := configMap["services"].(string)
 	log.Printf("Services: %v\n", services)

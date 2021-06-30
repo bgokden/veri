@@ -33,12 +33,12 @@ func TestData(t *testing.T) {
 	dt, err := data.NewData(config1, dir)
 	assert.Nil(t, err)
 	defer dt.Close()
-	datum := data.NewDatum([]float64{0.1, 0.2, 0.3}, 3, 0, 1, 0, []byte("a"), []byte("a"), 0)
+	datum := data.NewDatum([]float32{0.1, 0.2, 0.3}, 3, 0, 1, 0, []byte("a"), []byte("a"), 0)
 	log.Printf("datum %v\n", datum)
 	err = dt.Insert(datum, nil)
-	datum2 := data.NewDatum([]float64{0.2, 0.3, 0.4}, 3, 0, 1, 0, []byte("b"), []byte("b"), 0)
+	datum2 := data.NewDatum([]float32{0.2, 0.3, 0.4}, 3, 0, 1, 0, []byte("b"), []byte("b"), 0)
 	err = dt.Insert(datum2, nil)
-	datum3 := data.NewDatum([]float64{0.2, 0.3, 0.7}, 3, 0, 1, 0, []byte("c"), []byte("c"), 0)
+	datum3 := data.NewDatum([]float32{0.2, 0.3, 0.7}, 3, 0, 1, 0, []byte("c"), []byte("c"), 0)
 	err = dt.Insert(datum3, nil)
 	for i := 0; i < 5; i++ {
 		dt.Process(true)
@@ -66,7 +66,7 @@ func TestData(t *testing.T) {
 
 type NewsTitle struct {
 	Title     string
-	Embedding []float64
+	Embedding []float32
 }
 
 func load_data_from_json(dt *data.Data, fname string) (*pb.Datum, error) {

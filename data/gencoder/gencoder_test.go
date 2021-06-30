@@ -14,5 +14,5 @@ func TestDatumScoreEncoding(t *testing.T) {
 	ds2 := gencoder.DatumScore{Score: 0}
 	_, e2 := ds2.Unmarshal(b)
 	assert.Nil(t, e2)
-	assert.Equal(t, ds2.Score, float32(3))
+	assert.Equal(t, ds2.Score, float64(3))
 }

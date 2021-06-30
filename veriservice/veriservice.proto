@@ -54,7 +54,7 @@ message Datum {
 }
 
 message DatumKey {
-  repeated double feature = 1;
+  repeated float feature = 1;
   bytes groupLabel = 2;
   uint32 size1 = 3;
   uint32 size2 = 4;
@@ -101,8 +101,8 @@ message DataInfo {
   string name = 1;
   uint64 timestamp = 2;
   uint64 version = 3;
-  repeated double avg = 4;
-  repeated double hist = 5;
+  repeated float avg = 4;
+  repeated float hist = 5;
   uint64 n = 6;
   double maxDistance = 7;
   uint64 targetN = 8;

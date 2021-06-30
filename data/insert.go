@@ -3,6 +3,7 @@ package data
 import (
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
@@ -49,21 +50,21 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	}
 	counter := uint32(1)
 	if dt.Config.EnforceReplicationOnInsert && config.Count == 0 {
-		sourceList := dt.Sources.Items()
 		config.Count++
 		// log.Printf("Sending Insert with config.Count: %v ttl: %v\n", config.Count, config.TTL)
-		for _, sourceItem := range sourceList {
-			source := sourceItem.Object.(DataSource)
+		dt.RunOnRandomSources(func(source DataSource) error {
 			err := source.Insert(datum, config)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Number of elements is over the target") { // This error occurs frequently and it is normal
 				log.Printf("Sending Insert error %v\n", err.Error())
-			} else {
+			}
+			if err == nil {
 				counter++
 			}
 			if counter >= dt.Config.ReplicationOnInsert {
-				break
+				return errors.New("Replication number reached")
 			}
-		}
+			return nil
+		})
 		if counter < dt.Config.ReplicationOnInsert {
 			return errors.New("Replicas is less then Replication Config")
 		}

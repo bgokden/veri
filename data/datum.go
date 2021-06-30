@@ -7,7 +7,7 @@ import (
 )
 
 // NewDatum is an utily function to initialize datum type
-func NewDatum(feature []float64,
+func NewDatum(feature []float32,
 	dim1 uint32,
 	dim2 uint32,
 	size1 uint32,

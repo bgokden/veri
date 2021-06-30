@@ -3,7 +3,6 @@ package data
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"log"
 	"sort"
@@ -14,6 +13,7 @@ import (
 	"github.com/jinzhu/copier"
 
 	"github.com/bgokden/veri/data/gencoder"
+	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 	badger "github.com/dgraph-io/badger/v3"
 	bpb "github.com/dgraph-io/badger/v3/pb"
@@ -45,14 +45,14 @@ func EncodeSearchConfig(sc *pb.SearchConfig) []byte {
 	copier.Copy(&config, sc)
 	config.Uuid = ""
 	marshalled, _ := json.Marshal(&config)
-	log.Printf("SearchConfig Encoded: %v\n", string(marshalled))
+	// log.Printf("SearchConfig Encoded: %v\n", string(marshalled))
 	return marshalled
 }
 
 // Collector collects results
 type Collector struct {
 	List           []*pb.ScoredDatum
-	ScoreFunc      func(arr1 []float64, arr2 []float64) float64
+	ScoreFunc      func(arr1 []float32, arr2 []float32) float64
 	MaxScore       float64
 	DatumKey       *pb.DatumKey
 	N              uint32
@@ -240,7 +240,7 @@ func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error
 	return list, nil
 }
 
-var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) float64{
+var vectorComparisonFuncs = map[string]func(arr1 []float32, arr2 []float32) float64{
 	"AnnoyVectorDistance":   VectorDistance,
 	"AnnoyCosineSimilarity": CosineSimilarity,
 	"VectorDistance":        VectorDistance,
@@ -249,7 +249,7 @@ var vectorComparisonFuncs = map[string]func(arr1 []float64, arr2 []float64) floa
 	"QuickVectorDistance":   QuickVectorDistance,
 }
 
-func GetVectorComparisonFunction(name string) func(arr1 []float64, arr2 []float64) float64 {
+func GetVectorComparisonFunction(name string) func(arr1 []float32, arr2 []float32) float64 {
 	if function, ok := vectorComparisonFuncs[name]; ok {
 		return function
 	}
@@ -325,9 +325,9 @@ func GetSearchKey(datum *pb.Datum, config *pb.SearchConfig) string {
 	keyByte, err := GetKeyAsBytes(datum)
 	signature := EncodeSearchConfig(config)
 	if err != nil {
-		return hex.EncodeToString(signature)
+		return util.EncodeToString(signature)
 	}
-	return hex.EncodeToString(append(keyByte, signature...))
+	return util.EncodeToString(append(keyByte, signature...))
 }
 
 // AggregatedSearch searches and merges other resources
@@ -364,18 +364,11 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		dt.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}()
 	// external
-	sourceList := dt.Sources.Items()
-	sourceLimit := 5 // This should be configurable
-	for _, sourceItem := range sourceList {
-		if sourceLimit < 0 {
-			break
-		}
-		sourceLimit--
-		source := sourceItem.Object.(DataSource)
+	dt.RunOnRandomSources(func(source DataSource) error {
 		queryWaitGroup.Add(1)
-		// log.Printf("Search Source %v\n", source.GetID())
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
-	}
+		return nil
+	})
 	go func() {
 		defer close(waitChannel)
 		queryWaitGroup.Wait()
@@ -489,16 +482,16 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 	c.N = config.Limit
 	c.Filters = config.Filters
 	c.GroupFilters = config.GroupFilters
-	features32 := make([]float32, len(datum.Key.Feature))
-	for i, f := range datum.Key.Feature {
-		features32[i] = float32(f)
-	}
+	// features32 := make([]float32, len(datum.Key.Feature))
+	// for i, f := range datum.Key.Feature {
+	// 	features32[i] = float32(f)
+	// }
 	if dt.Annoyer.AnnoyIndex != nil && dt.Annoyer.DataIndex != nil && len(*(dt.Annoyer.DataIndex)) > 0 {
 		dt.Annoyer.RLock()
 		var result []int
 		var distances []float32
 		index := *(dt.Annoyer.DataIndex)
-		dt.Annoyer.AnnoyIndex.GetNnsByVector(features32, len(index), int(config.Limit), &result, &distances)
+		dt.Annoyer.AnnoyIndex.GetNnsByVector(datum.Key.Feature, len(index), int(config.Limit), &result, &distances)
 		if result != nil {
 			for i := 0; i < len(result); i++ {
 				datumE := index[result[i]]

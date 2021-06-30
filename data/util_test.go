@@ -33,13 +33,13 @@ var vector32_1 = randFloats32(-1, 1, 512)
 func BenchmarkCosineSimilarity64(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
-		data.CosineSimilarity(vector64_0, vector64_1)
+		data.CosineSimilarity64(vector64_0, vector64_1)
 	}
 }
 
 func BenchmarkCosineSimilarity32(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
-		data.CosineSimilarity32(vector32_0, vector32_1)
+		data.CosineSimilarity(vector32_0, vector32_1)
 	}
 }

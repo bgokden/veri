@@ -26,6 +26,10 @@ spec:
   ports:
   - port: 5678
     targetPort: 10000
+    name: "grpc"
+  - port: 6060
+    targetPort: 6060
+    name: "pprof"
   type: LoadBalancer
 ---
 apiVersion: apps/v1
@@ -52,12 +56,37 @@ spec:
     spec:
       containers:
         - name: veri
-          image: berkgokden/veri:v0.0.46
+          image: berkgokden/veri:v0.0.47-9
           args: ["serve", "--services=veriservice:10000"]
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 10000
+              name: "grpc"
               protocol: TCP
+            - containerPort: 8000
+              name: "http"
+              protocol: TCP
+            - containerPort: 6060
+              name: "pprof"
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            failureThreshold: 3
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /ready
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
           env:
             - name: BROADCAST
               valueFrom:
@@ -70,3 +99,23 @@ spec:
             limits:
               memory: "768Mi"
               cpu: "500m"
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: veri
+  namespace: veri
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: veri
+  minReplicas: 3
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 60
