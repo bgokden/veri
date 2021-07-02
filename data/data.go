@@ -269,6 +269,9 @@ func (dt *Data) AddSource(dataSource DataSource) error {
 	if dt.Sources == nil {
 		dt.InitData()
 	}
+	if dt.Sources != nil {
+		return errors.New("Sources is still nil")
+	}
 	return dt.Sources.Add(dataSource.GetID(), dataSource, cache.DefaultExpiration)
 }
 
