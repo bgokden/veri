@@ -53,6 +53,14 @@ func (cc *ConnectionCache) Put(c *Connection) {
 	}
 }
 
+func (cc *ConnectionCache) Close(c *Connection) {
+	if cpInterface, _ := cc.Provider.Get(c.Address); cpInterface != nil {
+		if cp, ok2 := cpInterface.(*ConnectionPool); ok2 {
+			cp.Close(c)
+		}
+	}
+}
+
 // Func to init pool
 func NewConnectionPool(address string) *ConnectionPool {
 	pool := &sync.Pool{
@@ -153,6 +161,16 @@ func (cp *ConnectionPool) PutIfHealthy(conn *Connection) {
 		if conn.Conn.GetState() == connectivity.Ready {
 			cp.Pool.Put(conn)
 		} else {
+			err := conn.Conn.Close()
+			if err != nil {
+				log.Printf("Connection Close Error: %v\n", err.Error())
+			}
+		}
+	}
+}
+
+func (cp *ConnectionPool) Close(conn *Connection) {
+	if conn != nil && conn.Conn != nil {
 			err := conn.Conn.Close()
 			if err != nil {
 				log.Printf("Connection Close Error: %v\n", err.Error())
