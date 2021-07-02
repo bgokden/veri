@@ -208,7 +208,10 @@ func (n *Node) SendJoinRequest(id string) error {
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer n.ConnectionCache.Put(conn)
+	defer n.ConnectionCache.Close(conn)
+	// this connection should be closed time to time
+	// It is observed that it can cause a split brain due to two nodes
+	// sync to each other and never break connection
 	client := conn.Client
 	resp, err := client.Join(context.Background(), request)
 	if err != nil {
@@ -229,9 +232,6 @@ func (n *Node) SendJoinRequest(id string) error {
 			n.KnownIds = append(n.KnownIds, feedbackID)
 		}
 	}
-	conn.Close() // this connection should be closed time to time
-	// It is observed that it can cause a split brain due to two nodes
-	// sync to each other and never break connection
 	return nil
 }
 
