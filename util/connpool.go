@@ -171,10 +171,9 @@ func (cp *ConnectionPool) PutIfHealthy(conn *Connection) {
 
 func (cp *ConnectionPool) Close(conn *Connection) {
 	if conn != nil && conn.Conn != nil {
-			err := conn.Conn.Close()
-			if err != nil {
-				log.Printf("Connection Close Error: %v\n", err.Error())
-			}
+		err := conn.Conn.Close()
+		if err != nil {
+			log.Printf("Connection Close Error: %v\n", err.Error())
 		}
 	}
 }
