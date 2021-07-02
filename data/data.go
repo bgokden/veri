@@ -178,6 +178,9 @@ func (dt *Data) Process(force bool) error {
 						if index >= 64 {
 							index = 63
 						}
+						if index <= 0 {
+							index = 0 // this is probably related to a bug
+						}
 						hist[index] += histUnit
 					}
 				}
