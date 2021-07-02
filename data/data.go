@@ -1,6 +1,7 @@
 package data
 
 import (
+	"errors"
 	"log"
 	"os"
 	"path"
@@ -262,6 +263,9 @@ func (dt *Data) GetDataInfo() *pb.DataInfo {
 
 // AddSource adds a source
 func (dt *Data) AddSource(dataSource DataSource) error {
+	if dataSource == nil {
+		return errors.New("DataSource is nil")
+	}
 	if dt.Sources == nil {
 		dt.InitData()
 	}
