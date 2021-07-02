@@ -229,6 +229,9 @@ func (n *Node) SendJoinRequest(id string) error {
 			n.KnownIds = append(n.KnownIds, feedbackID)
 		}
 	}
+	conn.Close() // this connection should be closed time to time
+	// It is observed that it can cause a split brain due to two nodes
+	// sync to each other and never break connection
 	return nil
 }
 
