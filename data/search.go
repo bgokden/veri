@@ -150,7 +150,7 @@ func (c *Collector) Send(buf *z.Buffer) error {
 func (c *Collector) PassesFilters(datum *pb.Datum) bool {
 	if len(c.GroupFilters) > 0 {
 		jsonLabel := string(datum.Key.GroupLabel)
-		for _, filter := range c.Filters {
+		for _, filter := range c.GroupFilters {
 			value := gjson.Get(jsonLabel, filter)
 			if !value.Exists() {
 				return false
@@ -198,7 +198,7 @@ func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error
 		if len(c.GroupFilters) > 0 {
 			filterFailed := false
 			jsonLabel := string(datumKey.GroupLabel)
-			for _, filter := range c.Filters {
+			for _, filter := range c.GroupFilters {
 				value := gjson.Get(jsonLabel, filter)
 				if !value.Exists() {
 					filterFailed = true
