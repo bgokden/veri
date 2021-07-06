@@ -17,6 +17,8 @@ import (
 	data "github.com/bgokden/veri/data"
 )
 
+const MINGOMAXPROCS = 32
+
 func GetIdOfPeer(p *pb.Peer) string {
 	return SerializeStringArray(p.GetAddressList())
 }
@@ -283,11 +285,19 @@ func (n *Node) Periodic() error {
 	return nil
 }
 
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func (n *Node) Info() string {
 	var sb strings.Builder
 	nodeId := GetIdOfPeer(n.GetNodeInfo())
 	sb.WriteString("-------------------------------------------------\n")
-	sb.WriteString(fmt.Sprintf("-- Node ID: %v GOMAXPROCS: %v\n", nodeId, runtime.GOMAXPROCS(-1)))
+	goMaxProcsHint := max(MINGOMAXPROCS, runtime.GOMAXPROCS(-1))
+	sb.WriteString(fmt.Sprintf("-- Node ID: %v GOMAXPROCS: %v\n", nodeId, runtime.GOMAXPROCS(goMaxProcsHint)))
 	sb.WriteString("DataList:\n")
 	for _, name := range n.Dataset.List() {
 		dt, err := n.Dataset.GetNoCreate(name)
