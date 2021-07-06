@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.16.2-buster
+      - image: circleci/golang:1.16.5-buster
     steps:
       - checkout
       - run: mkdir -p ./artifacts
@@ -12,7 +12,7 @@ jobs:
       - run: $GOPATH/bin/goveralls -coverprofile=coverage.out -service=circle-ci -repotoken $COVERALLS_TOKEN
   publish-and-release:
     docker:
-      - image: circleci/golang:1.16.2-buster
+      - image: circleci/golang:1.16.5-buster
     steps:
       - checkout
       - add_ssh_keys

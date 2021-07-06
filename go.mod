@@ -1,6 +1,6 @@
 module github.com/bgokden/veri
 
-go 1.15
+go 1.16
 
 require (
 	github.com/bgokden/go-cache v2.1.1+incompatible
