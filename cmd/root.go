@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/magneticio/go-common/logging"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -14,6 +14,7 @@ import (
 )
 
 var cfgFile string
+var Verbose bool
 
 // Version should be in format vd.d.d where d is a decimal number
 const Version string = semver.Version
@@ -43,8 +44,6 @@ func Execute() {
 
 func init() {
 
-	logging.Init(os.Stdout, os.Stderr)
-
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
@@ -52,7 +51,7 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.veri/config.yaml")
-	rootCmd.PersistentFlags().BoolVarP(&logging.Verbose, "verbose", "v", false, "Verbose output")
+	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "Verbose output")
 
 	viper.BindEnv("config", "VERICONFIG")
 
@@ -64,7 +63,7 @@ func initConfig() {
 	if cfgFile == "" {
 		cfgFile = viper.GetString("config")
 	}
-	logging.Info("Using Config file path: %v\n", cfgFile)
+	log.Printf("Using Config file path: %v\n", cfgFile)
 
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -73,7 +72,7 @@ func initConfig() {
 		// Find home directory.
 		home, homeDirError := homedir.Dir()
 		if homeDirError != nil {
-			logging.Error("Can not find home Directory: %v\n", homeDirError)
+			log.Printf("Can not find home Directory: %v\n", homeDirError)
 			os.Exit(1)
 		}
 		// Search config in home directory with name ".veri" (without extension).
@@ -83,8 +82,8 @@ func initConfig() {
 	}
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		logging.Info("Using config file: %v\n", viper.ConfigFileUsed())
+		log.Printf("Using config file: %v\n", viper.ConfigFileUsed())
 	} else {
-		logging.Error("Config can not be read due to error: %v\n", err)
+		log.Printf("Config can not be read due to error: %v\n", err)
 	}
 }
