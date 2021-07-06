@@ -26,7 +26,7 @@ type DataSource interface {
 type Annoyer struct {
 	sync.RWMutex
 	DataIndex  *[]*pb.Datum
-	AnnoyIndex annoyindex.AnnoyIndex
+	AnnoyIndex annoyindex.AnnoyIndexEuclidean
 }
 
 // Data represents a dataset with similar struture
@@ -156,7 +156,7 @@ func (dt *Data) Process(force bool) error {
 		}
 		histUnit := 1 / nFloat
 		newDataIndex := make([]*pb.Datum, max(1000, int(dt.N)))
-		var newAnnoyIndex annoyindex.AnnoyIndex
+		var newAnnoyIndex annoyindex.AnnoyIndexEuclidean
 		err := dt.DB.View(func(txn *badger.Txn) error {
 			opts := badger.DefaultIteratorOptions
 			opts.PrefetchValues = false
@@ -222,6 +222,9 @@ func (dt *Data) Process(force bool) error {
 			newAnnoyIndex.Build(10)
 			// log.Printf("Updating index. len: %v\n", len(newDataIndex))
 			dt.Annoyer.Lock()
+			if dt.Annoyer.DataIndex != nil {
+				annoyindex.DeleteAnnoyIndexEuclidean(dt.Annoyer.AnnoyIndex)
+			}
 			dt.Annoyer.AnnoyIndex = newAnnoyIndex
 			dt.Annoyer.DataIndex = &newDataIndex
 			dt.Annoyer.Unlock()
