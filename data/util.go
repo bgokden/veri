@@ -52,6 +52,11 @@ func VectorMultiplication(arr1 []float32, arr2 []float32) float64 {
 	return float64(ret)
 }
 
+// AngularDistance sim(u.v) = (1 - arccos(cosine_similarity(u, v)) / pi)
+func AngularDistance(a []float32, b []float32) float64 {
+	return 1.0 - (math.Acos(CosineSimilarity(a, b)) / math.Pi)
+}
+
 // CosineSimilarity for vector similarity
 func CosineSimilarity(a []float32, b []float32) float64 {
 	count := 0

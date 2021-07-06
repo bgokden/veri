@@ -247,6 +247,8 @@ var vectorComparisonFuncs = map[string]func(arr1 []float32, arr2 []float32) floa
 	"VectorMultiplication":  VectorMultiplication,
 	"CosineSimilarity":      CosineSimilarity,
 	"QuickVectorDistance":   QuickVectorDistance,
+	"AngularDistance":       AngularDistance,
+	"AnnoyAngularDistance":  AngularDistance,
 }
 
 func GetVectorComparisonFunction(name string) func(arr1 []float32, arr2 []float32) float64 {
