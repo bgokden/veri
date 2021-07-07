@@ -15,13 +15,15 @@ func GetDataSourceClient(p *pb.Peer, name string, idOfPeer string) data.DataSour
 	return &DataSourceClient{
 		Ids:      []string{idOfPeer},
 		Name:     name,
-		ConnPool: util.NewConnectionPool(idOfPeer),
+		IdOfPeer: idOfPeer,
+		ConnPool: nil,
 	}
 }
 
 type DataSourceClient struct {
 	Ids      []string
 	Name     string
+	IdOfPeer string
 	ConnPool *util.ConnectionPool
 }
 
@@ -39,11 +41,11 @@ type DataSourceClient struct {
 
 func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	defer queryWaitGroup.Done()
-	conn := dcs.ConnPool.Get()
+	conn := dcs.GetConnPool().Get()
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer dcs.ConnPool.PutIfHealthy(conn)
+	defer dcs.GetConnPool().PutIfHealthy(conn)
 	client := conn.Client
 	searchRequest := &pb.SearchRequest{
 		Datum:  []*pb.Datum{datum},
@@ -66,11 +68,11 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 }
 
 func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
-	conn := dcs.ConnPool.Get()
+	conn := dcs.GetConnPool().Get()
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer dcs.ConnPool.PutIfHealthy(conn)
+	defer dcs.GetConnPool().PutIfHealthy(conn)
 	client := conn.Client
 	request := &pb.InsertionRequest{
 		Config:   config,
@@ -82,12 +84,12 @@ func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) er
 }
 
 func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
-	conn := dcs.ConnPool.Get()
+	conn := dcs.GetConnPool().Get()
 	if conn == nil {
 		log.Printf("Connection failure\n")
 		return nil
 	}
-	defer dcs.ConnPool.PutIfHealthy(conn)
+	defer dcs.GetConnPool().PutIfHealthy(conn)
 	client := conn.Client
 	request := &pb.GetDataRequest{
 		Name: dcs.Name,
@@ -98,6 +100,13 @@ func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
 		return nil
 	}
 	return dataInfo
+}
+
+func (dcs *DataSourceClient) GetConnPool() *util.ConnectionPool {
+	if dcs.ConnPool == nil {
+		dcs.ConnPool = util.NewConnectionPool(dcs.IdOfPeer)
+	}
+	return dcs.ConnPool
 }
 
 func (dcs *DataSourceClient) GetID() string {

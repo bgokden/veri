@@ -366,7 +366,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		dt.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 	}()
 	// external
-	dt.RunOnRandomSources(func(source DataSource) error {
+	dt.RunOnRandomSources(5, func(source DataSource) error {
 		queryWaitGroup.Add(1)
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 		return nil

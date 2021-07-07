@@ -22,7 +22,7 @@ func (dt *Data) SyncAll() error {
 	// 	waitGroup.Add(1)
 	// 	dt.Sync(source, &waitGroup)
 	// }
-	dt.RunOnRandomSources(func(source DataSource) error {
+	dt.RunOnRandomSources(2, func(source DataSource) error {
 		waitGroup.Add(1)
 		dt.Sync(source, &waitGroup)
 		return nil
@@ -59,7 +59,7 @@ func (dt *Data) Sync(source DataSource, waitGroup *sync.WaitGroup) error {
 		diff = 1
 	}
 	if VectorDistance(localInfo.Avg, info.Avg)+VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
-		diff = 1
+		diff = 0 // close enough
 	}
 	// log.Printf("Data diff:%v localN: %v  remoteN: %v\n", diff, localN, info.N)
 	if diff > 0 {
