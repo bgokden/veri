@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/bgokden/go-cache"
@@ -31,6 +32,7 @@ type Annoyer struct {
 
 // Data represents a dataset with similar struture
 type Data struct {
+	sync.RWMutex
 	Config      *pb.DataConfig
 	Path        string
 	Avg         []float32
@@ -46,6 +48,7 @@ type Data struct {
 	Initialized bool
 	Alive       bool
 	Annoyer     Annoyer
+	Runs        int32
 }
 
 func (d *Data) GetConfig() *pb.DataConfig {
@@ -75,6 +78,8 @@ func NewPreData(config *pb.DataConfig, dataPath string) *Data {
 
 func (dt *Data) InitData() error {
 	log.Printf("Init Data %v\n", dt.Config)
+	dt.Lock()
+	defer dt.Unlock()
 	if dt.Initialized == false {
 		options := badger.DefaultOptions(dt.DBPath).
 			WithLoggingLevel(badger.WARNING)
@@ -122,7 +127,14 @@ func (dt *Data) DeletePath() error {
 
 // Run runs statistical calculation regularly
 func (dt *Data) Run() error {
+	if atomic.LoadInt32(&dt.Runs) >= 1 {
+		log.Printf("Multiple Run calls detected.")
+		return errors.New("Another instance of processor is running for data")
+	}
+	atomic.AddInt32(&dt.Runs, 1)
+	defer atomic.AddInt32(&dt.Runs, -1)
 	nextTime := getCurrentTime()
+	gcCounter := 10
 	for {
 		if !dt.Alive {
 			break
@@ -131,7 +143,11 @@ func (dt *Data) Run() error {
 			secondsToSleep := uint64(10) // increment this based on load
 			dt.Process(false)
 			nextTime = getCurrentTime() + secondsToSleep
-			dt.DB.RunValueLogGC(0.7)
+			gcCounter--
+			if gcCounter <= 0 {
+				gcCounter = 10
+				dt.DB.RunValueLogGC(0.5)
+			}
 		}
 		time.Sleep(time.Duration(1000) * time.Millisecond)
 
