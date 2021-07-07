@@ -175,7 +175,7 @@ func (dt *Data) Process(force bool) error {
 		var newAnnoyIndex annoyindex.AnnoyIndexEuclidean
 		err := dt.DB.View(func(txn *badger.Txn) error {
 			opts := badger.DefaultIteratorOptions
-			opts.PrefetchValues = false
+			opts.PrefetchValues = true
 			it := txn.NewIterator(opts)
 			defer it.Close()
 			for it.Rewind(); it.Valid(); it.Next() {
@@ -239,6 +239,7 @@ func (dt *Data) Process(force bool) error {
 			// log.Printf("Updating index. len: %v\n", len(newDataIndex))
 			dt.Annoyer.Lock()
 			if dt.Annoyer.DataIndex != nil {
+				dt.Annoyer.AnnoyIndex.Unload() // Not sure if this is needed
 				annoyindex.DeleteAnnoyIndexEuclidean(dt.Annoyer.AnnoyIndex)
 			}
 			dt.Annoyer.AnnoyIndex = newAnnoyIndex
@@ -280,6 +281,18 @@ func (dt *Data) GetDataInfo() *pb.DataInfo {
 	}
 }
 
+// CheckSource adds a source
+func (dt *Data) CheckSource(dataSourceID string) bool {
+	if dt.Sources == nil {
+		return false
+	}
+	if dt.Sources == nil {
+		return false
+	}
+	_, check := dt.Sources.Get(dataSourceID)
+	return check
+}
+
 // AddSource adds a source
 func (dt *Data) AddSource(dataSource DataSource) error {
 	if dataSource == nil {
@@ -298,9 +311,9 @@ func (dt *Data) GetID() string {
 	return dt.Config.Name
 }
 
-func (dt *Data) RunOnRandomSources(sourceFunction func(dataSource DataSource) error) error {
+func (dt *Data) RunOnRandomSources(sourceLimit int, sourceFunction func(dataSource DataSource) error) error {
 	sourceList := dt.Sources.Items()
-	sourceLimit := 5                        // This should be configurable
+	// sourceLimit := 5                        // This should be configurable
 	for _, sourceItem := range sourceList { // Assumption is that random map runs are random enough
 		if sourceLimit < 0 {
 			break

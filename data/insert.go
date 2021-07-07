@@ -15,6 +15,9 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	if dt.Config != nil && !dt.Config.NoTarget && dt.N >= dt.Config.TargetN {
 		return errors.New("Number of elements is over the target")
 	}
+	if dt.DB == nil {
+		dt.InitData()
+	}
 	var ttlDuration *time.Duration
 	if config != nil && config.GetTTL() > 0 {
 		// log.Printf("Insert Datum with ttl config: %v\n", config.GetTTL())
@@ -52,7 +55,7 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	if dt.Config.EnforceReplicationOnInsert && config.Count == 0 {
 		config.Count++
 		// log.Printf("Sending Insert with config.Count: %v ttl: %v\n", config.Count, config.TTL)
-		dt.RunOnRandomSources(func(source DataSource) error {
+		dt.RunOnRandomSources(5, func(source DataSource) error {
 			err := source.Insert(datum, config)
 			if err != nil && !strings.Contains(err.Error(), "Number of elements is over the target") { // This error occurs frequently and it is normal
 				log.Printf("Sending Insert error %v\n", err.Error())

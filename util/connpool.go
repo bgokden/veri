@@ -24,9 +24,9 @@ func NewConnectionCache() *ConnectionCache {
 	}
 	// Create a loading cache
 	c := goburrow.NewLoadingCache(load,
-		goburrow.WithMaximumSize(100),                  // Limit number of entries in the cache.
-		goburrow.WithExpireAfterAccess(10*time.Minute), // Expire entries after 1 minute since last accessed.
-		goburrow.WithRefreshAfterWrite(20*time.Minute), // Expire entries after 2 minutes since last created.
+		goburrow.WithMaximumSize(20),                  // Limit number of entries in the cache.
+		goburrow.WithExpireAfterAccess(2*time.Minute), // Expire entries after 1 minute since last accessed.
+		goburrow.WithRefreshAfterWrite(5*time.Minute), // Expire entries after 2 minutes since last created.
 	)
 
 	cc := &ConnectionCache{
