@@ -167,26 +167,26 @@ func (n *Node) Listen() error {
 		// connection may exist before it will be closed by sending a GoAway. A
 		// random jitter of +/-10% will be added to MaxConnectionAge to spread out
 		// connection storms.
-		MaxConnectionAge: 20 * time.Minute, // The current default value is infinity.
+		MaxConnectionAge: 2 * time.Minute, // The current default value is infinity.
 		// MaxConnectionAgeGrace is an additive period after MaxConnectionAge after
 		// which the connection will be forcibly closed.
-		MaxConnectionAgeGrace: 25 * time.Minute, // The current default value is infinity.
+		MaxConnectionAgeGrace: 1 * time.Minute, // The current default value is infinity.
 		// After a duration of this time if the server doesn't see any activity it
 		// pings the client to see if the transport is still alive.
 		// If set below 1s, a minimum value of 1s will be used instead.
-		Time: 20 * time.Second, // The current default value is 2 hours.
+		Time: 10 * time.Second, // The current default value is 2 hours.
 		// After having pinged for keepalive check, the server waits for a duration
 		// of Timeout and if no activity is seen even after that the connection is
 		// closed.
-		Timeout: 200 * time.Millisecond, // The current default value is 20 seconds.
+		Timeout: 20 * time.Second, // The current default value is 20 seconds.
 	}), grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
 		// MinTime is the minimum amount of time a client should wait before sending
 		// a keepalive ping.
-		MinTime: 5 * time.Second, // The current default value is 5 minutes.
+		MinTime: 3 * time.Second, // The current default value is 5 minutes.
 		// If true, server allows keepalive pings even when there are no active
 		// streams(RPCs). If false, and client sends ping when there are no active
 		// streams, server will send GOAWAY and close the connection.
-		PermitWithoutStream: false, // false by default.
+		PermitWithoutStream: true, // false by default.
 	}))
 
 	pb.RegisterVeriServiceServer(grpcServer, n)
