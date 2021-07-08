@@ -24,9 +24,9 @@ func NewConnectionCache() *ConnectionCache {
 	}
 	// Create a loading cache
 	c := goburrow.NewLoadingCache(load,
-		goburrow.WithMaximumSize(20),                  // Limit number of entries in the cache.
-		goburrow.WithExpireAfterAccess(2*time.Minute), // Expire entries after 1 minute since last accessed.
-		goburrow.WithRefreshAfterWrite(5*time.Minute), // Expire entries after 2 minutes since last created.
+		goburrow.WithMaximumSize(100),                  // Limit number of entries in the cache.
+		goburrow.WithExpireAfterAccess(10*time.Minute), // Expire entries after 10 minutes since last accessed.
+		goburrow.WithRefreshAfterWrite(20*time.Minute), // Expire entries after 20 minutes since last created.
 	)
 
 	cc := &ConnectionCache{
@@ -98,7 +98,7 @@ func NewConnection(address string) *Connection {
 			// After a duration of this time if the client doesn't see any activity it
 			// pings the server to see if the transport is still alive.
 			// If set below 10s, a minimum value of 10s will be used instead.
-			Time: 600 * time.Second, // The current default value is infinity.
+			Time: 10 * time.Second, // The current default value is infinity.
 			// After having pinged for keepalive check, the client waits for a duration
 			// of Timeout and if no activity is seen even after that the connection is
 			// closed.
@@ -106,7 +106,7 @@ func NewConnection(address string) *Connection {
 			// If true, client sends keepalive pings even with no active RPCs. If false,
 			// when there are no active RPCs, Time and Timeout will be ignored and no
 			// keepalive pings will be sent.
-			PermitWithoutStream: false, // false by default.
+			PermitWithoutStream: true, // false by default.
 		}))
 	if err != nil {
 		// This happens too frequently when scaling down

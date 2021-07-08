@@ -11,20 +11,20 @@ import (
 	pb "github.com/bgokden/veri/veriservice"
 )
 
-func GetDataSourceClient(p *pb.Peer, name string, idOfPeer string) data.DataSource {
+func GetDataSourceClient(p *pb.Peer, name string, idOfPeer string, connectionCache *util.ConnectionCache) data.DataSource {
 	return &DataSourceClient{
-		Ids:      []string{idOfPeer},
-		Name:     name,
-		IdOfPeer: idOfPeer,
-		ConnPool: nil,
+		Ids:             []string{idOfPeer},
+		Name:            name,
+		IdOfPeer:        idOfPeer,
+		ConnectionCache: connectionCache,
 	}
 }
 
 type DataSourceClient struct {
-	Ids      []string
-	Name     string
-	IdOfPeer string
-	ConnPool *util.ConnectionPool
+	Ids             []string
+	Name            string
+	IdOfPeer        string
+	ConnectionCache *util.ConnectionCache
 }
 
 // func (dcs *DataSourceClient) GetVeriServiceClient() (pb.VeriServiceClient, *grpc.ClientConn, error) {
@@ -41,11 +41,11 @@ type DataSourceClient struct {
 
 func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	defer queryWaitGroup.Done()
-	conn := dcs.GetConnPool().Get()
+	conn := dcs.ConnectionCache.Get(dcs.IdOfPeer)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer dcs.GetConnPool().PutIfHealthy(conn)
+	defer dcs.ConnectionCache.Put(conn)
 	client := conn.Client
 	searchRequest := &pb.SearchRequest{
 		Datum:  []*pb.Datum{datum},
@@ -68,11 +68,11 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 }
 
 func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
-	conn := dcs.GetConnPool().Get()
+	conn := dcs.ConnectionCache.Get(dcs.IdOfPeer)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer dcs.GetConnPool().PutIfHealthy(conn)
+	defer dcs.ConnectionCache.Put(conn)
 	client := conn.Client
 	request := &pb.InsertionRequest{
 		Config:   config,
@@ -84,12 +84,12 @@ func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) er
 }
 
 func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
-	conn := dcs.GetConnPool().Get()
+	conn := dcs.ConnectionCache.Get(dcs.IdOfPeer)
 	if conn == nil {
 		log.Printf("Connection failure\n")
 		return nil
 	}
-	defer dcs.GetConnPool().PutIfHealthy(conn)
+	defer dcs.ConnectionCache.Put(conn)
 	client := conn.Client
 	request := &pb.GetDataRequest{
 		Name: dcs.Name,
@@ -100,13 +100,6 @@ func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
 		return nil
 	}
 	return dataInfo
-}
-
-func (dcs *DataSourceClient) GetConnPool() *util.ConnectionPool {
-	if dcs.ConnPool == nil {
-		dcs.ConnPool = util.NewConnectionPool(dcs.IdOfPeer)
-	}
-	return dcs.ConnPool
 }
 
 func (dcs *DataSourceClient) GetID() string {

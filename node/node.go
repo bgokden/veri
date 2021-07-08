@@ -214,7 +214,7 @@ func (n *Node) SyncWithPeers() {
 			data, err := n.Dataset.GetOrCreateIfNotExists(dataConfigFromPeer)
 			// log.Printf("(2) dataN: %v peer %v dataConfigFromPeer %v idOfPeer %v\n", data.N, peer, dataConfigFromPeer, idOfPeer)
 			if err == nil {
-				data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name, idOfPeer))
+				data.AddSource(GetDataSourceClient(peer, dataConfigFromPeer.Name, idOfPeer, n.ConnectionCache))
 			} else {
 				log.Printf("Error data creation: %v\n", err)
 			}
