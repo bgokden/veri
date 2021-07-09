@@ -10,7 +10,6 @@ import (
 	goburrow "github.com/goburrow/cache"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
-	"google.golang.org/grpc/keepalive"
 )
 
 type ConnectionCache struct {
@@ -94,26 +93,27 @@ func NewConnection(address string) *Connection {
 		grpc.WithBlock(),
 		grpc.WithInsecure(),
 		grpc.WithTimeout(time.Duration(1000)*time.Millisecond),
-		grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			// After a duration of this time if the client doesn't see any activity it
-			// pings the server to see if the transport is still alive.
-			// If set below 10s, a minimum value of 10s will be used instead.
-			Time: 10 * time.Second, // The current default value is infinity.
-			// After having pinged for keepalive check, the client waits for a duration
-			// of Timeout and if no activity is seen even after that the connection is
-			// closed.
-			Timeout: 20 * time.Second, // The current default value is 20 seconds.
-			// If true, client sends keepalive pings even with no active RPCs. If false,
-			// when there are no active RPCs, Time and Timeout will be ignored and no
-			// keepalive pings will be sent.
-			PermitWithoutStream: true, // false by default.
-		}))
+		// grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		// 	// After a duration of this time if the client doesn't see any activity it
+		// 	// pings the server to see if the transport is still alive.
+		// 	// If set below 10s, a minimum value of 10s will be used instead.
+		// 	Time: 10 * time.Second, // The current default value is infinity.
+		// 	// After having pinged for keepalive check, the client waits for a duration
+		// 	// of Timeout and if no activity is seen even after that the connection is
+		// 	// closed.
+		// 	Timeout: 20 * time.Second, // The current default value is 20 seconds.
+		// 	// If true, client sends keepalive pings even with no active RPCs. If false,
+		// 	// when there are no active RPCs, Time and Timeout will be ignored and no
+		// 	// keepalive pings will be sent.
+		// 	PermitWithoutStream: true, // false by default.
+		// })
+	)
 	if err != nil {
 		// This happens too frequently when scaling down
 		// log.Printf("fail to dial to %v: %v\n", address, err)
 		return nil
 	}
-	// log.Printf("New connection to: %v\n", address)
+	log.Printf("New connection to: %v\n", address) // TODO: remove
 	client := pb.NewVeriServiceClient(conn)
 	return &Connection{
 		Address: address,
