@@ -113,7 +113,7 @@ func NewConnection(address string) *Connection {
 		// log.Printf("fail to dial to %v: %v\n", address, err)
 		return nil
 	}
-	// log.Printf("New connection to: %v\n", address)
+	log.Printf("New connection to: %v\n", address) // TODO: remove
 	client := pb.NewVeriServiceClient(conn)
 	return &Connection{
 		Address: address,
