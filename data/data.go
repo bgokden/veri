@@ -3,8 +3,10 @@ package data
 import (
 	"errors"
 	"log"
+	"math/rand"
 	"os"
 	"path"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -155,10 +157,79 @@ func (dt *Data) Run() error {
 	return nil
 }
 
+func (dt *Data) DataSourceDiffMap() (map[string]uint64, uint64) {
+	localInfo := dt.GetDataInfo()
+	localN := localInfo.N
+	diffMap := map[string]uint64{}
+	sum := uint64(0)
+	dt.RunOnRandomSources(5, func(source DataSource) error {
+		info := source.GetDataInfo()
+		diff := minUint64(((localN-info.N)/2)+1, 1000) // diff may be negative
+		freq := float64(diff) / float64(localN+1)
+		if info.N > localN {
+			diff = 1
+		}
+		if VectorDistance(localInfo.Avg, info.Avg)+VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
+			diff = 1 // close enough
+			if freq < 0.01 {
+				diff = 0
+			}
+		}
+		diffMap[source.GetID()] = diff
+		sum += diff
+		return nil
+	})
+	return diffMap, sum
+}
+
 // Process runs through keys and calculates statistics
 func (dt *Data) Process(force bool) error {
 	// log.Printf("Try Running Process (forced: %v) current: %v timestamp: %v diff: %v\n", force, getCurrentTime(), dt.Timestamp, getCurrentTime()-dt.Timestamp)
 	if getCurrentTime()-dt.Timestamp >= 60 || force {
+		localInfo := dt.GetDataInfo()
+		localN := localInfo.N
+		config := dt.GetConfig()
+		diffMap, limit := dt.DataSourceDiffMap()
+		datumStream := make(chan *pb.InsertDatumWithConfig, limit)
+		defer close(datumStream)
+		insertionCounter := uint64(0)
+		fraction := float64(0)
+		if localN > 0 {
+			fraction = float64(limit) / float64(localN)
+			// log.Printf("Diff larger than 0: %v\n", diff)
+			countMap := make(map[string]uint64, len(diffMap))
+			go func() {
+				deleted := uint64(0)
+				counter := 0
+				for datum := range datumStream {
+					for id, count := range diffMap {
+						if countMap[id] < count {
+							if sourceItem, ok := dt.Sources.Get(id); ok {
+								if source, ok2 := sourceItem.(DataSource); ok2 {
+									err := source.Insert(datum.Datum, datum.Config)
+									if err != nil && !strings.Contains(err.Error(), "Number of elements is over the target") {
+										// This error occurs frequently and it is normal
+										log.Printf("Sending Insert error %v\n", err.Error())
+									}
+									if err == nil {
+										counter++
+									}
+									if err == nil && isEvictionOn(localInfo, config, deleted) {
+										countMap[id]++
+										dt.Delete(datum.Datum)
+										deleted++
+										// log.Printf("Datum deleted count: %v\n", deleted)
+									}
+								}
+							}
+						}
+					}
+					// No need to sleep time.Sleep(200 * time.Millisecond)
+				}
+			}()
+			// dt.InsertStreamSample(datumStream, float64(diff)/float64(localN))
+			// log.Printf("Close stream\n")
+		}
 		// log.Printf("Running Process (forced: %v)\n", force)
 		n := uint64(0)
 		distance := 0.0
@@ -216,7 +287,18 @@ func (dt *Data) Process(force bool) error {
 							newAnnoyIndex.AddItem(i, datum.Key.Feature)
 							newDataIndex[i] = datum
 						}
+						if insertionCounter < limit && rand.Float64() < fraction {
+							config := InsertConfigFromExpireAt(item.ExpiresAt())
+							if config.TTL > 10 {
+								datumStream <- &pb.InsertDatumWithConfig{
+									Datum:  datum,
+									Config: config,
+								}
+								insertionCounter++
+							}
+						}
 						// newDataIndex = append(newDataIndex, datum)
+
 					}
 					return nil
 				})
@@ -257,7 +339,7 @@ func (dt *Data) Process(force bool) error {
 		// 	dt.ActiveIndex = 0
 		// }
 
-		dt.SyncAll()
+		// dt.SyncAll()
 	}
 	// dt.Timestamp = getCurrentTime() // update always
 	dt.Dirty = false
@@ -279,18 +361,6 @@ func (dt *Data) GetDataInfo() *pb.DataInfo {
 		TargetUtilization: dt.Config.TargetUtilization,
 		NoTarget:          dt.Config.NoTarget,
 	}
-}
-
-// CheckSource adds a source
-func (dt *Data) CheckSource(dataSourceID string) bool {
-	if dt.Sources == nil {
-		return false
-	}
-	if dt.Sources == nil {
-		return false
-	}
-	_, check := dt.Sources.Get(dataSourceID)
-	return check
 }
 
 // AddSource adds a source
