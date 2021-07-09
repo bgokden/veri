@@ -252,7 +252,7 @@ func (n *Node) JoinToPeers() error {
 }
 
 func (n *Node) SetPeriodicTask() {
-	n.PeriodicTicker = time.NewTicker(10 * time.Second)
+	n.PeriodicTicker = time.NewTicker(60 * time.Second)
 	n.PeriodicDone = make(chan bool)
 	go func() {
 		for {
