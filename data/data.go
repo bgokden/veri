@@ -164,19 +164,21 @@ func (dt *Data) DataSourceDiffMap() (map[string]uint64, uint64) {
 	sum := uint64(0)
 	dt.RunOnRandomSources(5, func(source DataSource) error {
 		info := source.GetDataInfo()
-		diff := minUint64(((localN-info.N)/2)+1, 1000) // diff may be negative
-		freq := float64(diff) / float64(localN+1)
-		if info.N > localN {
-			diff = 1
-		}
-		if VectorDistance(localInfo.Avg, info.Avg)+VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
-			diff = 1 // close enough
-			if freq < 0.01 {
-				diff = 0
+		if info != nil {
+			diff := minUint64(((localN-info.N)/2)+1, 1000) // diff may be negative
+			freq := float64(diff) / float64(localN+1)
+			if info.N > localN {
+				diff = 1
 			}
+			if VectorDistance(localInfo.Avg, info.Avg)+VectorDistance(localInfo.Hist, info.Hist) <= 0.01*localInfo.GetMaxDistance() { // This is arbitary
+				diff = 1 // close enough
+				if freq < 0.01 {
+					diff = 0
+				}
+			}
+			diffMap[source.GetID()] = diff
+			sum += diff
 		}
-		diffMap[source.GetID()] = diff
-		sum += diff
 		return nil
 	})
 	return diffMap, sum
