@@ -13,7 +13,6 @@ import (
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 	grpcPeer "google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
 )
@@ -157,37 +156,38 @@ func (n *Node) Listen() error {
 		return err
 	}
 
-	grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-		// MaxConnectionIdle is a duration for the amount of time after which an
-		// idle connection would be closed by sending a GoAway. Idleness duration is
-		// defined since the most recent time the number of outstanding RPCs became
-		// zero or the connection establishment.
-		MaxConnectionIdle: 1 * time.Minute, // The current default value is infinity.
-		// MaxConnectionAge is a duration for the maximum amount of time a
-		// connection may exist before it will be closed by sending a GoAway. A
-		// random jitter of +/-10% will be added to MaxConnectionAge to spread out
-		// connection storms.
-		MaxConnectionAge: 2 * time.Minute, // The current default value is infinity.
-		// MaxConnectionAgeGrace is an additive period after MaxConnectionAge after
-		// which the connection will be forcibly closed.
-		MaxConnectionAgeGrace: 1 * time.Minute, // The current default value is infinity.
-		// After a duration of this time if the server doesn't see any activity it
-		// pings the client to see if the transport is still alive.
-		// If set below 1s, a minimum value of 1s will be used instead.
-		Time: 10 * time.Second, // The current default value is 2 hours.
-		// After having pinged for keepalive check, the server waits for a duration
-		// of Timeout and if no activity is seen even after that the connection is
-		// closed.
-		Timeout: 20 * time.Second, // The current default value is 20 seconds.
-	}), grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-		// MinTime is the minimum amount of time a client should wait before sending
-		// a keepalive ping.
-		MinTime: 3 * time.Second, // The current default value is 5 minutes.
-		// If true, server allows keepalive pings even when there are no active
-		// streams(RPCs). If false, and client sends ping when there are no active
-		// streams, server will send GOAWAY and close the connection.
-		PermitWithoutStream: true, // false by default.
-	}))
+	grpcServer := grpc.NewServer()
+	// grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
+	// 	// MaxConnectionIdle is a duration for the amount of time after which an
+	// 	// idle connection would be closed by sending a GoAway. Idleness duration is
+	// 	// defined since the most recent time the number of outstanding RPCs became
+	// 	// zero or the connection establishment.
+	// 	MaxConnectionIdle: 1 * time.Minute, // The current default value is infinity.
+	// 	// MaxConnectionAge is a duration for the maximum amount of time a
+	// 	// connection may exist before it will be closed by sending a GoAway. A
+	// 	// random jitter of +/-10% will be added to MaxConnectionAge to spread out
+	// 	// connection storms.
+	// 	MaxConnectionAge: 2 * time.Minute, // The current default value is infinity.
+	// 	// MaxConnectionAgeGrace is an additive period after MaxConnectionAge after
+	// 	// which the connection will be forcibly closed.
+	// 	MaxConnectionAgeGrace: 1 * time.Minute, // The current default value is infinity.
+	// 	// After a duration of this time if the server doesn't see any activity it
+	// 	// pings the client to see if the transport is still alive.
+	// 	// If set below 1s, a minimum value of 1s will be used instead.
+	// 	Time: 10 * time.Second, // The current default value is 2 hours.
+	// 	// After having pinged for keepalive check, the server waits for a duration
+	// 	// of Timeout and if no activity is seen even after that the connection is
+	// 	// closed.
+	// 	Timeout: 20 * time.Second, // The current default value is 20 seconds.
+	// }), grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+	// 	// MinTime is the minimum amount of time a client should wait before sending
+	// 	// a keepalive ping.
+	// 	MinTime: 3 * time.Second, // The current default value is 5 minutes.
+	// 	// If true, server allows keepalive pings even when there are no active
+	// 	// streams(RPCs). If false, and client sends ping when there are no active
+	// 	// streams, server will send GOAWAY and close the connection.
+	// 	PermitWithoutStream: true, // false by default.
+	// }))
 
 	pb.RegisterVeriServiceServer(grpcServer, n)
 	reflection.Register(grpcServer)
