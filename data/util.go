@@ -86,7 +86,13 @@ func CosineSimilarity(a []float32, b []float32) float64 {
 	if s1 == 0 || s2 == 0 {
 		return 0.0
 	}
-	return float64(sumA / (math32.Sqrt(s1) * math32.Sqrt(s2)))
+	similarity := float64(sumA / (math32.Sqrt(s1) * math32.Sqrt(s2)))
+	if similarity > 1 {
+		similarity = 1.0
+	} else if similarity < -1.0 {
+		similarity = -1.0
+	}
+	return similarity
 }
 
 // CosineSimilarity64 for vector similarity
