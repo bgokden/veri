@@ -117,6 +117,11 @@ func NewTempData() (*Data, error) {
 // Close currently closes underlying kv store
 func (dt *Data) Close() error {
 	dt.Alive = false
+	if dt.Sources != nil && len(dt.Sources.Items()) > 0 {
+		for dt.N > 0 {
+			dt.Process(true)
+		}
+	}
 	return dt.DB.Close()
 }
 
@@ -216,7 +221,7 @@ func (dt *Data) Process(force bool) error {
 									if err == nil {
 										counter++
 									}
-									if err == nil && isEvictionOn(localInfo, config, deleted) {
+									if err == nil && (!dt.Alive || isEvictionOn(localInfo, config, deleted)) {
 										countMap[id]++
 										dt.Delete(datum.Datum)
 										deleted++
@@ -282,14 +287,14 @@ func (dt *Data) Process(force bool) error {
 						// 	features32[i] = float32(f)
 						// }
 						i := int(n - 1)
-						if i < len(newDataIndex) {
+						if dt.Alive && i < len(newDataIndex) {
 							if newAnnoyIndex == nil {
 								newAnnoyIndex = annoyindex.NewAnnoyIndexEuclidean(len(datum.Key.Feature))
 							}
 							newAnnoyIndex.AddItem(i, datum.Key.Feature)
 							newDataIndex[i] = datum
 						}
-						if insertionCounter < limit && rand.Float64() < fraction {
+						if !dt.Alive || (insertionCounter < limit && rand.Float64() < fraction) {
 							config := InsertConfigFromExpireAt(item.ExpiresAt())
 							if config.TTL > 10 {
 								datumStream <- &pb.InsertDatumWithConfig{

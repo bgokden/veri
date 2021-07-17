@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bgokden/go-cache"
+	"github.com/bgokden/veri/state"
 	pb "github.com/bgokden/veri/veriservice"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -32,6 +33,9 @@ func (n *Node) Search(ctx context.Context, searchRequest *pb.SearchRequest) (*pb
 }
 
 func (n *Node) Insert(ctx context.Context, insertionRequest *pb.InsertionRequest) (*pb.InsertionResponse, error) {
+	if state.Drain {
+		return nil, errors.New("Node is in drain mode")
+	}
 	config := insertionRequest.GetConfig()
 	datum := insertionRequest.GetDatum()
 	name := insertionRequest.GetDataName()
