@@ -2,6 +2,7 @@ package data
 
 import (
 	"errors"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
@@ -28,8 +29,9 @@ type DataSource interface {
 
 type Annoyer struct {
 	sync.RWMutex
-	DataIndex  *[]*pb.Datum
-	AnnoyIndex annoyindex.AnnoyIndexEuclidean
+	DataIndex     *[]*pb.Datum
+	AnnoyIndex    annoyindex.AnnoyIndexAngular
+	BuildFileName string
 }
 
 // Data represents a dataset with similar struture
@@ -250,7 +252,8 @@ func (dt *Data) Process(force bool) error {
 		}
 		histUnit := 1 / nFloat
 		newDataIndex := make([]*pb.Datum, max(1000, int(dt.N)))
-		var newAnnoyIndex annoyindex.AnnoyIndexEuclidean
+		var newAnnoyIndex annoyindex.AnnoyIndexAngular
+		var newTempFileName string
 		err := dt.DB.View(func(txn *badger.Txn) error {
 			opts := badger.DefaultIteratorOptions
 			opts.PrefetchValues = true
@@ -289,7 +292,14 @@ func (dt *Data) Process(force bool) error {
 						i := int(n - 1)
 						if dt.Alive && i < len(newDataIndex) {
 							if newAnnoyIndex == nil {
-								newAnnoyIndex = annoyindex.NewAnnoyIndexEuclidean(len(datum.Key.Feature))
+								// newAnnoyIndex = annoyindex.NewAnnoyIndexEuclidean(len(datum.Key.Feature))
+								newAnnoyIndex = annoyindex.NewAnnoyIndexAngular(len(datum.Key.Feature))
+								tmpfile, err := ioutil.TempFile("", "annoy")
+								if err == nil {
+									newTempFileName = tmpfile.Name()
+									newAnnoyIndex.OnDiskBuild(newTempFileName)
+								}
+
 							}
 							newAnnoyIndex.AddItem(i, datum.Key.Feature)
 							newDataIndex[i] = datum
@@ -324,16 +334,24 @@ func (dt *Data) Process(force bool) error {
 		dt.N = n
 		dt.Timestamp = getCurrentTime()
 		if newAnnoyIndex != nil {
-			newAnnoyIndex.Build(10)
+			start := time.Now()
+			newAnnoyIndex.Build(-1) // Previosly 10, -1 creates index dynamically
+			elapsed := time.Since(start)
+			log.Printf("Building annoy index took %s", elapsed)
 			// log.Printf("Updating index. len: %v\n", len(newDataIndex))
 			dt.Annoyer.Lock()
 			if dt.Annoyer.DataIndex != nil {
 				dt.Annoyer.AnnoyIndex.Unload() // Not sure if this is needed
-				annoyindex.DeleteAnnoyIndexEuclidean(dt.Annoyer.AnnoyIndex)
+				annoyindex.DeleteAnnoyIndexAngular(dt.Annoyer.AnnoyIndex)
 			}
+			oldFile := dt.Annoyer.BuildFileName
+			dt.Annoyer.BuildFileName = newTempFileName
 			dt.Annoyer.AnnoyIndex = newAnnoyIndex
 			dt.Annoyer.DataIndex = &newDataIndex
 			dt.Annoyer.Unlock()
+			if len(oldFile) > 0 {
+				os.Remove(oldFile)
+			}
 			// log.Printf("Updated index\n")
 		}
 		// if dt.ActiveIndex == 0 {
