@@ -3,7 +3,6 @@ package data
 import (
 	"errors"
 	"log"
-	"strings"
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
@@ -57,7 +56,7 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 		// log.Printf("Sending Insert with config.Count: %v ttl: %v\n", config.Count, config.TTL)
 		dt.RunOnRandomSources(5, func(source DataSource) error {
 			err := source.Insert(datum, config)
-			if err != nil && !strings.Contains(err.Error(), "Number of elements is over the target") { // This error occurs frequently and it is normal
+			if err != nil && CheckIfUnkownError(err) { // This error occurs frequently and it is normal
 				log.Printf("Sending Insert error %v\n", err.Error())
 			}
 			if err == nil {
