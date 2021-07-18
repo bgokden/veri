@@ -191,6 +191,13 @@ func (dt *Data) DataSourceDiffMap() (map[string]uint64, uint64) {
 	return diffMap, sum
 }
 
+func CheckIfUnkownError(err error) bool {
+	if strings.Contains(err.Error(), "Number of elements is over the target") || strings.Contains(err.Error(), "Node is in drain mode") {
+		return false
+	}
+	return true
+}
+
 // Process runs through keys and calculates statistics
 func (dt *Data) Process(force bool) error {
 	// log.Printf("Try Running Process (forced: %v) current: %v timestamp: %v diff: %v\n", force, getCurrentTime(), dt.Timestamp, getCurrentTime()-dt.Timestamp)
@@ -216,8 +223,7 @@ func (dt *Data) Process(force bool) error {
 							if sourceItem, ok := dt.Sources.Get(id); ok {
 								if source, ok2 := sourceItem.(DataSource); ok2 {
 									err := source.Insert(datum.Datum, datum.Config)
-									if err != nil && !strings.Contains(err.Error(), "Number of elements is over the target") {
-										// This error occurs frequently and it is normal
+									if err != nil && CheckIfUnkownError(err) {
 										log.Printf("Sending Insert error %v\n", err.Error())
 									}
 									if err == nil {
