@@ -1,9 +1,8 @@
 package data
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"sort"
 	"strings"
@@ -12,13 +11,8 @@ import (
 
 	"github.com/jinzhu/copier"
 
-	"github.com/bgokden/veri/data/gencoder"
 	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
-	badger "github.com/dgraph-io/badger/v3"
-	bpb "github.com/dgraph-io/badger/v3/pb"
-	pbp "github.com/dgraph-io/badger/v3/pb"
-	"github.com/dgraph-io/ristretto/z"
 	"github.com/tidwall/gjson"
 )
 
@@ -92,60 +86,60 @@ func (c *Collector) Insert(scoredDatum *pb.ScoredDatum) error {
 	return nil
 }
 
-// Send collects the results
-func (c *Collector) Send(buf *z.Buffer) error {
-	err := buf.SliceIterate(func(s []byte) error {
-		kv := new(pbp.KV)
-		if err := kv.Unmarshal(s); err != nil {
-			return err
-		}
-		if kv.StreamDone == true {
-			return nil
-		}
-		/////
-		datumScore := gencoder.DatumScore{Score: 0}
-		datumScore.Unmarshal(kv.UserMeta)
-		// Old way of scoring:
-		// datumKey, _ := ToDatumKey(item.Key)
-		// // TODO: implement filters use: https://godoc.org/github.com/PaesslerAG/jsonpath#Get
-		// score := c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature)
-		score := datumScore.Score
-		itemAdded := false
-		if uint32(len(c.List)) < c.N {
-			datum, _ := ToDatum(kv.Key, kv.Value)
-			scoredDatum := &pb.ScoredDatum{
-				Datum: datum,
-				Score: score,
-			}
-			// log.Printf("ScoredDatum %v\n", scoredDatum)
-			c.List = append(c.List, scoredDatum)
-			itemAdded = true
-		} else if (c.HigherIsBetter && score > c.List[len(c.List)-1].Score) ||
-			(!c.HigherIsBetter && score < c.List[len(c.List)-1].Score) {
-			datum, _ := ToDatum(kv.Key, kv.Value)
-			scoredDatum := &pb.ScoredDatum{
-				Datum: datum,
-				Score: score,
-			}
-			c.List[len(c.List)-1] = scoredDatum
-			itemAdded = true
-		}
-		if itemAdded {
-			if c.HigherIsBetter {
-				sort.Slice(c.List, func(i, j int) bool {
-					return c.List[i].Score > c.List[j].Score
-				})
-			} else {
-				sort.Slice(c.List, func(i, j int) bool {
-					return c.List[i].Score < c.List[j].Score
-				})
-			}
-		}
-		/////
-		return nil
-	})
-	return err
-}
+// // Send collects the results
+// func (c *Collector) Send(buf *z.Buffer) error {
+// 	err := buf.SliceIterate(func(s []byte) error {
+// 		kv := new(pbp.KV)
+// 		if err := kv.Unmarshal(s); err != nil {
+// 			return err
+// 		}
+// 		if kv.StreamDone == true {
+// 			return nil
+// 		}
+// 		/////
+// 		datumScore := gencoder.DatumScore{Score: 0}
+// 		datumScore.Unmarshal(kv.UserMeta)
+// 		// Old way of scoring:
+// 		// datumKey, _ := ToDatumKey(item.Key)
+// 		// // TODO: implement filters use: https://godoc.org/github.com/PaesslerAG/jsonpath#Get
+// 		// score := c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature)
+// 		score := datumScore.Score
+// 		itemAdded := false
+// 		if uint32(len(c.List)) < c.N {
+// 			datum, _ := ToDatum(kv.Key, kv.Value)
+// 			scoredDatum := &pb.ScoredDatum{
+// 				Datum: datum,
+// 				Score: score,
+// 			}
+// 			// log.Printf("ScoredDatum %v\n", scoredDatum)
+// 			c.List = append(c.List, scoredDatum)
+// 			itemAdded = true
+// 		} else if (c.HigherIsBetter && score > c.List[len(c.List)-1].Score) ||
+// 			(!c.HigherIsBetter && score < c.List[len(c.List)-1].Score) {
+// 			datum, _ := ToDatum(kv.Key, kv.Value)
+// 			scoredDatum := &pb.ScoredDatum{
+// 				Datum: datum,
+// 				Score: score,
+// 			}
+// 			c.List[len(c.List)-1] = scoredDatum
+// 			itemAdded = true
+// 		}
+// 		if itemAdded {
+// 			if c.HigherIsBetter {
+// 				sort.Slice(c.List, func(i, j int) bool {
+// 					return c.List[i].Score > c.List[j].Score
+// 				})
+// 			} else {
+// 				sort.Slice(c.List, func(i, j int) bool {
+// 					return c.List[i].Score < c.List[j].Score
+// 				})
+// 			}
+// 		}
+// 		/////
+// 		return nil
+// 	})
+// 	return err
+// }
 
 func (c *Collector) PassesFilters(datum *pb.Datum) bool {
 	if len(c.GroupFilters) > 0 {
@@ -170,75 +164,75 @@ func (c *Collector) PassesFilters(datum *pb.Datum) bool {
 	return true
 }
 
-// ToList is a default implementation of KeyToList. It picks up all valid versions of the key,
-// skipping over deleted or expired keys.
-// TODO: update to bagder/v3 allocators
-func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error) {
-	list := &bpb.KVList{}
-	for ; itr.Valid(); itr.Next() {
-		item := itr.Item()
-		if item.IsDeletedOrExpired() {
-			break
-		}
-		if !bytes.Equal(key, item.Key()) {
-			// Break out on the first encounter with another key.
-			break
-		}
+// // ToList is a default implementation of KeyToList. It picks up all valid versions of the key,
+// // skipping over deleted or expired keys.
+// // TODO: update to bagder/v3 allocators
+// func (c *Collector) ToList(key []byte, itr *badger.Iterator) (*bpb.KVList, error) {
+// 	list := &bpb.KVList{}
+// 	for ; itr.Valid(); itr.Next() {
+// 		item := itr.Item()
+// 		if item.IsDeletedOrExpired() {
+// 			break
+// 		}
+// 		if !bytes.Equal(key, item.Key()) {
+// 			// Break out on the first encounter with another key.
+// 			break
+// 		}
 
-		valCopy, err := item.ValueCopy(nil)
-		if err != nil {
-			return nil, err
-		}
-		keyCopy := item.KeyCopy(nil)
-		datumKey, _ := ToDatumKey(keyCopy)
-		datumScore := &gencoder.DatumScore{
-			Score: c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature),
-		}
+// 		valCopy, err := item.ValueCopy(nil)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		keyCopy := item.KeyCopy(nil)
+// 		datumKey, _ := ToDatumKey(keyCopy)
+// 		datumScore := &gencoder.DatumScore{
+// 			Score: c.ScoreFunc(datumKey.Feature, c.DatumKey.Feature),
+// 		}
 
-		if len(c.GroupFilters) > 0 {
-			filterFailed := false
-			jsonLabel := string(datumKey.GroupLabel)
-			for _, filter := range c.GroupFilters {
-				value := gjson.Get(jsonLabel, filter)
-				if !value.Exists() {
-					filterFailed = true
-					break
-				}
-			}
-			if filterFailed {
-				break
-			}
-		}
+// 		if len(c.GroupFilters) > 0 {
+// 			filterFailed := false
+// 			jsonLabel := string(datumKey.GroupLabel)
+// 			for _, filter := range c.GroupFilters {
+// 				value := gjson.Get(jsonLabel, filter)
+// 				if !value.Exists() {
+// 					filterFailed = true
+// 					break
+// 				}
+// 			}
+// 			if filterFailed {
+// 				break
+// 			}
+// 		}
 
-		if len(c.Filters) > 0 {
-			filterFailed := false
-			datumValue, _ := ToDatumValue(valCopy)
-			jsonLabel := string(datumValue.Label)
-			for _, filter := range c.Filters {
-				value := gjson.Get(jsonLabel, filter)
-				if !value.Exists() {
-					filterFailed = true
-					break
-				}
-			}
-			if filterFailed {
-				break
-			}
-		}
+// 		if len(c.Filters) > 0 {
+// 			filterFailed := false
+// 			datumValue, _ := ToDatumValue(valCopy)
+// 			jsonLabel := string(datumValue.Label)
+// 			for _, filter := range c.Filters {
+// 				value := gjson.Get(jsonLabel, filter)
+// 				if !value.Exists() {
+// 					filterFailed = true
+// 					break
+// 				}
+// 			}
+// 			if filterFailed {
+// 				break
+// 			}
+// 		}
 
-		datumScoreBytes, _ := datumScore.Marshal()
-		kv := &bpb.KV{
-			Key:       keyCopy,
-			Value:     valCopy,
-			UserMeta:  datumScoreBytes,
-			Version:   item.Version(),
-			ExpiresAt: item.ExpiresAt(),
-		}
-		list.Kv = append(list.Kv, kv)
-		break
-	}
-	return list, nil
-}
+// 		datumScoreBytes, _ := datumScore.Marshal()
+// 		kv := &bpb.KV{
+// 			Key:       keyCopy,
+// 			Value:     valCopy,
+// 			UserMeta:  datumScoreBytes,
+// 			Version:   item.Version(),
+// 			ExpiresAt: item.ExpiresAt(),
+// 		}
+// 		list.Kv = append(list.Kv, kv)
+// 		break
+// 	}
+// 	return list, nil
+// }
 
 var vectorComparisonFuncs = map[string]func(arr1 []float32, arr2 []float32) float64{
 	"AnnoyVectorDistance":   VectorDistance,
@@ -258,60 +252,62 @@ func GetVectorComparisonFunction(name string) func(arr1 []float32, arr2 []float3
 	return VectorDistance
 }
 
-// Search does a search based on distances of keys
-func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
-	// log.Printf("Search: %v\n", datum)
-	if config == nil {
-		config = DefaultSearchConfig()
-	}
-	c := &Collector{}
-	c.List = make([]*pb.ScoredDatum, 0, config.Limit)
-	c.DatumKey = datum.Key
-	c.ScoreFunc = GetVectorComparisonFunction(config.ScoreFuncName)
-	c.HigherIsBetter = config.HigherIsBetter
-	c.N = config.Limit
-	c.Filters = config.Filters
-	c.GroupFilters = config.GroupFilters
-	stream := dt.DB.NewStream()
-	// db.NewStreamAt(readTs) for managed mode.
+// // Search does a search based on distances of keys
+// func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig) *Collector {
+// 	// log.Printf("Search: %v\n", datum)
+// 	if config == nil {
+// 		config = DefaultSearchConfig()
+// 	}
+// 	c := &Collector{}
+// 	c.List = make([]*pb.ScoredDatum, 0, config.Limit)
+// 	c.DatumKey = datum.Key
+// 	c.ScoreFunc = GetVectorComparisonFunction(config.ScoreFuncName)
+// 	c.HigherIsBetter = config.HigherIsBetter
+// 	c.N = config.Limit
+// 	c.Filters = config.Filters
+// 	c.GroupFilters = config.GroupFilters
+// 	stream := dt.DB.NewStream()
+// 	// db.NewStreamAt(readTs) for managed mode.
 
-	// -- Optional settings
-	stream.NumGo = 16                     // Set number of goroutines to use for iteration.
-	stream.Prefix = nil                   // Leave nil for iteration over the whole DB.
-	stream.LogPrefix = "Badger.Streaming" // For identifying stream logs. Outputs to Logger.
+// 	// -- Optional settings
+// 	stream.NumGo = 16                     // Set number of goroutines to use for iteration.
+// 	stream.Prefix = nil                   // Leave nil for iteration over the whole DB.
+// 	stream.LogPrefix = "Badger.Streaming" // For identifying stream logs. Outputs to Logger.
 
-	// ChooseKey is called concurrently for every key. If left nil, assumes true by default.
-	stream.ChooseKey = nil
+// 	// ChooseKey is called concurrently for every key. If left nil, assumes true by default.
+// 	stream.ChooseKey = nil
 
-	// KeyToList is called concurrently for chosen keys. This can be used to convert
-	// Badger data into custom key-values. If nil, uses stream.ToList, a default
-	// implementation, which picks all valid key-values.
-	stream.KeyToList = c.ToList // nil
+// 	// KeyToList is called concurrently for chosen keys. This can be used to convert
+// 	// Badger data into custom key-values. If nil, uses stream.ToList, a default
+// 	// implementation, which picks all valid key-values.
+// 	stream.KeyToList = c.ToList // nil
 
-	// -- End of optional settings.
+// 	// -- End of optional settings.
 
-	// Send is called serially, while Stream.Orchestrate is running.
+// 	// Send is called serially, while Stream.Orchestrate is running.
 
-	stream.Send = c.Send
+// 	stream.Send = c.Send
 
-	// Run the stream
-	if err := stream.Orchestrate(context.Background()); err != nil {
-		return nil
-	}
-	// Done.
-	return c
-}
+// 	// Run the stream
+// 	if err := stream.Orchestrate(context.Background()); err != nil {
+// 		return nil
+// 	}
+// 	// Done.
+// 	return c
+// }
 
 // StreamSearch does a search based on distances of keys
 func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	var collector *Collector
+	defer queryWaitGroup.Done()
 	if config == nil {
 		config = DefaultSearchConfig()
 	}
 	if strings.HasPrefix(config.ScoreFuncName, "Annoy") {
 		collector = dt.SearchAnnoy(datum, config)
 	} else {
-		collector = dt.Search(datum, config)
+		return errors.New("Base search is not working yet")
+		// collector = dt.Search(datum, config)
 	}
 	if collector != nil {
 		for _, i := range collector.List {
@@ -319,7 +315,6 @@ func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.Score
 			scoredDatumStream <- i
 		}
 	}
-	queryWaitGroup.Done()
 	return nil
 }
 
@@ -517,7 +512,8 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 		dt.Annoyer.RUnlock()
 	} else {
 		log.Println("Fallback to regular search")
-		return dt.Search(datum, config)
+		return c // Fallback is emptry list now
+		//return dt.Search(datum, config)
 	}
 	return c
 }
