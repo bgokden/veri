@@ -53,6 +53,7 @@ type Data struct {
 	Alive       bool
 	Annoyer     Annoyer
 	Runs        int32
+	DBMap       sync.Map
 }
 
 func (d *Data) GetConfig() *pb.DataConfig {
@@ -199,7 +200,7 @@ func CheckIfUnkownError(err error) bool {
 }
 
 // Process runs through keys and calculates statistics
-func (dt *Data) Process(force bool) error {
+func (dt *Data) ProcessOLD(force bool) error {
 	// log.Printf("Try Running Process (forced: %v) current: %v timestamp: %v diff: %v\n", force, getCurrentTime(), dt.Timestamp, getCurrentTime()-dt.Timestamp)
 	if getCurrentTime()-dt.Timestamp >= 60 || force {
 		localInfo := dt.GetDataInfo()

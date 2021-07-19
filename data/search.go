@@ -495,6 +495,7 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 		index := *(dt.Annoyer.DataIndex)
 		dt.Annoyer.AnnoyIndex.GetNnsByVector(datum.Key.Feature, len(index), int(config.Limit), &result, &distances)
 		if result != nil {
+			counter := uint32(0)
 			for i := 0; i < len(result); i++ {
 				datumE := index[result[i]]
 				if datumE != nil && c.PassesFilters(datumE) {
@@ -504,6 +505,10 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 					}
 					// log.Printf("Result %v d: %v\n", result[i], distances[i])
 					c.List = append(c.List, scoredDatum)
+					counter += 1
+					if counter >= c.N {
+						break
+					}
 				} else {
 					log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
 				}
