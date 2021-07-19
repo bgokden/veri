@@ -78,29 +78,30 @@ func (n *Node) Join(ctx context.Context, joinRequest *pb.JoinRequest) (*pb.JoinR
 }
 
 func (n *Node) DataStream(getDataRequest *pb.GetDataRequest, stream pb.VeriService_DataStreamServer) error {
-	name := getDataRequest.GetName()
-	dt, err := n.Dataset.Get(name)
-	if err != nil {
-		return err
-	}
-	datumStreamAll := make(chan *pb.Datum, 100)
-	go func() {
-		for datum := range datumStreamAll {
-			// log.Printf("Send label: %v\n", string(datum.Value.Label))
-			stream.Send(datum)
-		}
-	}()
-	err = dt.StreamAll(datumStreamAll)
-	if err != nil {
-		return err
-	}
-	close(datumStreamAll)
-	for datum := range datumStreamAll {
-		// log.Printf("Flush - Send label: %v\n", string(datum.Value.Label))
-		stream.Send(datum)
-	}
-	// log.Printf("DataStream finished\n")
-	return nil
+	return errors.New("Not implemented")
+	// name := getDataRequest.GetName()
+	// dt, err := n.Dataset.Get(name)
+	// if err != nil {
+	// 	return err
+	// }
+	// datumStreamAll := make(chan *pb.Datum, 100)
+	// go func() {
+	// 	for datum := range datumStreamAll {
+	// 		// log.Printf("Send label: %v\n", string(datum.Value.Label))
+	// 		stream.Send(datum)
+	// 	}
+	// }()
+	// err = dt.StreamAll(datumStreamAll)
+	// if err != nil {
+	// 	return err
+	// }
+	// close(datumStreamAll)
+	// for datum := range datumStreamAll {
+	// 	// log.Printf("Flush - Send label: %v\n", string(datum.Value.Label))
+	// 	stream.Send(datum)
+	// }
+	// // log.Printf("DataStream finished\n")
+	// return nil
 }
 
 func (n *Node) GetDataInfo(ctx context.Context, getDataRequest *pb.GetDataRequest) (*pb.DataInfo, error) {

@@ -45,16 +45,16 @@ func TestData(t *testing.T) {
 
 	assert.Nil(t, err)
 
-	collector := dt.Search(datum, nil)
+	collector := dt.SearchAnnoy(datum, nil)
 
 	for _, e := range collector.List {
 		log.Printf("label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
 	}
 
 	config := data.DefaultSearchConfig()
-	config.ScoreFuncName = "VectorMultiplication"
+	config.ScoreFuncName = "AnnoyCosineSimilarity"
 	config.HigherIsBetter = true
-	collector2 := dt.Search(datum, config)
+	collector2 := dt.SearchAnnoy(datum, config)
 
 	for _, e := range collector2.List {
 		log.Printf("label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)

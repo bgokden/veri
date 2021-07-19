@@ -12,7 +12,7 @@ func (dt *Data) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	if dt.Config != nil && !dt.Config.NoTarget && dt.N >= dt.Config.TargetN {
 		return errors.New("Number of elements is over the target")
 	}
-	if dt.DB == nil {
+	if dt.Initialized == false {
 		dt.InitData()
 	}
 	err := dt.InsertBDMap(datum, config)
