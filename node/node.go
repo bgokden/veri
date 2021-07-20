@@ -80,6 +80,7 @@ func (n *Node) Close() error {
 	state.Ready = false
 	state.Drain = true
 	n.Dataset.Close()
+	log.Printf("Graceful close.")
 	return nil
 }
 func (n *Node) AddService(service string) error {
