@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	data "github.com/bgokden/veri/data"
+	"github.com/bgokden/veri/util"
 	"github.com/stretchr/testify/assert"
 
 	pb "github.com/bgokden/veri/veriservice"
@@ -129,6 +130,8 @@ func TestData2(t *testing.T) {
 	collector := dt.SearchAnnoy(datum, config)
 	for _, e := range collector.List {
 		log.Printf("label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
+		keyByte, _ := data.GetKeyAsBytes(e.Datum)
+		log.Printf("len key normal: %v len key compressed: %v info: %v\n", len(keyByte), len(util.Compress(keyByte)), string(e.Datum.Key.GroupLabel))
 	}
 	assert.Equal(t, config.Limit, uint32(len(collector.List)))
 
