@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bgokden/veri/annoyindex"
+	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 )
 
@@ -29,7 +30,7 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	if err != nil {
 		return err
 	}
-	dt.DBMap.Store(string(keyByte), entry)
+	dt.DBMap.Store(util.EncodeToString(keyByte), entry)
 	return nil
 }
 
@@ -38,7 +39,7 @@ func (dt *Data) DeleteBDMap(datum *pb.Datum) error {
 	if err != nil {
 		return err
 	}
-	dt.DBMap.Delete(string(keyByte))
+	dt.DBMap.Delete(util.EncodeToString(keyByte))
 	return nil
 }
 
