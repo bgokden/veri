@@ -131,7 +131,9 @@ func TestData2(t *testing.T) {
 	for _, e := range collector.List {
 		log.Printf("label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
 		keyByte, _ := data.GetKeyAsBytes(e.Datum)
+		valueByte, _ := data.GetValueAsBytes(e.Datum)
 		log.Printf("len key normal: %v len key compressed: %v info: %v\n", len(keyByte), len(util.Compress(keyByte)), string(e.Datum.Key.GroupLabel))
+		log.Printf("len value normal: %v len value compressed: %v info: %v\n", len(valueByte), len(util.Compress(valueByte)), string(e.Datum.Value.Label))
 	}
 	assert.Equal(t, config.Limit, uint32(len(collector.List)))
 

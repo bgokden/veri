@@ -68,3 +68,13 @@ func TestStringConflict(t *testing.T) {
 		}
 	}
 }
+
+func TestCompressDecompress(t *testing.T) {
+	input := []byte("Hello this is an example input lkhldkfhldshfl jhfjdshkfhsd hkfsdhkfhds jhlhlshdlfsd ")
+	compressed := util.Compress(input)
+	decompresed := util.Decompress(compressed)
+	assert.Less(t, len(compressed), len(input))
+	assert.Equal(t, len(compressed), len(input)-7)
+	assert.Equal(t, len(decompresed), len(input))
+	assert.Equal(t, decompresed, input)
+}

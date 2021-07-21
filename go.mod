@@ -6,6 +6,7 @@ require (
 	github.com/bgokden/go-cache v2.1.1+incompatible
 	github.com/chewxy/math32 v1.0.8
 	github.com/goburrow/cache v0.1.3
+	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang/protobuf v1.4.1
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/uuid v1.1.2
