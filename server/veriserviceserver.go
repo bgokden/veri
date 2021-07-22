@@ -11,6 +11,7 @@ import (
 
 	"github.com/bgokden/veri/node"
 	"github.com/bgokden/veri/state"
+	"github.com/bgokden/veri/util"
 )
 
 func RunServer(configMap map[string]interface{}) {
@@ -93,6 +94,7 @@ func RunServer(configMap map[string]interface{}) {
 		log.Printf("Closing services started.")
 		// Cleap up here
 		s.Close()
+		util.GlobalMemoli.Close()
 		os.Exit(0)
 	}()
 	log.Printf("Server started.")

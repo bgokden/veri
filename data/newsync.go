@@ -1,11 +1,13 @@
 package data
 
 import (
+	"errors"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"time"
+	"unsafe"
 
 	"github.com/bgokden/veri/annoyindex"
 	"github.com/bgokden/veri/util"
@@ -17,19 +19,48 @@ type DBMapEntry struct {
 	Datum     *pb.Datum
 }
 
+func NewAllocadtedDatum(datum *pb.Datum) *pb.Datum {
+	ptrKey := (*pb.DatumKey)(util.GlobalMemoli.New(unsafe.Sizeof(*(datum.Key))))
+	if ptrKey == nil {
+		return nil
+	}
+	ptrValue := (*pb.DatumValue)(util.GlobalMemoli.New(unsafe.Sizeof(*(datum.Value))))
+	if ptrValue == nil {
+		util.GlobalMemoli.Free(unsafe.Pointer(ptrKey))
+		return nil
+	}
+	newDatum := &pb.Datum{
+		Key:   ptrKey,
+		Value: ptrValue,
+	}
+	*(newDatum.Key) = *datum.Key
+	*(newDatum.Value) = *datum.Value
+	return newDatum
+}
+
+func FreeAllocadtedDatum(datum *pb.Datum) {
+	util.GlobalMemoli.Free(unsafe.Pointer(datum.Key))
+	util.GlobalMemoli.Free(unsafe.Pointer(datum.Value))
+}
+
 func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	exprireAt := int64(0)
 	if config != nil && config.TTL != 0 {
 		exprireAt = time.Now().Unix() + int64(config.TTL)
 	}
+	newDatum := NewAllocadtedDatum(datum)
+	if newDatum == nil {
+		return errors.New("Running out of reserved memory")
+	}
 	entry := &DBMapEntry{
 		ExprireAt: exprireAt,
-		Datum:     datum,
+		Datum:     newDatum,
 	}
 	keyByte, err := GetKeyAsBytes(datum)
 	if err != nil {
 		return err
 	}
+
 	dt.DBMap.Store(util.EncodeToString(keyByte), entry)
 	return nil
 }
@@ -40,6 +71,7 @@ func (dt *Data) DeleteBDMap(datum *pb.Datum) error {
 		return err
 	}
 	dt.DBMap.Delete(util.EncodeToString(keyByte))
+	FreeAllocadtedDatum(datum)
 	return nil
 }
 
