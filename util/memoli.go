@@ -43,7 +43,7 @@ func NewMemoliArena(blockSize int, length int) (*MemoliArena, error) {
 	memoliArena := &MemoliArena{
 		BlockSize: uintptr(blockSize),
 		Length:    length,
-		MaxSize:   uintptr(blockSize * length),
+		MaxSize:   uintptr(blockSize * (length - 1)),
 	}
 	ti := blockSize * memoliArena.Length
 	mapFile, err := ioutil.TempFile("", "memoliarena")
@@ -115,7 +115,7 @@ func (ma *MemoliArena) Delete(byteSlicePtr *[]byte) error {
 
 func (ma *MemoliArena) New() unsafe.Pointer {
 	index := ma.GetNewIndex()
-	if index >= ma.MaxSize {
+	if index > ma.MaxSize {
 		return nil // run out of space
 	}
 	return unsafe.Pointer(ma.StartPointer + index)
