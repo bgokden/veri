@@ -177,7 +177,9 @@ func (dt *Data) Process(force bool) error {
 					}
 
 				}
-				newAnnoyIndex.AddItem(i, entry.Datum.Key.Feature)
+				var feature []float32
+				copy(feature, entry.Datum.Key.Feature)
+				newAnnoyIndex.AddItem(i, feature)
 				newDataIndex[i] = entry.Datum
 			}
 			if !dt.Alive || (insertionCounter < limit && rand.Float64() < fraction) {
