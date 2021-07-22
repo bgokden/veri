@@ -11,7 +11,7 @@ func EncodeToString(b []byte) string {
 	// bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
 	// sh := reflect.StringHeader{bh.Data, bh.Len}
 	// return *(*string)(unsafe.Pointer(&sh))
-	return string(Compress(b))
+	return string(b) // Gave up on Compression since it is expensive but not effective
 }
 
 func Compress(src []byte) []byte {
