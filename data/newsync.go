@@ -177,8 +177,11 @@ func (dt *Data) Process(force bool) error {
 					}
 
 				}
-				var feature []float32
+				feature := make([]float32, len(entry.Datum.Key.Feature))
 				copy(feature, entry.Datum.Key.Feature)
+				for i, e := range entry.Datum.Key.Feature {
+					feature[i] = e
+				}
 				newAnnoyIndex.AddItem(i, feature)
 				newDataIndex[i] = entry.Datum
 			}
