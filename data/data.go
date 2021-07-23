@@ -26,7 +26,7 @@ type DataSource interface {
 
 type Annoyer struct {
 	sync.RWMutex
-	DataIndex     *[]*pb.Datum
+	DataIndex     *[]*DBMapEntry
 	AnnoyIndex    annoyindex.AnnoyIndexAngular
 	BuildFileName string
 }

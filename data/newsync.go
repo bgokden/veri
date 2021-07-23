@@ -1,64 +1,83 @@
 package data
 
 import (
-	"errors"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"time"
-	"unsafe"
 
 	"github.com/bgokden/veri/annoyindex"
+	"github.com/bgokden/veri/models"
 	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 )
 
 type DBMapEntry struct {
 	ExprireAt int64
-	Datum     *pb.Datum
+	// Datum     *pb.Datum
+	Key   []byte
+	Value []byte
 }
 
-func NewAllocadtedDatum(datum *pb.Datum) *pb.Datum {
-	ptrKey := (*pb.DatumKey)(util.GlobalMemoli.New(unsafe.Sizeof(*(datum.Key))))
-	if ptrKey == nil {
-		return nil
-	}
-	ptrValue := (*pb.DatumValue)(util.GlobalMemoli.New(unsafe.Sizeof(*(datum.Value))))
-	if ptrValue == nil {
-		util.GlobalMemoli.Free(unsafe.Pointer(ptrKey))
-		return nil
-	}
-	newDatum := &pb.Datum{
-		Key:   ptrKey,
-		Value: ptrValue,
-	}
-	*(newDatum.Key) = *datum.Key
-	*(newDatum.Value) = *datum.Value
-	return newDatum
+func NewAllocadtedDatum(datum *pb.Datum) *models.InternalDatum {
+	// ptrValue := (*models.InternalDatum)(util.GlobalMemoli.New(unsafe.Sizeof(*(datum.Key)) + unsafe.Sizeof(*(datum.Value))))
+	// if ptrValue == nil {
+	// 	return nil
+	// }
+	ptrValue := &models.InternalDatum{}
+	ptrValue.Key.Dim1 = datum.Key.Dim1
+	ptrValue.Key.Dim2 = datum.Key.Dim2
+	ptrValue.Key.Size1 = datum.Key.Size1
+	ptrValue.Key.Size2 = datum.Key.Size2
+	ptrValue.Key.Feature = datum.Key.Feature
+	ptrValue.Key.GroupLabel = datum.Key.GroupLabel
+	ptrValue.Value.Label = datum.Value.Label
+	ptrValue.Value.Version = datum.Value.Version
+	return ptrValue
 }
 
-func FreeAllocadtedDatum(datum *pb.Datum) {
-	util.GlobalMemoli.Free(unsafe.Pointer(datum.Key))
-	util.GlobalMemoli.Free(unsafe.Pointer(datum.Value))
+func InternalDatumToDatum(ptrValue *models.InternalDatum) *pb.Datum {
+	datumKey := &pb.DatumKey{
+		Dim1:       ptrValue.Key.Dim1,
+		Dim2:       ptrValue.Key.Dim2,
+		Size1:      ptrValue.Key.Size1,
+		Size2:      ptrValue.Key.Size2,
+		Feature:    ptrValue.Key.Feature,
+		GroupLabel: ptrValue.Key.GroupLabel,
+	}
+	datumValue := &pb.DatumValue{
+		Label:   ptrValue.Value.Label,
+		Version: ptrValue.Value.Version,
+	}
+	return &pb.Datum{
+		Key:   datumKey,
+		Value: datumValue,
+	}
 }
+
+// func FreeAllocadtedDatum(ptrValue *models.InternalDatum) {
+// 	util.GlobalMemoli.Free(unsafe.Pointer(ptrValue))
+// }
 
 func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	exprireAt := int64(0)
 	if config != nil && config.TTL != 0 {
 		exprireAt = time.Now().Unix() + int64(config.TTL)
 	}
-	newDatum := NewAllocadtedDatum(datum)
-	if newDatum == nil {
-		return errors.New("Running out of reserved memory")
-	}
-	entry := &DBMapEntry{
-		ExprireAt: exprireAt,
-		Datum:     newDatum,
-	}
 	keyByte, err := GetKeyAsBytes(datum)
 	if err != nil {
 		return err
+	}
+	valueByte, err := GetValueAsBytes(datum)
+	if err != nil {
+		return err
+	}
+	entry := &DBMapEntry{
+		ExprireAt: exprireAt,
+		// Datum:     datum,
+		Key:   keyByte,
+		Value: valueByte,
 	}
 
 	dt.DBMap.Store(util.EncodeToString(keyByte), entry)
@@ -71,7 +90,7 @@ func (dt *Data) DeleteBDMap(datum *pb.Datum) error {
 		return err
 	}
 	dt.DBMap.Delete(util.EncodeToString(keyByte))
-	FreeAllocadtedDatum(datum)
+	// FreeAllocadtedDatum(datum)
 	return nil
 }
 
@@ -144,14 +163,18 @@ func (dt *Data) Process(force bool) error {
 			nFloat = 1
 		}
 		histUnit := 1 / nFloat
-		newDataIndex := make([]*pb.Datum, max(1000, int(dt.N)))
+		newDataIndex := make([]*DBMapEntry, max(1000, int(dt.N)))
 		var newAnnoyIndex annoyindex.AnnoyIndexAngular
 		var newTempFileName string
 
 		err := dt.LoopDBMap(func(entry *DBMapEntry) error {
 			n++
-			avg = CalculateAverage(avg, entry.Datum.Key.Feature, nFloat)
-			distance = VectorDistance(dt.Avg, entry.Datum.Key.Feature)
+			datumKey, err := ToDatumKey(entry.Key)
+			if err != nil {
+				return err
+			}
+			avg = CalculateAverage(avg, datumKey.Feature, nFloat)
+			distance = VectorDistance(dt.Avg, datumKey.Feature)
 			if distance > maxDistance {
 				maxDistance = distance
 			}
@@ -169,7 +192,7 @@ func (dt *Data) Process(force bool) error {
 			if dt.Alive && i < len(newDataIndex) {
 				if newAnnoyIndex == nil {
 					// newAnnoyIndex = annoyindex.NewAnnoyIndexEuclidean(len(datum.Key.Feature))
-					newAnnoyIndex = annoyindex.NewAnnoyIndexAngular(len(entry.Datum.Key.Feature))
+					newAnnoyIndex = annoyindex.NewAnnoyIndexAngular(len(datumKey.Feature))
 					tmpfile, err := ioutil.TempFile("", "annoy")
 					if err == nil {
 						newTempFileName = tmpfile.Name()
@@ -177,19 +200,21 @@ func (dt *Data) Process(force bool) error {
 					}
 
 				}
-				feature := make([]float32, len(entry.Datum.Key.Feature))
-				copy(feature, entry.Datum.Key.Feature)
-				for i, e := range entry.Datum.Key.Feature {
-					feature[i] = e
-				}
-				newAnnoyIndex.AddItem(i, feature)
-				newDataIndex[i] = entry.Datum
+				newAnnoyIndex.AddItem(i, datumKey.Feature)
+				newDataIndex[i] = entry
 			}
 			if !dt.Alive || (insertionCounter < limit && rand.Float64() < fraction) {
 				config := InsertConfigFromExpireAt(uint64(entry.ExprireAt))
 				if config.TTL > 10 {
+					datumValue, err := ToDatumValue(entry.Value)
+					if err != nil {
+						return err
+					}
 					datumStream <- &pb.InsertDatumWithConfig{
-						Datum:  entry.Datum,
+						Datum: &pb.Datum{
+							Key:   datumKey,
+							Value: datumValue,
+						},
 						Config: config,
 					}
 					insertionCounter++

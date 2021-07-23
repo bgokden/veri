@@ -1,6 +1,7 @@
 package data
 
 import (
+	"github.com/bgokden/veri/models"
 	pb "github.com/bgokden/veri/veriservice"
 
 	"github.com/bgokden/veri/data/gencoder"
@@ -101,6 +102,9 @@ func NewDatum(feature []float32,
 // }
 
 // Gencode
+func GetInternalKeyAsBytes(datum *models.InternalDatum) ([]byte, error) {
+	return gencoder.MarshalInternalKey(&datum.Key)
+}
 
 func GetKeyAsBytes(datum *pb.Datum) ([]byte, error) {
 	return gencoder.MarshalKey(datum.Key)
