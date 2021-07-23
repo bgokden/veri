@@ -494,8 +494,8 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 			for i := 0; i < len(result); i++ {
 				datumEntry := index[result[i]]
 				if datumEntry != nil {
-					datumKey, _ := ToDatumKey(datumEntry.Key)
-					datumValue, _ := ToDatumValue(datumEntry.Value)
+					datumKey, _ := ToDatumKey(*(datumEntry.Key))
+					datumValue, _ := ToDatumValue(*(datumEntry.Value))
 					datumE := &pb.Datum{
 						Key:   datumKey,
 						Value: datumValue,
@@ -505,7 +505,7 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 							Datum: datumE,
 							Score: c.ScoreFunc(datum.Key.Feature, datumE.Key.Feature),
 						}
-						// log.Printf("Result %v d: %v\n", result[i], distances[i])
+						log.Printf("Result %v d: %v\n", result[i], distances[i])
 						c.List = append(c.List, scoredDatum)
 						counter += 1
 						if counter >= c.N {
