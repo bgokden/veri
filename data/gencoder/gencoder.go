@@ -5,6 +5,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/bgokden/veri/models"
 	pb "github.com/bgokden/veri/veriservice"
 )
 
@@ -399,3 +400,237 @@ func (d *DatumScore) Unmarshal(buf []byte) (uint64, error) {
 	}
 	return i + 8, nil
 }
+
+////// InternalDatumKey
+func SizeInternalKey(d *models.InternalDatumKey) (s uint64) {
+
+	{
+		l := uint64(len(d.Feature))
+
+		{
+
+			t := l
+			for t >= 0x80 {
+				t >>= 7
+				s++
+			}
+			s++
+
+		}
+
+		s += 4 * l
+
+	}
+	{
+		l := uint64(len(d.GroupLabel))
+
+		{
+
+			t := l
+			for t >= 0x80 {
+				t >>= 7
+				s++
+			}
+			s++
+
+		}
+		s += l
+	}
+	s += 16
+	return
+}
+
+func MarshalInternalKey(d *models.InternalDatumKey) ([]byte, error) {
+	size := SizeInternalKey(d)
+	buf := make([]byte, size)
+	i := uint64(0)
+
+	{
+		l := uint64(len(d.Feature))
+
+		{
+
+			t := uint64(l)
+
+			for t >= 0x80 {
+				buf[i+0] = byte(t) | 0x80
+				t >>= 7
+				i++
+			}
+			buf[i+0] = byte(t)
+			i++
+
+		}
+		for k0 := range d.Feature {
+
+			{
+
+				v := *(*uint32)(unsafe.Pointer(&(d.Feature[k0])))
+
+				buf[i+0+0] = byte(v >> 0)
+
+				buf[i+1+0] = byte(v >> 8)
+
+				buf[i+2+0] = byte(v >> 16)
+
+				buf[i+3+0] = byte(v >> 24)
+
+			}
+
+			i += 4
+
+		}
+	}
+	{
+		l := uint64(len(d.GroupLabel))
+
+		{
+
+			t := uint64(l)
+
+			for t >= 0x80 {
+				buf[i+0] = byte(t) | 0x80
+				t >>= 7
+				i++
+			}
+			buf[i+0] = byte(t)
+			i++
+
+		}
+		copy(buf[i+0:], d.GroupLabel)
+		i += l
+	}
+	{
+
+		buf[i+0+0] = byte(d.Size1 >> 0)
+
+		buf[i+1+0] = byte(d.Size1 >> 8)
+
+		buf[i+2+0] = byte(d.Size1 >> 16)
+
+		buf[i+3+0] = byte(d.Size1 >> 24)
+
+	}
+	{
+
+		buf[i+0+4] = byte(d.Size2 >> 0)
+
+		buf[i+1+4] = byte(d.Size2 >> 8)
+
+		buf[i+2+4] = byte(d.Size2 >> 16)
+
+		buf[i+3+4] = byte(d.Size2 >> 24)
+
+	}
+	{
+
+		buf[i+0+8] = byte(d.Dim1 >> 0)
+
+		buf[i+1+8] = byte(d.Dim1 >> 8)
+
+		buf[i+2+8] = byte(d.Dim1 >> 16)
+
+		buf[i+3+8] = byte(d.Dim1 >> 24)
+
+	}
+	{
+
+		buf[i+0+12] = byte(d.Dim2 >> 0)
+
+		buf[i+1+12] = byte(d.Dim2 >> 8)
+
+		buf[i+2+12] = byte(d.Dim2 >> 16)
+
+		buf[i+3+12] = byte(d.Dim2 >> 24)
+
+	}
+	return buf[:i+16], nil
+}
+
+func UnmarshalInternalKey(d *models.InternalDatumKey, buf []byte) (uint64, error) {
+	i := uint64(0)
+
+	{
+		l := uint64(0)
+
+		{
+
+			bs := uint8(7)
+			t := uint64(buf[i+0] & 0x7F)
+			for buf[i+0]&0x80 == 0x80 {
+				i++
+				t |= uint64(buf[i+0]&0x7F) << bs
+				bs += 7
+			}
+			i++
+
+			l = t
+
+		}
+		if uint64(cap(d.Feature)) >= l {
+			d.Feature = d.Feature[:l]
+		} else {
+			d.Feature = make([]float32, l)
+		}
+		for k0 := range d.Feature {
+
+			{
+
+				v := 0 | (uint32(buf[i+0+0]) << 0) | (uint32(buf[i+1+0]) << 8) | (uint32(buf[i+2+0]) << 16) | (uint32(buf[i+3+0]) << 24)
+				d.Feature[k0] = *(*float32)(unsafe.Pointer(&v))
+
+			}
+
+			i += 4
+
+		}
+	}
+	{
+		l := uint64(0)
+
+		{
+
+			bs := uint8(7)
+			t := uint64(buf[i+0] & 0x7F)
+			for buf[i+0]&0x80 == 0x80 {
+				i++
+				t |= uint64(buf[i+0]&0x7F) << bs
+				bs += 7
+			}
+			i++
+
+			l = t
+
+		}
+		if uint64(cap(d.GroupLabel)) >= l {
+			d.GroupLabel = d.GroupLabel[:l]
+		} else {
+			d.GroupLabel = make([]byte, l)
+		}
+		copy(d.GroupLabel, buf[i+0:])
+		i += l
+	}
+	{
+
+		d.Size1 = 0 | (uint32(buf[i+0+0]) << 0) | (uint32(buf[i+1+0]) << 8) | (uint32(buf[i+2+0]) << 16) | (uint32(buf[i+3+0]) << 24)
+
+	}
+	{
+
+		d.Size2 = 0 | (uint32(buf[i+0+4]) << 0) | (uint32(buf[i+1+4]) << 8) | (uint32(buf[i+2+4]) << 16) | (uint32(buf[i+3+4]) << 24)
+
+	}
+	{
+
+		d.Dim1 = 0 | (uint32(buf[i+0+8]) << 0) | (uint32(buf[i+1+8]) << 8) | (uint32(buf[i+2+8]) << 16) | (uint32(buf[i+3+8]) << 24)
+
+	}
+	{
+
+		d.Dim2 = 0 | (uint32(buf[i+0+12]) << 0) | (uint32(buf[i+1+12]) << 8) | (uint32(buf[i+2+12]) << 16) | (uint32(buf[i+3+12]) << 24)
+
+	}
+	return i + 16, nil
+}
+
+////////////////////////

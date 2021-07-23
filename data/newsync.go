@@ -1,15 +1,14 @@
 package data
 
 import (
-	"errors"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
 	"time"
-	"unsafe"
 
 	"github.com/bgokden/veri/annoyindex"
+	"github.com/bgokden/veri/models"
 	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 )
@@ -19,42 +18,54 @@ type DBMapEntry struct {
 	Datum     *pb.Datum
 }
 
-func NewAllocadtedDatum(datum *pb.Datum) *pb.Datum {
-	ptrKey := (*pb.DatumKey)(util.GlobalMemoli.New(unsafe.Sizeof(*(datum.Key))))
-	if ptrKey == nil {
-		return nil
-	}
-	ptrValue := (*pb.DatumValue)(util.GlobalMemoli.New(unsafe.Sizeof(*(datum.Value))))
-	if ptrValue == nil {
-		util.GlobalMemoli.Free(unsafe.Pointer(ptrKey))
-		return nil
-	}
-	newDatum := &pb.Datum{
-		Key:   ptrKey,
-		Value: ptrValue,
-	}
-	*(newDatum.Key) = *datum.Key
-	*(newDatum.Value) = *datum.Value
-	return newDatum
+func NewAllocadtedDatum(datum *pb.Datum) *models.InternalDatum {
+	// ptrValue := (*models.InternalDatum)(util.GlobalMemoli.New(unsafe.Sizeof(*(datum.Key)) + unsafe.Sizeof(*(datum.Value))))
+	// if ptrValue == nil {
+	// 	return nil
+	// }
+	ptrValue := &models.InternalDatum{}
+	ptrValue.Key.Dim1 = datum.Key.Dim1
+	ptrValue.Key.Dim2 = datum.Key.Dim2
+	ptrValue.Key.Size1 = datum.Key.Size1
+	ptrValue.Key.Size2 = datum.Key.Size2
+	ptrValue.Key.Feature = datum.Key.Feature
+	ptrValue.Key.GroupLabel = datum.Key.GroupLabel
+	ptrValue.Value.Label = datum.Value.Label
+	ptrValue.Value.Version = datum.Value.Version
+	return ptrValue
 }
 
-func FreeAllocadtedDatum(datum *pb.Datum) {
-	util.GlobalMemoli.Free(unsafe.Pointer(datum.Key))
-	util.GlobalMemoli.Free(unsafe.Pointer(datum.Value))
+func InternalDatumToDatum(ptrValue *models.InternalDatum) *pb.Datum {
+	datumKey := &pb.DatumKey{
+		Dim1:       ptrValue.Key.Dim1,
+		Dim2:       ptrValue.Key.Dim2,
+		Size1:      ptrValue.Key.Size1,
+		Size2:      ptrValue.Key.Size2,
+		Feature:    ptrValue.Key.Feature,
+		GroupLabel: ptrValue.Key.GroupLabel,
+	}
+	datumValue := &pb.DatumValue{
+		Label:   ptrValue.Value.Label,
+		Version: ptrValue.Value.Version,
+	}
+	return &pb.Datum{
+		Key:   datumKey,
+		Value: datumValue,
+	}
 }
+
+// func FreeAllocadtedDatum(ptrValue *models.InternalDatum) {
+// 	util.GlobalMemoli.Free(unsafe.Pointer(ptrValue))
+// }
 
 func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	exprireAt := int64(0)
 	if config != nil && config.TTL != 0 {
 		exprireAt = time.Now().Unix() + int64(config.TTL)
 	}
-	newDatum := NewAllocadtedDatum(datum)
-	if newDatum == nil {
-		return errors.New("Running out of reserved memory")
-	}
 	entry := &DBMapEntry{
 		ExprireAt: exprireAt,
-		Datum:     newDatum,
+		Datum:     datum,
 	}
 	keyByte, err := GetKeyAsBytes(datum)
 	if err != nil {
@@ -71,9 +82,41 @@ func (dt *Data) DeleteBDMap(datum *pb.Datum) error {
 		return err
 	}
 	dt.DBMap.Delete(util.EncodeToString(keyByte))
-	FreeAllocadtedDatum(datum)
+	// FreeAllocadtedDatum(datum)
 	return nil
 }
+
+// func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
+// 	exprireAt := int64(0)
+// 	if config != nil && config.TTL != 0 {
+// 		exprireAt = time.Now().Unix() + int64(config.TTL)
+// 	}
+// 	internalDatum := NewAllocadtedDatum(datum)
+// 	if internalDatum == nil {
+// 		return errors.New("Running out of reserved memory")
+// 	}
+// 	entry := &DBMapEntry{
+// 		ExprireAt: exprireAt,
+// 		Datum:     internalDatum,
+// 	}
+// 	keyByte, err := GetInternalKeyAsBytes(internalDatum)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	dt.DBMap.Store(util.EncodeToString(keyByte), entry)
+// 	return nil
+// }
+
+// func (dt *Data) DeleteBDMap(datum *models.InternalDatum) error {
+// 	keyByte, err := GetInternalKeyAsBytes(datum)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	dt.DBMap.Delete(util.EncodeToString(keyByte))
+// 	// FreeAllocadtedDatum(datum)
+// 	return nil
+// }
 
 func (dt *Data) LoopDBMap(entryFunction func(entry *DBMapEntry) error) error {
 	var lastError error
@@ -177,12 +220,7 @@ func (dt *Data) Process(force bool) error {
 					}
 
 				}
-				feature := make([]float32, len(entry.Datum.Key.Feature))
-				copy(feature, entry.Datum.Key.Feature)
-				for i, e := range entry.Datum.Key.Feature {
-					feature[i] = e
-				}
-				newAnnoyIndex.AddItem(i, feature)
+				newAnnoyIndex.AddItem(i, entry.Datum.Key.Feature)
 				newDataIndex[i] = entry.Datum
 			}
 			if !dt.Alive || (insertionCounter < limit && rand.Float64() < fraction) {
