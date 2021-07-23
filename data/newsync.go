@@ -5,9 +5,12 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"runtime"
 	"time"
+	"unsafe"
 
 	"github.com/bgokden/veri/annoyindex"
+	"github.com/bgokden/veri/data/gencoder"
 	"github.com/bgokden/veri/models"
 	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
@@ -16,8 +19,8 @@ import (
 type DBMapEntry struct {
 	ExprireAt int64
 	// Datum     *pb.Datum
-	Key   []byte
-	Value []byte
+	Key   *[]byte
+	Value *[]byte
 }
 
 func NewAllocadtedDatum(datum *pb.Datum) *models.InternalDatum {
@@ -73,12 +76,20 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	if err != nil {
 		return err
 	}
+	keyByteAllocate := (*[]byte)(util.GlobalMemoli.New(uintptr(gencoder.SizeKey(datum.Key))))
+	*(keyByteAllocate) = keyByte
+	valueByteAllocate := (*[]byte)(util.GlobalMemoli.New(uintptr(gencoder.SizeValue(datum.Value))))
+	*(valueByteAllocate) = valueByte
 	entry := &DBMapEntry{
 		ExprireAt: exprireAt,
 		// Datum:     datum,
-		Key:   keyByte,
-		Value: valueByte,
+		Key:   keyByteAllocate,
+		Value: valueByteAllocate,
 	}
+	runtime.SetFinalizer(entry, func(e *DBMapEntry) {
+		util.GlobalMemoli.Free(unsafe.Pointer(e.Key))
+		util.GlobalMemoli.Free(unsafe.Pointer(e.Value))
+	})
 
 	dt.DBMap.Store(util.EncodeToString(keyByte), entry)
 	return nil
@@ -169,7 +180,7 @@ func (dt *Data) Process(force bool) error {
 
 		err := dt.LoopDBMap(func(entry *DBMapEntry) error {
 			n++
-			datumKey, err := ToDatumKey(entry.Key)
+			datumKey, err := ToDatumKey(*(entry.Key))
 			if err != nil {
 				return err
 			}
@@ -206,7 +217,7 @@ func (dt *Data) Process(force bool) error {
 			if !dt.Alive || (insertionCounter < limit && rand.Float64() < fraction) {
 				config := InsertConfigFromExpireAt(uint64(entry.ExprireAt))
 				if config.TTL > 10 {
-					datumValue, err := ToDatumValue(entry.Value)
+					datumValue, err := ToDatumValue(*(entry.Value))
 					if err != nil {
 						return err
 					}
