@@ -15,7 +15,9 @@ import (
 
 type DBMapEntry struct {
 	ExprireAt int64
-	Datum     *pb.Datum
+	// Datum     *pb.Datum
+	Key   []byte
+	Value []byte
 }
 
 func NewAllocadtedDatum(datum *pb.Datum) *models.InternalDatum {
@@ -63,13 +65,19 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	if config != nil && config.TTL != 0 {
 		exprireAt = time.Now().Unix() + int64(config.TTL)
 	}
-	entry := &DBMapEntry{
-		ExprireAt: exprireAt,
-		Datum:     datum,
-	}
 	keyByte, err := GetKeyAsBytes(datum)
 	if err != nil {
 		return err
+	}
+	valueByte, err := GetValueAsBytes(datum)
+	if err != nil {
+		return err
+	}
+	entry := &DBMapEntry{
+		ExprireAt: exprireAt,
+		// Datum:     datum,
+		Key:   keyByte,
+		Value: valueByte,
 	}
 
 	dt.DBMap.Store(util.EncodeToString(keyByte), entry)
@@ -85,38 +93,6 @@ func (dt *Data) DeleteBDMap(datum *pb.Datum) error {
 	// FreeAllocadtedDatum(datum)
 	return nil
 }
-
-// func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
-// 	exprireAt := int64(0)
-// 	if config != nil && config.TTL != 0 {
-// 		exprireAt = time.Now().Unix() + int64(config.TTL)
-// 	}
-// 	internalDatum := NewAllocadtedDatum(datum)
-// 	if internalDatum == nil {
-// 		return errors.New("Running out of reserved memory")
-// 	}
-// 	entry := &DBMapEntry{
-// 		ExprireAt: exprireAt,
-// 		Datum:     internalDatum,
-// 	}
-// 	keyByte, err := GetInternalKeyAsBytes(internalDatum)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	dt.DBMap.Store(util.EncodeToString(keyByte), entry)
-// 	return nil
-// }
-
-// func (dt *Data) DeleteBDMap(datum *models.InternalDatum) error {
-// 	keyByte, err := GetInternalKeyAsBytes(datum)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	dt.DBMap.Delete(util.EncodeToString(keyByte))
-// 	// FreeAllocadtedDatum(datum)
-// 	return nil
-// }
 
 func (dt *Data) LoopDBMap(entryFunction func(entry *DBMapEntry) error) error {
 	var lastError error
@@ -187,14 +163,18 @@ func (dt *Data) Process(force bool) error {
 			nFloat = 1
 		}
 		histUnit := 1 / nFloat
-		newDataIndex := make([]*pb.Datum, max(1000, int(dt.N)))
+		newDataIndex := make([]*DBMapEntry, max(1000, int(dt.N)))
 		var newAnnoyIndex annoyindex.AnnoyIndexAngular
 		var newTempFileName string
 
 		err := dt.LoopDBMap(func(entry *DBMapEntry) error {
 			n++
-			avg = CalculateAverage(avg, entry.Datum.Key.Feature, nFloat)
-			distance = VectorDistance(dt.Avg, entry.Datum.Key.Feature)
+			datumKey, err := ToDatumKey(entry.Key)
+			if err != nil {
+				return err
+			}
+			avg = CalculateAverage(avg, datumKey.Feature, nFloat)
+			distance = VectorDistance(dt.Avg, datumKey.Feature)
 			if distance > maxDistance {
 				maxDistance = distance
 			}
@@ -212,7 +192,7 @@ func (dt *Data) Process(force bool) error {
 			if dt.Alive && i < len(newDataIndex) {
 				if newAnnoyIndex == nil {
 					// newAnnoyIndex = annoyindex.NewAnnoyIndexEuclidean(len(datum.Key.Feature))
-					newAnnoyIndex = annoyindex.NewAnnoyIndexAngular(len(entry.Datum.Key.Feature))
+					newAnnoyIndex = annoyindex.NewAnnoyIndexAngular(len(datumKey.Feature))
 					tmpfile, err := ioutil.TempFile("", "annoy")
 					if err == nil {
 						newTempFileName = tmpfile.Name()
@@ -220,14 +200,21 @@ func (dt *Data) Process(force bool) error {
 					}
 
 				}
-				newAnnoyIndex.AddItem(i, entry.Datum.Key.Feature)
-				newDataIndex[i] = entry.Datum
+				newAnnoyIndex.AddItem(i, datumKey.Feature)
+				newDataIndex[i] = entry
 			}
 			if !dt.Alive || (insertionCounter < limit && rand.Float64() < fraction) {
 				config := InsertConfigFromExpireAt(uint64(entry.ExprireAt))
 				if config.TTL > 10 {
+					datumValue, err := ToDatumValue(entry.Value)
+					if err != nil {
+						return err
+					}
 					datumStream <- &pb.InsertDatumWithConfig{
-						Datum:  entry.Datum,
+						Datum: &pb.Datum{
+							Key:   datumKey,
+							Value: datumValue,
+						},
 						Config: config,
 					}
 					insertionCounter++
