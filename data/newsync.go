@@ -78,8 +78,9 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	if err != nil {
 		return err
 	}
-	keySize := uintptr(gencoder.SizeKey(datum.Key)) + unsafe.Sizeof([]byte{})
-	valueSize := uintptr(gencoder.SizeValue(datum.Value)) + unsafe.Sizeof([]byte{})
+	buffer := uintptr(100)
+	keySize := uintptr(gencoder.SizeKey(datum.Key)) + unsafe.Sizeof([]byte{}) + buffer
+	valueSize := uintptr(gencoder.SizeValue(datum.Value)) + unsafe.Sizeof([]byte{}) + buffer
 	keyByteAllocate := (*[]byte)(util.GlobalMemoli.New(keySize))
 	*(keyByteAllocate) = keyByte
 	valueByteAllocate := (*[]byte)(util.GlobalMemoli.New(valueSize))
