@@ -80,7 +80,7 @@ func TestGlobalMemoli(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		slicePtr := arrayBackedByMmap[i]
-		util.GlobalMemoli.Free(unsafe.Pointer(slicePtr))
+		util.GlobalMemoli.Free(unsafe.Pointer(slicePtr), unsafe.Sizeof(slicePtr))
 	}
 
 	for i := 20; i < 20+testN; i++ {

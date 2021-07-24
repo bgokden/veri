@@ -126,9 +126,9 @@ func TestData2(t *testing.T) {
 	config := data.DefaultSearchConfig()
 	config.ScoreFuncName = "AnnoyAngularDistance"
 	config.HigherIsBetter = true
-	config.Limit = 10
+	config.Limit = 15
 	collector := dt.SearchAnnoy(datum, config)
-	resultLabelList := make([]string, 10)
+	resultLabelList := make([]string, config.Limit)
 	for i, e := range collector.List {
 		log.Printf("label: %v score: %v\n", string(e.Datum.Value.Label), e.Score)
 		keyByte, _ := data.GetKeyAsBytes(e.Datum)
