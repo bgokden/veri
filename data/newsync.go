@@ -5,12 +5,12 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"reflect"
 	"runtime"
 	"time"
 	"unsafe"
 
 	"github.com/bgokden/veri/annoyindex"
-	"github.com/bgokden/veri/data/gencoder"
 	"github.com/bgokden/veri/models"
 	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
@@ -79,8 +79,8 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 		return err
 	}
 	buffer := uintptr(100)
-	keySize := uintptr(gencoder.SizeKey(datum.Key)) + unsafe.Sizeof([]byte{}) + buffer
-	valueSize := uintptr(gencoder.SizeValue(datum.Value)) + unsafe.Sizeof([]byte{}) + buffer
+	keySize := uintptr(len(keyByte))*reflect.TypeOf(keyByte).Elem().Size() + unsafe.Sizeof([]byte{}) + buffer
+	valueSize := uintptr(len(valueByte))*reflect.TypeOf(valueByte).Elem().Size() + unsafe.Sizeof([]byte{}) + buffer
 	keyByteAllocate := (*[]byte)(util.GlobalMemoli.New(keySize))
 	*(keyByteAllocate) = keyByte
 	valueByteAllocate := (*[]byte)(util.GlobalMemoli.New(valueSize))
