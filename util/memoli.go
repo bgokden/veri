@@ -156,8 +156,9 @@ func (m *Memoli) New(size uintptr) unsafe.Pointer {
 	return nil
 }
 
-func (m *Memoli) Free(ptr unsafe.Pointer) {
-	size := unsafe.Sizeof(ptr)
+func (m *Memoli) Free(ptr unsafe.Pointer, size uintptr) {
+	// size := unsafe.Sizeof(ptr)
+	// log.Printf("Size: %v\n", size)
 	if maInterface, ok := m.ArenaMap.Load(m.ArenaKey(size)); ok {
 		if ma, ok2 := maInterface.(*MemoliArena); ok2 {
 			ma.Free(ptr)

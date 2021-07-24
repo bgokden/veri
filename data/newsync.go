@@ -19,8 +19,10 @@ import (
 type DBMapEntry struct {
 	ExprireAt int64
 	// Datum     *pb.Datum
-	Key   *[]byte
-	Value *[]byte
+	Key       *[]byte
+	KeySize   uintptr
+	Value     *[]byte
+	ValueSize uintptr
 }
 
 func NewAllocadtedDatum(datum *pb.Datum) *models.InternalDatum {
@@ -76,19 +78,24 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	if err != nil {
 		return err
 	}
-	keyByteAllocate := (*[]byte)(util.GlobalMemoli.New(uintptr(gencoder.SizeKey(datum.Key))))
+	keySize := uintptr(gencoder.SizeKey(datum.Key)) + unsafe.Sizeof([]byte{})
+	valueSize := uintptr(gencoder.SizeValue(datum.Value)) + unsafe.Sizeof([]byte{})
+	keyByteAllocate := (*[]byte)(util.GlobalMemoli.New(keySize))
 	*(keyByteAllocate) = keyByte
-	valueByteAllocate := (*[]byte)(util.GlobalMemoli.New(uintptr(gencoder.SizeValue(datum.Value))))
+	valueByteAllocate := (*[]byte)(util.GlobalMemoli.New(valueSize))
 	*(valueByteAllocate) = valueByte
 	entry := &DBMapEntry{
 		ExprireAt: exprireAt,
 		// Datum:     datum,
-		Key:   keyByteAllocate,
-		Value: valueByteAllocate,
+		Key:       keyByteAllocate,
+		KeySize:   keySize,
+		Value:     valueByteAllocate,
+		ValueSize: valueSize,
 	}
+
 	runtime.SetFinalizer(entry, func(e *DBMapEntry) {
-		util.GlobalMemoli.Free(unsafe.Pointer(e.Key))
-		util.GlobalMemoli.Free(unsafe.Pointer(e.Value))
+		util.GlobalMemoli.Free(unsafe.Pointer(e.Key), e.KeySize)
+		util.GlobalMemoli.Free(unsafe.Pointer(e.Value), e.ValueSize)
 	})
 
 	dt.DBMap.Store(util.EncodeToString(keyByte), entry)
