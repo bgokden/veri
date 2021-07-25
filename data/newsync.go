@@ -94,7 +94,7 @@ func (dt *Data) Process(force bool) error {
 	localInfo := dt.GetDataInfo()
 	localN := localInfo.N
 	transferLimit := localInfo.N / 10 // this is arbitary
-	if (getCurrentTime()-dt.Timestamp >= 60 && (atomic.LoadUint64(&(dt.RecentInsertCount)) > 0 || limit > transferLimit)) || force {
+	if (getCurrentTime()-dt.LastRunTimestamp >= 60 && (atomic.LoadUint64(&(dt.RecentInsertCount)) > 0 || limit > transferLimit)) || force {
 		atomic.StoreUint64(&(dt.RecentInsertCount), 0)
 		config := dt.GetConfig()
 		datumStream := make(chan *pb.InsertDatumWithConfig, limit)
@@ -196,7 +196,7 @@ func (dt *Data) Process(force bool) error {
 		dt.Hist = hist
 		dt.MaxDistance = maxDistance
 		dt.N = n
-		dt.Timestamp = getCurrentTime()
+		dt.LastRunTimestamp = getCurrentTime()
 		if newAnnoyIndex != nil {
 			start := time.Now()
 			newAnnoyIndex.Build(-1) // Previosly 10, -1 creates index dynamically
