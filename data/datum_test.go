@@ -15,10 +15,10 @@ func TestDatum(t *testing.T) {
 	valueByte, err := data.GetValueAsBytes(datum)
 	assert.Nil(t, err)
 
-	key2, err := data.ToDatumKey(keyByte)
+	key2, err := data.ToDatumKey(&keyByte)
 	assert.Nil(t, err)
 	assert.Equal(t, datum.Key, key2)
-	value2, err := data.ToDatumValue(valueByte)
+	value2, err := data.ToDatumValue(&valueByte)
 	assert.Nil(t, err)
 	assert.Equal(t, datum.Value, value2)
 

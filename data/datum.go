@@ -114,7 +114,7 @@ func GetValueAsBytes(datum *pb.Datum) ([]byte, error) {
 	return gencoder.MarshalValue(datum.Value)
 }
 
-func ToDatumKey(byteArray []byte) (*pb.DatumKey, error) {
+func ToDatumKey(byteArray *[]byte) (*pb.DatumKey, error) {
 	var element pb.DatumKey
 	_, err := gencoder.UnmarshalKey(&element, byteArray)
 	if err != nil {
@@ -123,7 +123,7 @@ func ToDatumKey(byteArray []byte) (*pb.DatumKey, error) {
 	return &element, nil
 }
 
-func ToDatumValue(byteArray []byte) (*pb.DatumValue, error) {
+func ToDatumValue(byteArray *[]byte) (*pb.DatumValue, error) {
 	var element pb.DatumValue
 	_, err := gencoder.UnmarshalValue(&element, byteArray)
 	if err != nil {
@@ -133,11 +133,11 @@ func ToDatumValue(byteArray []byte) (*pb.DatumValue, error) {
 }
 
 func ToDatum(key, value []byte) (*pb.Datum, error) {
-	keyP, err := ToDatumKey(key)
+	keyP, err := ToDatumKey(&key)
 	if err != nil {
 		return nil, err
 	}
-	valueP, err := ToDatumValue(value)
+	valueP, err := ToDatumValue(&value)
 	if err != nil {
 		return nil, err
 	}

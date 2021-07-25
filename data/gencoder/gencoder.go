@@ -275,7 +275,7 @@ func MarshalKeyWith(d *pb.DatumKey, buf *[]byte) ([]byte, error) {
 	return (*buf)[:i+16], nil
 }
 
-func UnmarshalKey(d *pb.DatumKey, buf []byte) (uint64, error) {
+func UnmarshalKey(d *pb.DatumKey, buf *[]byte) (uint64, error) {
 	i := uint64(0)
 
 	{
@@ -284,10 +284,10 @@ func UnmarshalKey(d *pb.DatumKey, buf []byte) (uint64, error) {
 		{
 
 			bs := uint8(7)
-			t := uint64(buf[i+0] & 0x7F)
-			for buf[i+0]&0x80 == 0x80 {
+			t := uint64((*buf)[i+0] & 0x7F)
+			for (*buf)[i+0]&0x80 == 0x80 {
 				i++
-				t |= uint64(buf[i+0]&0x7F) << bs
+				t |= uint64((*buf)[i+0]&0x7F) << bs
 				bs += 7
 			}
 			i++
@@ -304,7 +304,7 @@ func UnmarshalKey(d *pb.DatumKey, buf []byte) (uint64, error) {
 
 			{
 
-				v := 0 | (uint32(buf[i+0+0]) << 0) | (uint32(buf[i+1+0]) << 8) | (uint32(buf[i+2+0]) << 16) | (uint32(buf[i+3+0]) << 24)
+				v := 0 | (uint32((*buf)[i+0+0]) << 0) | (uint32((*buf)[i+1+0]) << 8) | (uint32((*buf)[i+2+0]) << 16) | (uint32((*buf)[i+3+0]) << 24)
 				d.Feature[k0] = *(*float32)(unsafe.Pointer(&v))
 
 			}
@@ -319,10 +319,10 @@ func UnmarshalKey(d *pb.DatumKey, buf []byte) (uint64, error) {
 		{
 
 			bs := uint8(7)
-			t := uint64(buf[i+0] & 0x7F)
-			for buf[i+0]&0x80 == 0x80 {
+			t := uint64((*buf)[i+0] & 0x7F)
+			for (*buf)[i+0]&0x80 == 0x80 {
 				i++
-				t |= uint64(buf[i+0]&0x7F) << bs
+				t |= uint64((*buf)[i+0]&0x7F) << bs
 				bs += 7
 			}
 			i++
@@ -335,27 +335,27 @@ func UnmarshalKey(d *pb.DatumKey, buf []byte) (uint64, error) {
 		} else {
 			d.GroupLabel = make([]byte, l)
 		}
-		copy(d.GroupLabel, buf[i+0:])
+		copy(d.GroupLabel, (*buf)[i+0:])
 		i += l
 	}
 	{
 
-		d.Size1 = 0 | (uint32(buf[i+0+0]) << 0) | (uint32(buf[i+1+0]) << 8) | (uint32(buf[i+2+0]) << 16) | (uint32(buf[i+3+0]) << 24)
+		d.Size1 = 0 | (uint32((*buf)[i+0+0]) << 0) | (uint32((*buf)[i+1+0]) << 8) | (uint32((*buf)[i+2+0]) << 16) | (uint32((*buf)[i+3+0]) << 24)
 
 	}
 	{
 
-		d.Size2 = 0 | (uint32(buf[i+0+4]) << 0) | (uint32(buf[i+1+4]) << 8) | (uint32(buf[i+2+4]) << 16) | (uint32(buf[i+3+4]) << 24)
+		d.Size2 = 0 | (uint32((*buf)[i+0+4]) << 0) | (uint32((*buf)[i+1+4]) << 8) | (uint32((*buf)[i+2+4]) << 16) | (uint32((*buf)[i+3+4]) << 24)
 
 	}
 	{
 
-		d.Dim1 = 0 | (uint32(buf[i+0+8]) << 0) | (uint32(buf[i+1+8]) << 8) | (uint32(buf[i+2+8]) << 16) | (uint32(buf[i+3+8]) << 24)
+		d.Dim1 = 0 | (uint32((*buf)[i+0+8]) << 0) | (uint32((*buf)[i+1+8]) << 8) | (uint32((*buf)[i+2+8]) << 16) | (uint32((*buf)[i+3+8]) << 24)
 
 	}
 	{
 
-		d.Dim2 = 0 | (uint32(buf[i+0+12]) << 0) | (uint32(buf[i+1+12]) << 8) | (uint32(buf[i+2+12]) << 16) | (uint32(buf[i+3+12]) << 24)
+		d.Dim2 = 0 | (uint32((*buf)[i+0+12]) << 0) | (uint32((*buf)[i+1+12]) << 8) | (uint32((*buf)[i+2+12]) << 16) | (uint32((*buf)[i+3+12]) << 24)
 
 	}
 	return i + 16, nil
@@ -482,12 +482,12 @@ func MarshalValueWith(d *pb.DatumValue, buf *[]byte) ([]byte, error) {
 	return (*buf)[:i+8], nil
 }
 
-func UnmarshalValue(d *pb.DatumValue, buf []byte) (uint64, error) {
+func UnmarshalValue(d *pb.DatumValue, buf *[]byte) (uint64, error) {
 	i := uint64(0)
 
 	{
 
-		d.Version = 0 | (uint64(buf[i+0+0]) << 0) | (uint64(buf[i+1+0]) << 8) | (uint64(buf[i+2+0]) << 16) | (uint64(buf[i+3+0]) << 24) | (uint64(buf[i+4+0]) << 32) | (uint64(buf[i+5+0]) << 40) | (uint64(buf[i+6+0]) << 48) | (uint64(buf[i+7+0]) << 56)
+		d.Version = 0 | (uint64((*buf)[i+0+0]) << 0) | (uint64((*buf)[i+1+0]) << 8) | (uint64((*buf)[i+2+0]) << 16) | (uint64((*buf)[i+3+0]) << 24) | (uint64((*buf)[i+4+0]) << 32) | (uint64((*buf)[i+5+0]) << 40) | (uint64((*buf)[i+6+0]) << 48) | (uint64((*buf)[i+7+0]) << 56)
 
 	}
 	{
@@ -496,10 +496,10 @@ func UnmarshalValue(d *pb.DatumValue, buf []byte) (uint64, error) {
 		{
 
 			bs := uint8(7)
-			t := uint64(buf[i+8] & 0x7F)
-			for buf[i+8]&0x80 == 0x80 {
+			t := uint64((*buf)[i+8] & 0x7F)
+			for (*buf)[i+8]&0x80 == 0x80 {
 				i++
-				t |= uint64(buf[i+8]&0x7F) << bs
+				t |= uint64((*buf)[i+8]&0x7F) << bs
 				bs += 7
 			}
 			i++
@@ -512,7 +512,7 @@ func UnmarshalValue(d *pb.DatumValue, buf []byte) (uint64, error) {
 		} else {
 			d.Label = make([]byte, l)
 		}
-		copy(d.Label, buf[i+8:])
+		copy(d.Label, (*buf)[i+8:])
 		i += l
 	}
 	return i + 8, nil
