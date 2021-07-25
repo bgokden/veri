@@ -1,6 +1,8 @@
 package data
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -79,8 +81,13 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	// if err != nil {
 	// 	return err
 	// }
-	keySize := uintptr(10e3)
-	valueSize := uintptr(10e3)
+
+	keySize := uintptr(10e4)
+	encodedKeySize := gencoder.SizeKey(datum.Key)
+	if encodedKeySize > 10e4 {
+		return errors.New(fmt.Sprintf("Key Size is larger than 10k %v", encodedKeySize))
+	}
+	valueSize := uintptr(10e4)
 	keyByteAllocate := (*[]byte)(util.GlobalMemoli.New(keySize))
 	*keyByteAllocate = make([]byte, keySize)
 	_, err := gencoder.MarshalKeyWith(datum.Key, keyByteAllocate)
@@ -196,7 +203,7 @@ func (dt *Data) Process(force bool) error {
 
 		err := dt.LoopDBMap(func(entry *DBMapEntry) error {
 			n++
-			datumKey, err := ToDatumKey(*(entry.Key))
+			datumKey, err := ToDatumKey((entry.Key))
 			if err != nil {
 				return err
 			}
@@ -233,7 +240,7 @@ func (dt *Data) Process(force bool) error {
 			if !dt.Alive || (insertionCounter < limit && rand.Float64() < fraction) {
 				config := InsertConfigFromExpireAt(uint64(entry.ExprireAt))
 				if config.TTL > 10 {
-					datumValue, err := ToDatumValue(*(entry.Value))
+					datumValue, err := ToDatumValue((entry.Value))
 					if err != nil {
 						return err
 					}

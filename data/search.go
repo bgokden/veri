@@ -494,8 +494,8 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 			for i := 0; i < len(result); i++ {
 				datumEntry := index[result[i]]
 				if datumEntry != nil {
-					datumKey, _ := ToDatumKey(*(datumEntry.Key))
-					datumValue, _ := ToDatumValue(*(datumEntry.Value))
+					datumKey, _ := ToDatumKey((datumEntry.Key))
+					datumValue, _ := ToDatumValue((datumEntry.Value))
 					datumE := &pb.Datum{
 						Key:   datumKey,
 						Value: datumValue,
