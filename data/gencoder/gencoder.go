@@ -161,6 +161,120 @@ func MarshalKey(d *pb.DatumKey) ([]byte, error) {
 	return buf[:i+16], nil
 }
 
+func MarshalKeyWith(d *pb.DatumKey, buf *[]byte) ([]byte, error) {
+	// size := SizeKey(d)
+	// buf := make([]byte, size)
+	// {
+	// 	if uint64(cap(buf)) >= size {
+	// buf = buf[:size]
+	// 	} else {
+	// 		return nil, errors.New(fmt.Sprintf("Key Allocation error size: %v , uint64(cap(buf)): %v", size, uint64(cap(buf))))
+	// 	}
+	// }
+	i := uint64(0)
+
+	{
+		l := uint64(len(d.Feature))
+
+		{
+
+			t := uint64(l)
+
+			for t >= 0x80 {
+				(*buf)[i+0] = byte(t) | 0x80
+				t >>= 7
+				i++
+			}
+			(*buf)[i+0] = byte(t)
+			i++
+
+		}
+		for k0 := range d.Feature {
+
+			{
+
+				v := *(*uint32)(unsafe.Pointer(&(d.Feature[k0])))
+
+				(*buf)[i+0+0] = byte(v >> 0)
+
+				(*buf)[i+1+0] = byte(v >> 8)
+
+				(*buf)[i+2+0] = byte(v >> 16)
+
+				(*buf)[i+3+0] = byte(v >> 24)
+
+			}
+
+			i += 4
+
+		}
+	}
+	{
+		l := uint64(len(d.GroupLabel))
+
+		{
+
+			t := uint64(l)
+
+			for t >= 0x80 {
+				(*buf)[i+0] = byte(t) | 0x80
+				t >>= 7
+				i++
+			}
+			(*buf)[i+0] = byte(t)
+			i++
+
+		}
+		copy((*buf)[i+0:], d.GroupLabel)
+		i += l
+	}
+	{
+
+		(*buf)[i+0+0] = byte(d.Size1 >> 0)
+
+		(*buf)[i+1+0] = byte(d.Size1 >> 8)
+
+		(*buf)[i+2+0] = byte(d.Size1 >> 16)
+
+		(*buf)[i+3+0] = byte(d.Size1 >> 24)
+
+	}
+	{
+
+		(*buf)[i+0+4] = byte(d.Size2 >> 0)
+
+		(*buf)[i+1+4] = byte(d.Size2 >> 8)
+
+		(*buf)[i+2+4] = byte(d.Size2 >> 16)
+
+		(*buf)[i+3+4] = byte(d.Size2 >> 24)
+
+	}
+	{
+
+		(*buf)[i+0+8] = byte(d.Dim1 >> 0)
+
+		(*buf)[i+1+8] = byte(d.Dim1 >> 8)
+
+		(*buf)[i+2+8] = byte(d.Dim1 >> 16)
+
+		(*buf)[i+3+8] = byte(d.Dim1 >> 24)
+
+	}
+	{
+
+		(*buf)[i+0+12] = byte(d.Dim2 >> 0)
+
+		(*buf)[i+1+12] = byte(d.Dim2 >> 8)
+
+		(*buf)[i+2+12] = byte(d.Dim2 >> 16)
+
+		(*buf)[i+3+12] = byte(d.Dim2 >> 24)
+
+	}
+	return (*buf)[:i+16], nil
+}
+
 func UnmarshalKey(d *pb.DatumKey, buf []byte) (uint64, error) {
 	i := uint64(0)
 
@@ -313,6 +427,59 @@ func MarshalValue(d *pb.DatumValue) ([]byte, error) {
 		i += l
 	}
 	return buf[:i+8], nil
+}
+
+func MarshalValueWith(d *pb.DatumValue, buf *[]byte) ([]byte, error) {
+	//size := SizeValue(d)
+	// buf := make([]byte, size)
+	// {
+	// 	if uint64(cap(buf)) >= size {
+	// 		buf = buf[:size]
+	// 	} else {
+	// 		return nil, errors.New(fmt.Sprintf("Value Allocation error size: %v , uint64(cap(buf)): %v", size, uint64(cap(buf))))
+	// 	}
+	// }
+	i := uint64(0)
+
+	{
+
+		(*buf)[0+0] = byte(d.Version >> 0)
+
+		(*buf)[1+0] = byte(d.Version >> 8)
+
+		(*buf)[2+0] = byte(d.Version >> 16)
+
+		(*buf)[3+0] = byte(d.Version >> 24)
+
+		(*buf)[4+0] = byte(d.Version >> 32)
+
+		(*buf)[5+0] = byte(d.Version >> 40)
+
+		(*buf)[6+0] = byte(d.Version >> 48)
+
+		(*buf)[7+0] = byte(d.Version >> 56)
+
+	}
+	{
+		l := uint64(len(d.Label))
+
+		{
+
+			t := uint64(l)
+
+			for t >= 0x80 {
+				(*buf)[i+8] = byte(t) | 0x80
+				t >>= 7
+				i++
+			}
+			(*buf)[i+8] = byte(t)
+			i++
+
+		}
+		copy((*buf)[i+8:], d.Label)
+		i += l
+	}
+	return (*buf)[:i+8], nil
 }
 
 func UnmarshalValue(d *pb.DatumValue, buf []byte) (uint64, error) {
