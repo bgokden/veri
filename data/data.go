@@ -34,23 +34,23 @@ type Annoyer struct {
 // Data represents a dataset with similar struture
 type Data struct {
 	sync.RWMutex
-	Config      *pb.DataConfig
-	Path        string
-	Avg         []float32
-	N           uint64
-	MaxDistance float64
-	Hist        []float32
-	Timestamp   uint64
-	// DB          *badger.DB
-	DBPath      string
-	Dirty       bool
-	Sources     *cache.Cache
-	QueryCache  *cache.Cache
-	Initialized bool
-	Alive       bool
-	Annoyer     Annoyer
-	Runs        int32
-	DBMap       sync.Map
+	Config            *pb.DataConfig
+	Path              string
+	Avg               []float32
+	N                 uint64
+	MaxDistance       float64
+	Hist              []float32
+	Timestamp         uint64
+	DBPath            string
+	Dirty             bool
+	Sources           *cache.Cache
+	QueryCache        *cache.Cache
+	Initialized       bool
+	Alive             bool
+	Annoyer           Annoyer
+	Runs              int32
+	DBMap             sync.Map
+	RecentInsertCount uint64
 }
 
 func (d *Data) GetConfig() *pb.DataConfig {
@@ -73,6 +73,7 @@ func NewPreData(config *pb.DataConfig, dataPath string) *Data {
 	dt := &Data{
 		Config: config,
 	}
+	atomic.StoreUint64(&(dt.RecentInsertCount), 0)
 	// log.Printf("Pre Create Data %v\n", dt.Config)
 	dt.DBPath = path.Join(dataPath, config.Name)
 	return dt

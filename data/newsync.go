@@ -1,19 +1,27 @@
 package data
 
 import (
+	"bytes"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/bgokden/veri/annoyindex"
+	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
 )
 
 type DBMapEntry struct {
 	ExprireAt int64
 	Datum     *pb.Datum
+}
+
+func CloseEnough(a, b int64) bool {
+	c := a - b
+	return c < 10 && c > -10
 }
 
 func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
@@ -29,7 +37,27 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	if err != nil {
 		return err
 	}
-	dt.DBMap.Store(string(keyByte), entry)
+	mapKey := util.EncodeToString(keyByte)
+	isNewEntry := true // calulcation of this a bit expensive but it limit the runs
+	if oldEntryInfterface, ok := dt.DBMap.Load(mapKey); ok {
+		if oldEntry, ok2 := oldEntryInfterface.(*DBMapEntry); ok2 && oldEntry != nil && oldEntry.Datum != nil {
+			valueByte, err := GetValueAsBytes(datum)
+			if err != nil {
+				return err
+			}
+			oldValueByte, err := GetValueAsBytes(oldEntry.Datum)
+			if err != nil {
+				return err
+			}
+			if bytes.Compare(valueByte, oldValueByte) == 0 && CloseEnough(entry.ExprireAt, oldEntry.ExprireAt) {
+				isNewEntry = false
+			}
+		}
+	}
+	if isNewEntry {
+		dt.DBMap.Store(mapKey, entry)
+		atomic.AddUint64(&(dt.RecentInsertCount), 1)
+	}
 	return nil
 }
 
@@ -62,11 +90,13 @@ func (dt *Data) LoopDBMap(entryFunction func(entry *DBMapEntry) error) error {
 }
 
 func (dt *Data) Process(force bool) error {
-	if getCurrentTime()-dt.Timestamp >= 60 || force {
-		localInfo := dt.GetDataInfo()
-		localN := localInfo.N
+	diffMap, limit := dt.DataSourceDiffMap()
+	localInfo := dt.GetDataInfo()
+	localN := localInfo.N
+	transferLimit := localInfo.N / 10 // this is arbitary
+	if (getCurrentTime()-dt.Timestamp >= 60 && (atomic.LoadUint64(&(dt.RecentInsertCount)) > 0 || limit > transferLimit)) || force {
+		atomic.StoreUint64(&(dt.RecentInsertCount), 0)
 		config := dt.GetConfig()
-		diffMap, limit := dt.DataSourceDiffMap()
 		datumStream := make(chan *pb.InsertDatumWithConfig, limit)
 		defer close(datumStream)
 		insertionCounter := uint64(0)
@@ -188,6 +218,7 @@ func (dt *Data) Process(force bool) error {
 			}
 		}
 	}
+	dt.Timestamp = getCurrentTime()
 	dt.Dirty = false
 	return nil
 }
