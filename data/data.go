@@ -41,6 +41,7 @@ type Data struct {
 	MaxDistance       float64
 	Hist              []float32
 	Timestamp         uint64
+	LastRunTimestamp  uint64
 	DBPath            string
 	Dirty             bool
 	Sources           *cache.Cache
