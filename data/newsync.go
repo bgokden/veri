@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/bgokden/veri/annoyindex"
@@ -30,6 +31,7 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 		return err
 	}
 	dt.DBMap.Store(string(keyByte), entry)
+	atomic.AddUint64(&(dt.RecentInsertCount), 1)
 	return nil
 }
 
@@ -62,11 +64,13 @@ func (dt *Data) LoopDBMap(entryFunction func(entry *DBMapEntry) error) error {
 }
 
 func (dt *Data) Process(force bool) error {
-	if getCurrentTime()-dt.Timestamp >= 60 || force {
-		localInfo := dt.GetDataInfo()
-		localN := localInfo.N
+	diffMap, limit := dt.DataSourceDiffMap()
+	localInfo := dt.GetDataInfo()
+	localN := localInfo.N
+	transferLimit := localInfo.N / 10 // this is arbitary
+	if (getCurrentTime()-dt.Timestamp >= 60 && (atomic.LoadUint64(&(dt.RecentInsertCount)) > 0 || limit > transferLimit)) || force {
+		atomic.StoreUint64(&(dt.RecentInsertCount), 0)
 		config := dt.GetConfig()
-		diffMap, limit := dt.DataSourceDiffMap()
 		datumStream := make(chan *pb.InsertDatumWithConfig, limit)
 		defer close(datumStream)
 		insertionCounter := uint64(0)
@@ -188,6 +192,7 @@ func (dt *Data) Process(force bool) error {
 			}
 		}
 	}
+	dt.Timestamp = getCurrentTime()
 	dt.Dirty = false
 	return nil
 }
