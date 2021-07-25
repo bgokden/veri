@@ -5,12 +5,12 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"reflect"
 	"runtime"
 	"time"
 	"unsafe"
 
 	"github.com/bgokden/veri/annoyindex"
+	"github.com/bgokden/veri/data/gencoder"
 	"github.com/bgokden/veri/models"
 	"github.com/bgokden/veri/util"
 	pb "github.com/bgokden/veri/veriservice"
@@ -70,21 +70,29 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	if config != nil && config.TTL != 0 {
 		exprireAt = time.Now().Unix() + int64(config.TTL)
 	}
-	keyByte, err := GetKeyAsBytes(datum)
-	if err != nil {
-		return err
-	}
-	valueByte, err := GetValueAsBytes(datum)
-	if err != nil {
-		return err
-	}
-	buffer := uintptr(100)
-	keySize := uintptr(len(keyByte))*reflect.TypeOf(keyByte).Elem().Size() + unsafe.Sizeof([]byte{}) + buffer
-	valueSize := uintptr(len(valueByte))*reflect.TypeOf(valueByte).Elem().Size() + unsafe.Sizeof([]byte{}) + buffer
+
+	// keyByte, err := GetKeyAsBytes(datum)
+	// if err != nil {
+	// 	return err
+	// }
+	// valueByte, err := GetValueAsBytes(datum)
+	// if err != nil {
+	// 	return err
+	// }
+	keySize := uintptr(10e3)
+	valueSize := uintptr(10e3)
 	keyByteAllocate := (*[]byte)(util.GlobalMemoli.New(keySize))
-	*(keyByteAllocate) = keyByte
+	*keyByteAllocate = make([]byte, keySize)
+	_, err := gencoder.MarshalKeyWith(datum.Key, keyByteAllocate)
+	if err != nil {
+		return err
+	}
 	valueByteAllocate := (*[]byte)(util.GlobalMemoli.New(valueSize))
-	*(valueByteAllocate) = valueByte
+	*valueByteAllocate = make([]byte, valueSize)
+	_, err = gencoder.MarshalValueWith(datum.Value, keyByteAllocate)
+	if err != nil {
+		return err
+	}
 	entry := &DBMapEntry{
 		ExprireAt: exprireAt,
 		// Datum:     datum,
@@ -99,7 +107,7 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 		util.GlobalMemoli.Free(unsafe.Pointer(e.Value), e.ValueSize)
 	})
 
-	dt.DBMap.Store(util.EncodeToString(keyByte), entry)
+	dt.DBMap.Store(util.EncodeToString(*keyByteAllocate), entry)
 	return nil
 }
 
