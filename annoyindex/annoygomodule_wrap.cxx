@@ -246,7 +246,7 @@ static void* Swig_malloc(int c) {
 extern "C" {
 #endif
 
-void _wrap_Swig_free_annoyindex_270be72e18d030db(void *_swig_go_0) {
+void _wrap_Swig_free_annoyindex_2832eef9f6555f92(void *_swig_go_0) {
   void *arg1 = (void *) 0 ;
   
   arg1 = *(void **)&_swig_go_0; 
@@ -256,7 +256,7 @@ void _wrap_Swig_free_annoyindex_270be72e18d030db(void *_swig_go_0) {
 }
 
 
-void *_wrap_Swig_malloc_annoyindex_270be72e18d030db(intgo _swig_go_0) {
+void *_wrap_Swig_malloc_annoyindex_2832eef9f6555f92(intgo _swig_go_0) {
   int arg1 ;
   void *result = 0 ;
   void *_swig_go_result;
@@ -269,7 +269,7 @@ void *_wrap_Swig_malloc_annoyindex_270be72e18d030db(intgo _swig_go_0) {
 }
 
 
-void _wrap_delete_AnnoyIndex_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0) {
+void _wrap_delete_AnnoyIndex_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndex **)&_swig_go_0; 
@@ -279,7 +279,7 @@ void _wrap_delete_AnnoyIndex_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_s
 }
 
 
-void _wrap_AnnoyIndex_addItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
+void _wrap_AnnoyIndex_addItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   int arg2 ;
   float *arg3 = (float *) 0 ;
@@ -301,7 +301,7 @@ void _wrap_AnnoyIndex_addItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_
 }
 
 
-void _wrap_AnnoyIndex_build_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1) {
+void _wrap_AnnoyIndex_build_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   int arg2 ;
   
@@ -313,7 +313,7 @@ void _wrap_AnnoyIndex_build_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_sw
 }
 
 
-bool _wrap_AnnoyIndex_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndex_save__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -336,7 +336,7 @@ bool _wrap_AnnoyIndex_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyInd
 }
 
 
-bool _wrap_AnnoyIndex_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndex_save__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -357,7 +357,7 @@ bool _wrap_AnnoyIndex_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyInd
 }
 
 
-void _wrap_AnnoyIndex_unload_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0) {
+void _wrap_AnnoyIndex_unload_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndex **)&_swig_go_0; 
@@ -367,7 +367,7 @@ void _wrap_AnnoyIndex_unload_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_s
 }
 
 
-bool _wrap_AnnoyIndex_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndex_load__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -390,7 +390,7 @@ bool _wrap_AnnoyIndex_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyInd
 }
 
 
-bool _wrap_AnnoyIndex_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndex_load__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -411,7 +411,7 @@ bool _wrap_AnnoyIndex_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyInd
 }
 
 
-float _wrap_AnnoyIndex_getDistance_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
+float _wrap_AnnoyIndex_getDistance_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -428,7 +428,7 @@ float _wrap_AnnoyIndex_getDistance_annoyindex_270be72e18d030db(GoAnnoy::AnnoyInd
 }
 
 
-void _wrap_AnnoyIndex_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndex_getNnsByItem__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -478,7 +478,7 @@ void _wrap_AnnoyIndex_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::
 }
 
 
-void _wrap_AnnoyIndex_getNnsByVector__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndex_getNnsByVector__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -536,7 +536,7 @@ void _wrap_AnnoyIndex_getNnsByVector__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy
 }
 
 
-void _wrap_AnnoyIndex_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndex_getNnsByItem__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -569,7 +569,7 @@ void _wrap_AnnoyIndex_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::
 }
 
 
-void _wrap_AnnoyIndex_getNnsByVector__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndex_getNnsByVector__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -610,7 +610,7 @@ void _wrap_AnnoyIndex_getNnsByVector__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy
 }
 
 
-intgo _wrap_AnnoyIndex_getNItems_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0) {
+intgo _wrap_AnnoyIndex_getNItems_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -623,7 +623,7 @@ intgo _wrap_AnnoyIndex_getNItems_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex
 }
 
 
-void _wrap_AnnoyIndex_verbose_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, bool _swig_go_1) {
+void _wrap_AnnoyIndex_verbose_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, bool _swig_go_1) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   bool arg2 ;
   
@@ -635,7 +635,7 @@ void _wrap_AnnoyIndex_verbose_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_
 }
 
 
-void _wrap_AnnoyIndex_getItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
+void _wrap_AnnoyIndex_getItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   int arg2 ;
   vector< float > *arg3 = (vector< float > *) 0 ;
@@ -664,7 +664,7 @@ void _wrap_AnnoyIndex_getItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_
 }
 
 
-bool _wrap_AnnoyIndex_onDiskBuild_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndex_onDiskBuild_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndex *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndex *arg1 = (GoAnnoy::AnnoyIndex *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -685,7 +685,7 @@ bool _wrap_AnnoyIndex_onDiskBuild_annoyindex_270be72e18d030db(GoAnnoy::AnnoyInde
 }
 
 
-GoAnnoy::AnnoyIndex *_wrap_new_AnnoyIndex_annoyindex_270be72e18d030db() {
+GoAnnoy::AnnoyIndex *_wrap_new_AnnoyIndex_annoyindex_2832eef9f6555f92() {
   GoAnnoy::AnnoyIndex *result = 0 ;
   GoAnnoy::AnnoyIndex *_swig_go_result;
   
@@ -696,7 +696,7 @@ GoAnnoy::AnnoyIndex *_wrap_new_AnnoyIndex_annoyindex_270be72e18d030db() {
 }
 
 
-GoAnnoy::AnnoyIndexAngular *_wrap_new_AnnoyIndexAngular_annoyindex_270be72e18d030db(intgo _swig_go_0) {
+GoAnnoy::AnnoyIndexAngular *_wrap_new_AnnoyIndexAngular_annoyindex_2832eef9f6555f92(intgo _swig_go_0) {
   int arg1 ;
   GoAnnoy::AnnoyIndexAngular *result = 0 ;
   GoAnnoy::AnnoyIndexAngular *_swig_go_result;
@@ -709,7 +709,7 @@ GoAnnoy::AnnoyIndexAngular *_wrap_new_AnnoyIndexAngular_annoyindex_270be72e18d03
 }
 
 
-void _wrap_delete_AnnoyIndexAngular_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0) {
+void _wrap_delete_AnnoyIndexAngular_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndexAngular **)&_swig_go_0; 
@@ -719,7 +719,7 @@ void _wrap_delete_AnnoyIndexAngular_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIn
 }
 
 
-void _wrap_AnnoyIndexAngular_addItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
+void _wrap_AnnoyIndexAngular_addItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   int arg2 ;
   float *arg3 = (float *) 0 ;
@@ -742,7 +742,7 @@ void _wrap_AnnoyIndexAngular_addItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyI
 }
 
 
-void _wrap_AnnoyIndexAngular_build_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1) {
+void _wrap_AnnoyIndexAngular_build_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   int arg2 ;
   
@@ -755,7 +755,7 @@ void _wrap_AnnoyIndexAngular_build_annoyindex_270be72e18d030db(GoAnnoy::AnnoyInd
 }
 
 
-bool _wrap_AnnoyIndexAngular_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndexAngular_save__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -779,7 +779,7 @@ bool _wrap_AnnoyIndexAngular_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::A
 }
 
 
-bool _wrap_AnnoyIndexAngular_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexAngular_save__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -801,7 +801,7 @@ bool _wrap_AnnoyIndexAngular_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::A
 }
 
 
-void _wrap_AnnoyIndexAngular_unload_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0) {
+void _wrap_AnnoyIndexAngular_unload_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndexAngular **)&_swig_go_0; 
@@ -812,7 +812,7 @@ void _wrap_AnnoyIndexAngular_unload_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIn
 }
 
 
-bool _wrap_AnnoyIndexAngular_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndexAngular_load__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -836,7 +836,7 @@ bool _wrap_AnnoyIndexAngular_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::A
 }
 
 
-bool _wrap_AnnoyIndexAngular_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexAngular_load__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -858,7 +858,7 @@ bool _wrap_AnnoyIndexAngular_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::A
 }
 
 
-float _wrap_AnnoyIndexAngular_getDistance_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
+float _wrap_AnnoyIndexAngular_getDistance_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -876,7 +876,7 @@ float _wrap_AnnoyIndexAngular_getDistance_annoyindex_270be72e18d030db(GoAnnoy::A
 }
 
 
-void _wrap_AnnoyIndexAngular_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndexAngular_getNnsByItem__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -927,7 +927,7 @@ void _wrap_AnnoyIndexAngular_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db(Go
 }
 
 
-void _wrap_AnnoyIndexAngular_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndexAngular_getNnsByItem__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -961,7 +961,7 @@ void _wrap_AnnoyIndexAngular_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db(Go
 }
 
 
-void _wrap_AnnoyIndexAngular_getNnsByVector__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndexAngular_getNnsByVector__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -1020,7 +1020,7 @@ void _wrap_AnnoyIndexAngular_getNnsByVector__SWIG_0_annoyindex_270be72e18d030db(
 }
 
 
-void _wrap_AnnoyIndexAngular_getNnsByVector__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndexAngular_getNnsByVector__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -1062,7 +1062,7 @@ void _wrap_AnnoyIndexAngular_getNnsByVector__SWIG_1_annoyindex_270be72e18d030db(
 }
 
 
-intgo _wrap_AnnoyIndexAngular_getNItems_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0) {
+intgo _wrap_AnnoyIndexAngular_getNItems_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -1076,7 +1076,7 @@ intgo _wrap_AnnoyIndexAngular_getNItems_annoyindex_270be72e18d030db(GoAnnoy::Ann
 }
 
 
-void _wrap_AnnoyIndexAngular_verbose_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, bool _swig_go_1) {
+void _wrap_AnnoyIndexAngular_verbose_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, bool _swig_go_1) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   bool arg2 ;
   
@@ -1089,7 +1089,7 @@ void _wrap_AnnoyIndexAngular_verbose_annoyindex_270be72e18d030db(GoAnnoy::AnnoyI
 }
 
 
-void _wrap_AnnoyIndexAngular_getItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
+void _wrap_AnnoyIndexAngular_getItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   int arg2 ;
   vector< float > *arg3 = (vector< float > *) 0 ;
@@ -1119,7 +1119,7 @@ void _wrap_AnnoyIndexAngular_getItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyI
 }
 
 
-bool _wrap_AnnoyIndexAngular_onDiskBuild_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexAngular_onDiskBuild_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexAngular *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexAngular *arg1 = (GoAnnoy::AnnoyIndexAngular *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -1141,7 +1141,7 @@ bool _wrap_AnnoyIndexAngular_onDiskBuild_annoyindex_270be72e18d030db(GoAnnoy::An
 }
 
 
-GoAnnoy::AnnoyIndexEuclidean *_wrap_new_AnnoyIndexEuclidean_annoyindex_270be72e18d030db(intgo _swig_go_0) {
+GoAnnoy::AnnoyIndexEuclidean *_wrap_new_AnnoyIndexEuclidean_annoyindex_2832eef9f6555f92(intgo _swig_go_0) {
   int arg1 ;
   GoAnnoy::AnnoyIndexEuclidean *result = 0 ;
   GoAnnoy::AnnoyIndexEuclidean *_swig_go_result;
@@ -1154,7 +1154,7 @@ GoAnnoy::AnnoyIndexEuclidean *_wrap_new_AnnoyIndexEuclidean_annoyindex_270be72e1
 }
 
 
-void _wrap_delete_AnnoyIndexEuclidean_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0) {
+void _wrap_delete_AnnoyIndexEuclidean_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndexEuclidean **)&_swig_go_0; 
@@ -1164,7 +1164,7 @@ void _wrap_delete_AnnoyIndexEuclidean_annoyindex_270be72e18d030db(GoAnnoy::Annoy
 }
 
 
-void _wrap_AnnoyIndexEuclidean_addItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
+void _wrap_AnnoyIndexEuclidean_addItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   int arg2 ;
   float *arg3 = (float *) 0 ;
@@ -1187,7 +1187,7 @@ void _wrap_AnnoyIndexEuclidean_addItem_annoyindex_270be72e18d030db(GoAnnoy::Anno
 }
 
 
-void _wrap_AnnoyIndexEuclidean_build_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1) {
+void _wrap_AnnoyIndexEuclidean_build_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   int arg2 ;
   
@@ -1200,7 +1200,7 @@ void _wrap_AnnoyIndexEuclidean_build_annoyindex_270be72e18d030db(GoAnnoy::AnnoyI
 }
 
 
-bool _wrap_AnnoyIndexEuclidean_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndexEuclidean_save__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -1224,7 +1224,7 @@ bool _wrap_AnnoyIndexEuclidean_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-bool _wrap_AnnoyIndexEuclidean_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexEuclidean_save__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -1246,7 +1246,7 @@ bool _wrap_AnnoyIndexEuclidean_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-void _wrap_AnnoyIndexEuclidean_unload_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0) {
+void _wrap_AnnoyIndexEuclidean_unload_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndexEuclidean **)&_swig_go_0; 
@@ -1257,7 +1257,7 @@ void _wrap_AnnoyIndexEuclidean_unload_annoyindex_270be72e18d030db(GoAnnoy::Annoy
 }
 
 
-bool _wrap_AnnoyIndexEuclidean_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndexEuclidean_load__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -1281,7 +1281,7 @@ bool _wrap_AnnoyIndexEuclidean_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-bool _wrap_AnnoyIndexEuclidean_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexEuclidean_load__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -1303,7 +1303,7 @@ bool _wrap_AnnoyIndexEuclidean_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-float _wrap_AnnoyIndexEuclidean_getDistance_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
+float _wrap_AnnoyIndexEuclidean_getDistance_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -1321,7 +1321,7 @@ float _wrap_AnnoyIndexEuclidean_getDistance_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-void _wrap_AnnoyIndexEuclidean_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndexEuclidean_getNnsByItem__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -1372,7 +1372,7 @@ void _wrap_AnnoyIndexEuclidean_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db(
 }
 
 
-void _wrap_AnnoyIndexEuclidean_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndexEuclidean_getNnsByItem__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -1406,7 +1406,7 @@ void _wrap_AnnoyIndexEuclidean_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db(
 }
 
 
-void _wrap_AnnoyIndexEuclidean_getNnsByVector__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndexEuclidean_getNnsByVector__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -1465,7 +1465,7 @@ void _wrap_AnnoyIndexEuclidean_getNnsByVector__SWIG_0_annoyindex_270be72e18d030d
 }
 
 
-void _wrap_AnnoyIndexEuclidean_getNnsByVector__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndexEuclidean_getNnsByVector__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -1507,7 +1507,7 @@ void _wrap_AnnoyIndexEuclidean_getNnsByVector__SWIG_1_annoyindex_270be72e18d030d
 }
 
 
-intgo _wrap_AnnoyIndexEuclidean_getNItems_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0) {
+intgo _wrap_AnnoyIndexEuclidean_getNItems_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -1521,7 +1521,7 @@ intgo _wrap_AnnoyIndexEuclidean_getNItems_annoyindex_270be72e18d030db(GoAnnoy::A
 }
 
 
-void _wrap_AnnoyIndexEuclidean_verbose_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, bool _swig_go_1) {
+void _wrap_AnnoyIndexEuclidean_verbose_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, bool _swig_go_1) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   bool arg2 ;
   
@@ -1534,7 +1534,7 @@ void _wrap_AnnoyIndexEuclidean_verbose_annoyindex_270be72e18d030db(GoAnnoy::Anno
 }
 
 
-void _wrap_AnnoyIndexEuclidean_getItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
+void _wrap_AnnoyIndexEuclidean_getItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   int arg2 ;
   vector< float > *arg3 = (vector< float > *) 0 ;
@@ -1564,7 +1564,7 @@ void _wrap_AnnoyIndexEuclidean_getItem_annoyindex_270be72e18d030db(GoAnnoy::Anno
 }
 
 
-bool _wrap_AnnoyIndexEuclidean_onDiskBuild_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexEuclidean_onDiskBuild_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexEuclidean *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexEuclidean *arg1 = (GoAnnoy::AnnoyIndexEuclidean *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -1586,7 +1586,7 @@ bool _wrap_AnnoyIndexEuclidean_onDiskBuild_annoyindex_270be72e18d030db(GoAnnoy::
 }
 
 
-GoAnnoy::AnnoyIndexManhattan *_wrap_new_AnnoyIndexManhattan_annoyindex_270be72e18d030db(intgo _swig_go_0) {
+GoAnnoy::AnnoyIndexManhattan *_wrap_new_AnnoyIndexManhattan_annoyindex_2832eef9f6555f92(intgo _swig_go_0) {
   int arg1 ;
   GoAnnoy::AnnoyIndexManhattan *result = 0 ;
   GoAnnoy::AnnoyIndexManhattan *_swig_go_result;
@@ -1599,7 +1599,7 @@ GoAnnoy::AnnoyIndexManhattan *_wrap_new_AnnoyIndexManhattan_annoyindex_270be72e1
 }
 
 
-void _wrap_delete_AnnoyIndexManhattan_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0) {
+void _wrap_delete_AnnoyIndexManhattan_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndexManhattan **)&_swig_go_0; 
@@ -1609,7 +1609,7 @@ void _wrap_delete_AnnoyIndexManhattan_annoyindex_270be72e18d030db(GoAnnoy::Annoy
 }
 
 
-void _wrap_AnnoyIndexManhattan_addItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
+void _wrap_AnnoyIndexManhattan_addItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   int arg2 ;
   float *arg3 = (float *) 0 ;
@@ -1632,7 +1632,7 @@ void _wrap_AnnoyIndexManhattan_addItem_annoyindex_270be72e18d030db(GoAnnoy::Anno
 }
 
 
-void _wrap_AnnoyIndexManhattan_build_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1) {
+void _wrap_AnnoyIndexManhattan_build_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   int arg2 ;
   
@@ -1645,7 +1645,7 @@ void _wrap_AnnoyIndexManhattan_build_annoyindex_270be72e18d030db(GoAnnoy::AnnoyI
 }
 
 
-bool _wrap_AnnoyIndexManhattan_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndexManhattan_save__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -1669,7 +1669,7 @@ bool _wrap_AnnoyIndexManhattan_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-bool _wrap_AnnoyIndexManhattan_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexManhattan_save__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -1691,7 +1691,7 @@ bool _wrap_AnnoyIndexManhattan_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-void _wrap_AnnoyIndexManhattan_unload_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0) {
+void _wrap_AnnoyIndexManhattan_unload_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndexManhattan **)&_swig_go_0; 
@@ -1702,7 +1702,7 @@ void _wrap_AnnoyIndexManhattan_unload_annoyindex_270be72e18d030db(GoAnnoy::Annoy
 }
 
 
-bool _wrap_AnnoyIndexManhattan_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndexManhattan_load__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -1726,7 +1726,7 @@ bool _wrap_AnnoyIndexManhattan_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-bool _wrap_AnnoyIndexManhattan_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexManhattan_load__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -1748,7 +1748,7 @@ bool _wrap_AnnoyIndexManhattan_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-float _wrap_AnnoyIndexManhattan_getDistance_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
+float _wrap_AnnoyIndexManhattan_getDistance_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -1766,7 +1766,7 @@ float _wrap_AnnoyIndexManhattan_getDistance_annoyindex_270be72e18d030db(GoAnnoy:
 }
 
 
-void _wrap_AnnoyIndexManhattan_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndexManhattan_getNnsByItem__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -1817,7 +1817,7 @@ void _wrap_AnnoyIndexManhattan_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db(
 }
 
 
-void _wrap_AnnoyIndexManhattan_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndexManhattan_getNnsByItem__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -1851,7 +1851,7 @@ void _wrap_AnnoyIndexManhattan_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db(
 }
 
 
-void _wrap_AnnoyIndexManhattan_getNnsByVector__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndexManhattan_getNnsByVector__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -1910,7 +1910,7 @@ void _wrap_AnnoyIndexManhattan_getNnsByVector__SWIG_0_annoyindex_270be72e18d030d
 }
 
 
-void _wrap_AnnoyIndexManhattan_getNnsByVector__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndexManhattan_getNnsByVector__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -1952,7 +1952,7 @@ void _wrap_AnnoyIndexManhattan_getNnsByVector__SWIG_1_annoyindex_270be72e18d030d
 }
 
 
-intgo _wrap_AnnoyIndexManhattan_getNItems_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0) {
+intgo _wrap_AnnoyIndexManhattan_getNItems_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -1966,7 +1966,7 @@ intgo _wrap_AnnoyIndexManhattan_getNItems_annoyindex_270be72e18d030db(GoAnnoy::A
 }
 
 
-void _wrap_AnnoyIndexManhattan_verbose_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, bool _swig_go_1) {
+void _wrap_AnnoyIndexManhattan_verbose_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, bool _swig_go_1) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   bool arg2 ;
   
@@ -1979,7 +1979,7 @@ void _wrap_AnnoyIndexManhattan_verbose_annoyindex_270be72e18d030db(GoAnnoy::Anno
 }
 
 
-void _wrap_AnnoyIndexManhattan_getItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
+void _wrap_AnnoyIndexManhattan_getItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   int arg2 ;
   vector< float > *arg3 = (vector< float > *) 0 ;
@@ -2009,7 +2009,7 @@ void _wrap_AnnoyIndexManhattan_getItem_annoyindex_270be72e18d030db(GoAnnoy::Anno
 }
 
 
-bool _wrap_AnnoyIndexManhattan_onDiskBuild_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexManhattan_onDiskBuild_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexManhattan *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexManhattan *arg1 = (GoAnnoy::AnnoyIndexManhattan *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -2031,7 +2031,7 @@ bool _wrap_AnnoyIndexManhattan_onDiskBuild_annoyindex_270be72e18d030db(GoAnnoy::
 }
 
 
-GoAnnoy::AnnoyIndexDotProduct *_wrap_new_AnnoyIndexDotProduct_annoyindex_270be72e18d030db(intgo _swig_go_0) {
+GoAnnoy::AnnoyIndexDotProduct *_wrap_new_AnnoyIndexDotProduct_annoyindex_2832eef9f6555f92(intgo _swig_go_0) {
   int arg1 ;
   GoAnnoy::AnnoyIndexDotProduct *result = 0 ;
   GoAnnoy::AnnoyIndexDotProduct *_swig_go_result;
@@ -2044,7 +2044,7 @@ GoAnnoy::AnnoyIndexDotProduct *_wrap_new_AnnoyIndexDotProduct_annoyindex_270be72
 }
 
 
-void _wrap_delete_AnnoyIndexDotProduct_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0) {
+void _wrap_delete_AnnoyIndexDotProduct_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndexDotProduct **)&_swig_go_0; 
@@ -2054,7 +2054,7 @@ void _wrap_delete_AnnoyIndexDotProduct_annoyindex_270be72e18d030db(GoAnnoy::Anno
 }
 
 
-void _wrap_AnnoyIndexDotProduct_addItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
+void _wrap_AnnoyIndexDotProduct_addItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, _goslice_ _swig_go_2) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   int arg2 ;
   float *arg3 = (float *) 0 ;
@@ -2077,7 +2077,7 @@ void _wrap_AnnoyIndexDotProduct_addItem_annoyindex_270be72e18d030db(GoAnnoy::Ann
 }
 
 
-void _wrap_AnnoyIndexDotProduct_build_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1) {
+void _wrap_AnnoyIndexDotProduct_build_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   int arg2 ;
   
@@ -2090,7 +2090,7 @@ void _wrap_AnnoyIndexDotProduct_build_annoyindex_270be72e18d030db(GoAnnoy::Annoy
 }
 
 
-bool _wrap_AnnoyIndexDotProduct_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndexDotProduct_save__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -2114,7 +2114,7 @@ bool _wrap_AnnoyIndexDotProduct_save__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy
 }
 
 
-bool _wrap_AnnoyIndexDotProduct_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexDotProduct_save__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -2136,7 +2136,7 @@ bool _wrap_AnnoyIndexDotProduct_save__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy
 }
 
 
-void _wrap_AnnoyIndexDotProduct_unload_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0) {
+void _wrap_AnnoyIndexDotProduct_unload_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   
   arg1 = *(GoAnnoy::AnnoyIndexDotProduct **)&_swig_go_0; 
@@ -2147,7 +2147,7 @@ void _wrap_AnnoyIndexDotProduct_unload_annoyindex_270be72e18d030db(GoAnnoy::Anno
 }
 
 
-bool _wrap_AnnoyIndexDotProduct_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
+bool _wrap_AnnoyIndexDotProduct_load__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1, bool _swig_go_2) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   char *arg2 = (char *) 0 ;
   bool arg3 ;
@@ -2171,7 +2171,7 @@ bool _wrap_AnnoyIndexDotProduct_load__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy
 }
 
 
-bool _wrap_AnnoyIndexDotProduct_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexDotProduct_load__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
@@ -2193,7 +2193,7 @@ bool _wrap_AnnoyIndexDotProduct_load__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy
 }
 
 
-float _wrap_AnnoyIndexDotProduct_getDistance_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
+float _wrap_AnnoyIndexDotProduct_getDistance_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -2211,7 +2211,7 @@ float _wrap_AnnoyIndexDotProduct_getDistance_annoyindex_270be72e18d030db(GoAnnoy
 }
 
 
-void _wrap_AnnoyIndexDotProduct_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndexDotProduct_getNnsByItem__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -2262,7 +2262,7 @@ void _wrap_AnnoyIndexDotProduct_getNnsByItem__SWIG_0_annoyindex_270be72e18d030db
 }
 
 
-void _wrap_AnnoyIndexDotProduct_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndexDotProduct_getNnsByItem__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   int arg2 ;
   int arg3 ;
@@ -2296,7 +2296,7 @@ void _wrap_AnnoyIndexDotProduct_getNnsByItem__SWIG_1_annoyindex_270be72e18d030db
 }
 
 
-void _wrap_AnnoyIndexDotProduct_getNnsByVector__SWIG_0_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
+void _wrap_AnnoyIndexDotProduct_getNnsByVector__SWIG_0_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4, _goslice_* _swig_go_5) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -2355,7 +2355,7 @@ void _wrap_AnnoyIndexDotProduct_getNnsByVector__SWIG_0_annoyindex_270be72e18d030
 }
 
 
-void _wrap_AnnoyIndexDotProduct_getNnsByVector__SWIG_1_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
+void _wrap_AnnoyIndexDotProduct_getNnsByVector__SWIG_1_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _goslice_ _swig_go_1, intgo _swig_go_2, intgo _swig_go_3, _goslice_* _swig_go_4) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   float *arg2 = (float *) 0 ;
   int arg3 ;
@@ -2397,7 +2397,7 @@ void _wrap_AnnoyIndexDotProduct_getNnsByVector__SWIG_1_annoyindex_270be72e18d030
 }
 
 
-intgo _wrap_AnnoyIndexDotProduct_getNItems_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0) {
+intgo _wrap_AnnoyIndexDotProduct_getNItems_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   int result;
   intgo _swig_go_result;
@@ -2411,7 +2411,7 @@ intgo _wrap_AnnoyIndexDotProduct_getNItems_annoyindex_270be72e18d030db(GoAnnoy::
 }
 
 
-void _wrap_AnnoyIndexDotProduct_verbose_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, bool _swig_go_1) {
+void _wrap_AnnoyIndexDotProduct_verbose_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, bool _swig_go_1) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   bool arg2 ;
   
@@ -2424,7 +2424,7 @@ void _wrap_AnnoyIndexDotProduct_verbose_annoyindex_270be72e18d030db(GoAnnoy::Ann
 }
 
 
-void _wrap_AnnoyIndexDotProduct_getItem_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
+void _wrap_AnnoyIndexDotProduct_getItem_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, intgo _swig_go_1, _goslice_* _swig_go_2) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   int arg2 ;
   vector< float > *arg3 = (vector< float > *) 0 ;
@@ -2454,7 +2454,7 @@ void _wrap_AnnoyIndexDotProduct_getItem_annoyindex_270be72e18d030db(GoAnnoy::Ann
 }
 
 
-bool _wrap_AnnoyIndexDotProduct_onDiskBuild_annoyindex_270be72e18d030db(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1) {
+bool _wrap_AnnoyIndexDotProduct_onDiskBuild_annoyindex_2832eef9f6555f92(GoAnnoy::AnnoyIndexDotProduct *_swig_go_0, _gostring_ _swig_go_1) {
   GoAnnoy::AnnoyIndexDotProduct *arg1 = (GoAnnoy::AnnoyIndexDotProduct *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;

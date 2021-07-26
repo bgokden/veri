@@ -85,13 +85,6 @@ func (dt *Data) InitData() error {
 	dt.Lock()
 	defer dt.Unlock()
 	if dt.Initialized == false {
-		// options := badger.DefaultOptions(dt.DBPath).
-		// 	WithLoggingLevel(badger.WARNING)
-		// db, err := badger.Open(options)
-		// if err != nil {
-		// 	return err
-		// }
-		// dt.DB = db
 		dt.Sources = cache.New(5*time.Minute, 1*time.Minute)
 		dt.QueryCache = cache.New(5*time.Minute, 1*time.Minute)
 		dt.Alive = true
@@ -108,11 +101,6 @@ func NewTempData() (*Data, error) {
 			NoTarget: true,
 		},
 	}
-	// db, err := badger.Open(badger.DefaultOptions("").WithInMemory(true))
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// dt.DB = db
 	return dt, nil
 }
 
@@ -154,10 +142,6 @@ func (dt *Data) Run() error {
 			dt.Process(false)
 			nextTime = getCurrentTime() + secondsToSleep
 			gcCounter--
-			// if gcCounter <= 0 {
-			// 	gcCounter = 10
-			// 	dt.DB.RunValueLogGC(0.5)
-			// }
 		}
 		time.Sleep(time.Duration(1000) * time.Millisecond)
 

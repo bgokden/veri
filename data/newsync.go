@@ -222,3 +222,13 @@ func (dt *Data) Process(force bool) error {
 	dt.Dirty = false
 	return nil
 }
+
+func (dt *Data) StreamAll(datumStream chan<- *pb.Datum) error {
+	err := dt.LoopDBMap(func(entry *DBMapEntry) error {
+		if entry != nil && entry.Datum != nil {
+			datumStream <- entry.Datum
+		}
+		return nil
+	})
+	return err
+}
