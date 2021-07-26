@@ -13,13 +13,13 @@ if [ "$1" = "local" ]; then
       if [ "$GOOS" = "windows" ]; then
         go get -u github.com/spf13/cobra
       fi
-      go build -tags=jemalloc -a -o bin/veri-$GOOS-$GOARCH
+      go build -a -o bin/veri-$GOOS-$GOARCH
     done
   done
   unset GOOS
   unset GOARCH
 else
-  docker run --rm -it -v "$GOPATH":/go -w /go/src/github.com/magneticio/verikubistcli dockercore/golang-cross:1.13.15 sh -c '
+  docker run --rm -it -v "$GOPATH":/go -w /go/src/github.com/magneticio/verikubistcli dockercore/golang-cross:1.16.5 sh -c '
   for GOOS in darwin linux windows; do
     for GOARCH in 386 amd64; do
       echo "Building $GOOS-$GOARCH"
@@ -28,7 +28,7 @@ else
       if [ "$GOOS" = "windows" ]; then
         go get -u github.com/spf13/cobra
       fi
-      go build -tags=jemalloc -a -o bin/veri-$GOOS-$GOARCH
+      go build -a -o bin/veri-$GOOS-$GOARCH
     done
   done
   '
