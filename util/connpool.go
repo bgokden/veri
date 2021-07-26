@@ -140,7 +140,9 @@ func (cp *ConnectionPool) NewConnection(address string) *Connection {
 
 func (cp *ConnectionPool) Get() *Connection {
 	c := cp.GetWithRetry(0)
-	c.Counter++
+	if c != nil {
+		c.Counter++
+	}
 	return c
 }
 
