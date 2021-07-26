@@ -7,6 +7,7 @@ import (
 	"time"
 
 	pb "github.com/bgokden/veri/veriservice"
+	"github.com/goburrow/cache"
 	goburrow "github.com/goburrow/cache"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -21,11 +22,17 @@ func NewConnectionCache() *ConnectionCache {
 		address := fmt.Sprintf("%s", k)
 		return NewConnectionPool(address), nil
 	}
+	remove := func(k cache.Key, v cache.Value) {
+		if connectionPool, ok := v.(*ConnectionPool); ok {
+			connectionPool.CloseAll()
+		}
+	}
 	// Create a loading cache
 	c := goburrow.NewLoadingCache(load,
 		goburrow.WithMaximumSize(100),                  // Limit number of entries in the cache.
 		goburrow.WithExpireAfterAccess(10*time.Minute), // Expire entries after 10 minutes since last accessed.
 		goburrow.WithRefreshAfterWrite(20*time.Minute), // Expire entries after 20 minutes since last created.
+		goburrow.WithRemovalListener(remove),
 	)
 
 	cc := &ConnectionCache{
@@ -47,7 +54,11 @@ func (cc *ConnectionCache) Get(address string) *Connection {
 func (cc *ConnectionCache) Put(c *Connection) {
 	if cpInterface, _ := cc.Provider.Get(c.Address); cpInterface != nil {
 		if cp, ok2 := cpInterface.(*ConnectionPool); ok2 {
-			cp.PutIfHealthy(c)
+			if c.Counter < 20 {
+				cp.PutIfHealthy(c)
+			} else {
+				cp.Close(c)
+			}
 		}
 	}
 }
@@ -62,24 +73,25 @@ func (cc *ConnectionCache) Close(c *Connection) {
 
 // Func to init pool
 func NewConnectionPool(address string) *ConnectionPool {
-	pool := &sync.Pool{
+	cp := &ConnectionPool{}
+	cp.Pool = &sync.Pool{
 		New: func() interface{} {
-			return NewConnection(address)
+			return cp.NewConnection(address)
 		},
 	}
-	return &ConnectionPool{
-		Pool: pool,
-	}
+	return cp
 }
 
 type ConnectionPool struct {
-	Pool *sync.Pool
+	Pool   *sync.Pool
+	Closed bool
 }
 
 type Connection struct {
 	Address string
 	Client  pb.VeriServiceClient
 	Conn    *grpc.ClientConn
+	Counter int
 }
 
 func (c *Connection) Close() {
@@ -88,7 +100,10 @@ func (c *Connection) Close() {
 	}
 }
 
-func NewConnection(address string) *Connection {
+func (cp *ConnectionPool) NewConnection(address string) *Connection {
+	if cp.Closed {
+		return nil
+	}
 	conn, err := grpc.Dial(address,
 		grpc.WithBlock(),
 		grpc.WithInsecure(),
@@ -119,11 +134,14 @@ func NewConnection(address string) *Connection {
 		Address: address,
 		Client:  client,
 		Conn:    conn,
+		Counter: 0,
 	}
 }
 
 func (cp *ConnectionPool) Get() *Connection {
-	return cp.GetWithRetry(0)
+	c := cp.GetWithRetry(0)
+	c.Counter++
+	return c
 }
 
 func (cp *ConnectionPool) GetWithRetry(count int) *Connection {
@@ -174,6 +192,24 @@ func (cp *ConnectionPool) Close(conn *Connection) {
 		err := conn.Conn.Close()
 		if err != nil {
 			log.Printf("Connection Close Error: %v\n", err.Error())
+		}
+	}
+}
+
+func (cp *ConnectionPool) CloseAll() {
+	cp.Closed = true
+	for {
+		connectionInterface := cp.Pool.Get()
+		if connectionInterface == nil {
+			return // Coonection pool is finished
+		}
+		if conn, ok := connectionInterface.(*Connection); ok {
+			if conn != nil && conn.Conn != nil {
+				err := conn.Conn.Close()
+				if err != nil {
+					log.Printf("Connection Close Error: %v\n", err.Error())
+				}
+			}
 		}
 	}
 }
