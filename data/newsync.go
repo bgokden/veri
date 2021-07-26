@@ -29,6 +29,7 @@ func (dt *Data) InsertBDMap(datum *pb.Datum, config *pb.InsertConfig) error {
 	if config != nil && config.TTL != 0 {
 		exprireAt = time.Now().Unix() + int64(config.TTL)
 	}
+	datum.Clean()
 	entry := &DBMapEntry{
 		ExprireAt: exprireAt,
 		Datum:     datum,
