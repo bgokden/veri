@@ -187,6 +187,16 @@ func (dts *Dataset) LoadIndex() error {
 	return nil
 }
 
+func (dts *Dataset) ReloadRuns() error {
+	itemList := dts.DataList.Items()
+	for _, itemInterface := range itemList {
+		if item, ok := itemInterface.Object.(*Data); ok {
+			go item.Run()
+		}
+	}
+	return nil
+}
+
 func (dts *Dataset) SaveIndex() error {
 	indexPath := path.Join(dts.Path, "index.save")
 	sourceList := dts.DataList.Items()

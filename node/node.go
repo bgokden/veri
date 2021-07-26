@@ -93,6 +93,15 @@ func IsRecent(timestamp uint64) bool {
 	return timestamp+60 > getCurrentTime()
 }
 
+func (n *Node) CheckPeer(peer *pb.Peer) bool {
+	if !n.isPeerSimilarToNode(peer) && IsRecent(peer.GetTimestamp()) {
+		return true
+	} else {
+		n.PeerList.Delete(GetIdOfPeer(peer))
+	}
+	return false
+}
+
 func (n *Node) AddPeerElement(peer *pb.Peer) error {
 	if !n.isPeerSimilarToNode(peer) && IsRecent(peer.GetTimestamp()) {
 		n.PeerList.Set(GetIdOfPeer(peer), peer, cache.DefaultExpiration)
@@ -200,6 +209,9 @@ func (n *Node) SyncWithPeers() {
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
+		if !n.CheckPeer(peer) { // remove old peer
+			continue
+		}
 		idOfPeer := n.GetDifferentAddressOf(peer)
 		if idOfPeer == "" {
 			continue
@@ -283,6 +295,7 @@ func (n *Node) StopPeriodicTask() {
 func (n *Node) Periodic() error {
 	go n.JoinToPeers()
 	go n.SyncWithPeers()
+	go n.Dataset.ReloadRuns()
 	go n.Dataset.SaveIndex()
 	return nil
 }
