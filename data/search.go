@@ -2,7 +2,6 @@ package data
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"sort"
 	"strings"
@@ -306,8 +305,8 @@ func (dt *Data) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.Score
 	if strings.HasPrefix(config.ScoreFuncName, "Annoy") {
 		collector = dt.SearchAnnoy(datum, config)
 	} else {
-		return errors.New("Base search is not working yet")
-		// collector = dt.Search(datum, config)
+		// return errors.New("Base search is not working yet")
+		collector = dt.Search(datum, config, nil)
 	}
 	if collector != nil {
 		for _, i := range collector.List {
@@ -515,5 +514,34 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 		return c // Fallback is emptry list now
 		//return dt.Search(datum, config)
 	}
+	return c
+}
+
+// Search does a search based on distances of keys
+func (dt *Data) Search(datum *pb.Datum, config *pb.SearchConfig, c *Collector) *Collector {
+	// log.Printf("Search: %v\n", datum)
+	if c == nil {
+		if config == nil {
+			config = DefaultSearchConfig()
+		}
+		c = &Collector{}
+		c.List = make([]*pb.ScoredDatum, 0, config.Limit)
+		c.DatumKey = datum.Key
+		c.ScoreFunc = GetVectorComparisonFunction(config.ScoreFuncName)
+		c.HigherIsBetter = config.HigherIsBetter
+		c.N = config.Limit
+		c.Filters = config.Filters
+		c.GroupFilters = config.GroupFilters
+	}
+
+	dt.LoopDBMap(func(entry *DBMapEntry) error {
+		if c.PassesFilters(entry.Datum) {
+			c.Insert(&pb.ScoredDatum{
+				Score: c.ScoreFunc(entry.Datum.Key.Feature, datum.Key.Feature),
+				Datum: entry.Datum,
+			})
+		}
+	})
+
 	return c
 }
