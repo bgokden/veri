@@ -95,7 +95,9 @@ func (dt *Data) Process(force bool) error {
 	localInfo := dt.GetDataInfo()
 	localN := localInfo.N
 	transferLimit := localInfo.N / 10 // this is arbitary
-	if (getCurrentTime()-dt.LastRunTimestamp >= 60 && (atomic.LoadUint64(&(dt.RecentInsertCount)) > 0 || limit > transferLimit)) || force {
+	timeDiff := getCurrentTime() - dt.LastRunTimestamp
+	recentInsertCount := atomic.LoadUint64(&(dt.RecentInsertCount))
+	if (timeDiff >= 60 && (recentInsertCount > 0 || limit > transferLimit || timeDiff >= 600)) || force {
 		atomic.StoreUint64(&(dt.RecentInsertCount), 0)
 		config := dt.GetConfig()
 		datumStream := make(chan *pb.InsertDatumWithConfig, limit)
