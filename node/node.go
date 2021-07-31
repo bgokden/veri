@@ -94,8 +94,11 @@ func IsRecent(timestamp uint64) bool {
 }
 
 func (n *Node) CheckPeer(peer *pb.Peer) bool {
-	if !n.isPeerSimilarToNode(peer) && IsRecent(peer.GetTimestamp()) {
-		return true
+	if !n.isPeerSimilarToNode(peer) {
+		if IsRecent(peer.GetTimestamp()) {
+			return true
+		}
+		n.PeerList.Delete(GetIdOfPeer(peer))
 	}
 	return false
 }
