@@ -90,7 +90,7 @@ func (n *Node) AddService(service string) error {
 }
 
 func IsRecent(timestamp uint64) bool {
-	return timestamp+60 > getCurrentTime()
+	return timestamp+300 > getCurrentTime()
 }
 
 func (n *Node) CheckPeer(peer *pb.Peer) bool {
