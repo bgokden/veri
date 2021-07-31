@@ -203,7 +203,7 @@ func (n *Node) Listen() error {
 }
 
 func (n *Node) SendJoinRequest(id string) error {
-	// log.Printf("(Call Join 0) Send Join request to %v", id)
+	log.Printf("Sending Join request to %v", id)
 	peerInfo := n.GetNodeInfo()
 	request := &pb.JoinRequest{
 		Peer: peerInfo,
