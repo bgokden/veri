@@ -96,18 +96,23 @@ func IsRecent(timestamp uint64) bool {
 func (n *Node) CheckPeer(peer *pb.Peer) bool {
 	if !n.isPeerSimilarToNode(peer) && IsRecent(peer.GetTimestamp()) {
 		return true
-	} else {
-		n.PeerList.Delete(GetIdOfPeer(peer))
 	}
 	return false
 }
 
 func (n *Node) AddPeerElement(peer *pb.Peer) error {
-	if !n.isPeerSimilarToNode(peer) && IsRecent(peer.GetTimestamp()) {
-		n.PeerList.Set(GetIdOfPeer(peer), peer, cache.DefaultExpiration)
-		n.PeerList.IncrementExpiration(GetIdOfPeer(peer), 10*time.Minute)
-	} else {
-		n.PeerList.Delete(GetIdOfPeer(peer))
+	if !n.isPeerSimilarToNode(peer) {
+		idOfPeer := GetIdOfPeer(peer)
+		if oldPeerInterface, ok := n.PeerList.Get(idOfPeer); ok {
+			if oldPeer, ok2 := oldPeerInterface.(*pb.Peer); ok2 {
+				if oldPeer.Timestamp > peer.Timestamp {
+					// New one is older than current peer info
+					return nil
+				}
+			}
+		}
+		n.PeerList.Set(idOfPeer, peer, cache.DefaultExpiration)
+		n.PeerList.IncrementExpiration(idOfPeer, 10*time.Minute)
 	}
 	return nil
 }
