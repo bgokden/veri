@@ -98,7 +98,9 @@ func (n *Node) CheckPeer(peer *pb.Peer) bool {
 		if IsRecent(peer.GetTimestamp()) {
 			return true
 		}
-		n.PeerList.Delete(GetIdOfPeer(peer))
+		idOfPeer := GetIdOfPeer(peer)
+		log.Printf("Deleting %v since %v is too old (t:%v)\n", idOfPeer, peer.Timestamp, getCurrentTime())
+		n.PeerList.Delete(idOfPeer)
 	}
 	return false
 }
