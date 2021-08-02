@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"sync"
+	"time"
 
 	data "github.com/bgokden/veri/data"
 	"github.com/bgokden/veri/util"
@@ -27,20 +28,10 @@ type DataSourceClient struct {
 	ConnectionCache *util.ConnectionCache
 }
 
-// func (dcs *DataSourceClient) GetVeriServiceClient() (pb.VeriServiceClient, *grpc.ClientConn, error) {
-// 	// This can be a client pool
-// 	address := dcs.Ids[0]
-// 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(time.Duration(200)*time.Millisecond))
-// 	if err != nil {
-// 		log.Printf("fail to dial: %v\n", err)
-// 		return nil, nil, err
-// 	}
-// 	client := pb.NewVeriServiceClient(conn)
-// 	return client, conn, nil
-// }
-
 func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream chan<- *pb.ScoredDatum, queryWaitGroup *sync.WaitGroup, config *pb.SearchConfig) error {
 	defer queryWaitGroup.Done()
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	conn := dcs.ConnectionCache.Get(dcs.IdOfPeer)
 	if conn == nil {
 		return errors.New("Connection failure")
@@ -51,7 +42,7 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 		Datum:  []*pb.Datum{datum},
 		Config: config,
 	}
-	stream, err := client.SearchStream(context.Background(), searchRequest)
+	stream, err := client.SearchStream(clientCtx, searchRequest)
 	if err != nil {
 		return err
 	}
@@ -68,6 +59,8 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 }
 
 func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	conn := dcs.ConnectionCache.Get(dcs.IdOfPeer)
 	if conn == nil {
 		return errors.New("Connection failure")
@@ -79,11 +72,13 @@ func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) er
 		Datum:    datum,
 		DataName: dcs.Name,
 	}
-	_, err := client.Insert(context.Background(), request)
+	_, err := client.Insert(clientCtx, request)
 	return err
 }
 
 func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	conn := dcs.ConnectionCache.Get(dcs.IdOfPeer)
 	if conn == nil {
 		log.Printf("Connection failure\n")
@@ -94,7 +89,7 @@ func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
 	request := &pb.GetDataRequest{
 		Name: dcs.Name,
 	}
-	dataInfo, err := client.GetDataInfo(context.Background(), request)
+	dataInfo, err := client.GetDataInfo(clientCtx, request)
 	if err != nil {
 		log.Printf("GetDataInfo Error: %v\n", err.Error())
 		return nil

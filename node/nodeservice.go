@@ -181,7 +181,7 @@ func (n *Node) SendJoinRequest(id string) error {
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer n.ConnectionCache.Close(conn)
+	defer n.ConnectionCache.Put(conn)
 	// this connection should be closed time to time
 	// It is observed that it can cause a split brain due to two nodes
 	// sync to each other and never break connection
@@ -220,15 +220,15 @@ func (n *Node) CreateDataIfNotExists(ctx context.Context, in *pb.DataConfig) (*p
 	return aData.GetDataInfo(), nil
 }
 
-func (n *Node) getClient(address string) (pb.VeriServiceClient, *grpc.ClientConn, error) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(time.Duration(200)*time.Millisecond))
-	if err != nil {
-		// log.Printf("fail to dial: %v\n", err)
-		return nil, nil, err
-	}
-	client := pb.NewVeriServiceClient(conn)
-	return client, conn, nil
-}
+// func (n *Node) getClient(address string) (pb.VeriServiceClient, *grpc.ClientConn, error) {
+// 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(time.Duration(200)*time.Millisecond))
+// 	if err != nil {
+// 		// log.Printf("fail to dial: %v\n", err)
+// 		return nil, nil, err
+// 	}
+// 	client := pb.NewVeriServiceClient(conn)
+// 	return client, conn, nil
+// }
 
 func (n *Node) AddPeer(ctx context.Context, in *pb.AddPeerRequest) (*pb.AddPeerResponse, error) {
 	return &pb.AddPeerResponse{}, n.AddPeerElement(in.GetPeer())
