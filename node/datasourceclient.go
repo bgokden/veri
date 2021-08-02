@@ -32,12 +32,12 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 	defer queryWaitGroup.Done()
 	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	conn := dcs.ConnectionCache.Get(clientCtx, dcs.IdOfPeer)
+	conn := dcs.ConnectionCache.Get(dcs.IdOfPeer)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer conn.Close()
-	client := pb.NewVeriServiceClient(conn)
+	defer dcs.ConnectionCache.Put(conn)
+	client := pb.NewVeriServiceClient(conn.Conn)
 	searchRequest := &pb.SearchRequest{
 		Datum:  []*pb.Datum{datum},
 		Config: config,
@@ -61,12 +61,12 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) error {
 	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	conn := dcs.ConnectionCache.Get(clientCtx, dcs.IdOfPeer)
+	conn := dcs.ConnectionCache.Get(dcs.IdOfPeer)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer conn.Close()
-	client := pb.NewVeriServiceClient(conn)
+	defer dcs.ConnectionCache.Put(conn)
+	client := pb.NewVeriServiceClient(conn.Conn)
 	request := &pb.InsertionRequest{
 		Config:   config,
 		Datum:    datum,
@@ -79,13 +79,13 @@ func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) er
 func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
 	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	conn := dcs.ConnectionCache.Get(clientCtx, dcs.IdOfPeer)
+	conn := dcs.ConnectionCache.Get(dcs.IdOfPeer)
 	if conn == nil {
 		log.Printf("Connection failure\n")
 		return nil
 	}
-	defer conn.Close()
-	client := pb.NewVeriServiceClient(conn)
+	defer dcs.ConnectionCache.Put(conn)
+	client := pb.NewVeriServiceClient(conn.Conn)
 	request := &pb.GetDataRequest{
 		Name: dcs.Name,
 	}

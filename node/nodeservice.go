@@ -177,17 +177,17 @@ func (n *Node) SendJoinRequest(id string) error {
 	request := &pb.JoinRequest{
 		Peer: peerInfo,
 	}
-	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	conn := n.ConnectionCache.Get(clientCtx, id)
+	conn := n.ConnectionCache.Get(id)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer conn.Close()
+	defer n.ConnectionCache.Put(conn)
 	// this connection should be closed time to time
 	// It is observed that it can cause a split brain due to two nodes
 	// sync to each other and never break connection
-	client := pb.NewVeriServiceClient(conn)
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	client := pb.NewVeriServiceClient(conn.Conn)
 	resp, err := client.Join(clientCtx, request)
 	if err != nil {
 		// log.Printf("(Call Join 2 %v => %v) There is an error %v", n.Port, id, err)
@@ -242,14 +242,14 @@ func (n *Node) SendAddPeerRequest(id string, peerInfo *pb.Peer) error {
 	request := &pb.AddPeerRequest{
 		Peer: peerInfo,
 	}
-	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	conn := n.ConnectionCache.Get(clientCtx, id)
+	conn := n.ConnectionCache.Get(id)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer conn.Close()
-	client := pb.NewVeriServiceClient(conn)
+	defer n.ConnectionCache.Put(conn)
+	client := pb.NewVeriServiceClient(conn.Conn)
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	_, err := client.AddPeer(clientCtx, request)
 	if err != nil {
 		// log.Printf("(Call Add Peer 2 %v => %v) There is an error %v", n.Port, id, err)
@@ -264,14 +264,14 @@ func (n *Node) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingResponse, 
 
 func (n *Node) SendPingRequest(id string) error {
 	request := &pb.PingRequest{}
-	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	conn := n.ConnectionCache.Get(clientCtx, id)
+	conn := n.ConnectionCache.Get(id)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer conn.Close()
-	client := pb.NewVeriServiceClient(conn)
+	defer n.ConnectionCache.Put(conn)
+	client := pb.NewVeriServiceClient(conn.Conn)
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	_, err := client.Ping(clientCtx, request)
 	if err != nil {
 		return err

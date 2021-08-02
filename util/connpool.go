@@ -1,15 +1,15 @@
 package util
 
 import (
-	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/goburrow/cache"
 	goburrow "github.com/goburrow/cache"
-	grpcpool "github.com/processout/grpc-go-pool"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 )
 
 type ConnectionCache struct {
@@ -22,8 +22,8 @@ func NewConnectionCache() *ConnectionCache {
 		return NewConnectionPool(address), nil
 	}
 	remove := func(k cache.Key, v cache.Value) {
-		if connectionPool, ok := v.(*grpcpool.Pool); ok {
-			connectionPool.Close()
+		if connectionPool, ok := v.(*ConnectionPool); ok {
+			connectionPool.CloseAll()
 		}
 	}
 	// Create a loading cache
@@ -41,41 +41,161 @@ func NewConnectionCache() *ConnectionCache {
 	return cc
 }
 
-func (cc *ConnectionCache) Get(ctx context.Context, address string) *grpcpool.ClientConn {
+func (cc *ConnectionCache) Get(address string) *Connection {
 	if cpInterface, _ := cc.Provider.Get(address); cpInterface != nil {
-		if cp, ok2 := cpInterface.(*grpcpool.Pool); ok2 {
-			for i := 0; i < 5; i++ {
-				clientConn, err := cp.Get(ctx)
-				if err == nil {
-					return clientConn
-				} else {
-					log.Printf("Ignored error: %v\n", err)
-				}
-			}
+		if cp, ok2 := cpInterface.(*ConnectionPool); ok2 {
+			return cp.Get()
 		}
 	}
 	return nil
 }
 
+func (cc *ConnectionCache) Put(c *Connection) {
+	if cpInterface, _ := cc.Provider.Get(c.Address); cpInterface != nil {
+		if cp, ok2 := cpInterface.(*ConnectionPool); ok2 {
+			if c.Counter < 20 {
+				cp.PutIfHealthy(c)
+			} else {
+				cp.Close(c)
+			}
+		}
+	}
+}
+
+func (cc *ConnectionCache) Close(c *Connection) {
+	if cpInterface, _ := cc.Provider.Get(c.Address); cpInterface != nil {
+		if cp, ok2 := cpInterface.(*ConnectionPool); ok2 {
+			cp.Close(c)
+		}
+	}
+}
+
 // Func to init pool
-func NewConnectionPool(address string) *grpcpool.Pool {
-	// init, capacity int, idleTimeout time.Duration,
-	// maxLifeDuration ...time.Duration
-	p, err := grpcpool.New(
-		func() (*grpc.ClientConn, error) {
-			return grpc.Dial(address,
-				// grpc.WithBlock(),
-				grpc.WithInsecure(),
-				grpc.WithTimeout(time.Duration(200)*time.Millisecond),
-			)
+func NewConnectionPool(address string) *ConnectionPool {
+	cp := &ConnectionPool{}
+	cp.Pool = &sync.Pool{
+		New: func() interface{} {
+			return cp.NewConnection(address)
 		},
-		5,              // init
-		1000,           // capacity
-		5*time.Minute,  // idleTimeout
-		30*time.Minute, // maxLifeDuration
-	)
-	if err != nil {
+	}
+	return cp
+}
+
+type ConnectionPool struct {
+	Pool   *sync.Pool
+	Closed bool
+}
+
+type Connection struct {
+	Address string
+	Conn    *grpc.ClientConn
+	Counter int
+}
+
+func (c *Connection) Close() {
+	if c.Conn != nil {
+		c.Conn.Close()
+	}
+}
+
+func (cp *ConnectionPool) NewConnection(address string) *Connection {
+	if cp.Closed {
 		return nil
 	}
-	return p
+	conn, err := grpc.Dial(address,
+		grpc.WithBlock(),
+		grpc.WithInsecure(),
+		grpc.WithTimeout(time.Duration(200)*time.Millisecond),
+	)
+	if err != nil {
+		// This happens too frequently when scaling down
+		// log.Printf("fail to dial to %v: %v\n", address, err)
+		return nil
+	}
+	// log.Printf("New connection to: %v\n", address)
+	// client := pb.NewVeriServiceClient(conn)
+	return &Connection{
+		Address: address,
+		// Client:  client,
+		Conn:    conn,
+		Counter: 0,
+	}
+}
+
+func (cp *ConnectionPool) Get() *Connection {
+	c := cp.GetWithRetry(0)
+	if c != nil {
+		c.Counter++
+	}
+	return c
+}
+
+func (cp *ConnectionPool) GetWithRetry(count int) *Connection {
+	if count > 3 {
+		return nil
+	}
+	connectionInterface := cp.Pool.Get()
+	if connectionInterface == nil {
+		return nil
+	}
+	if conn, ok := connectionInterface.(*Connection); ok {
+		if conn != nil && conn.Conn != nil {
+			if conn.Conn.GetState() == connectivity.Ready {
+				return conn
+			} else {
+				err := conn.Conn.Close()
+				if err != nil {
+					log.Printf("Connection Close Error: %v\n", err.Error())
+				}
+
+			}
+		}
+		count++
+		return cp.GetWithRetry(count)
+	}
+	return nil
+}
+
+func (cp *ConnectionPool) Put(conn *Connection) {
+	cp.Pool.Put(conn)
+}
+
+func (cp *ConnectionPool) PutIfHealthy(conn *Connection) {
+	if conn != nil && conn.Conn != nil {
+		if conn.Conn.GetState() == connectivity.Ready {
+			cp.Pool.Put(conn)
+		} else {
+			err := conn.Conn.Close()
+			if err != nil {
+				log.Printf("Connection Close Error: %v\n", err.Error())
+			}
+		}
+	}
+}
+
+func (cp *ConnectionPool) Close(conn *Connection) {
+	if conn != nil && conn.Conn != nil {
+		err := conn.Conn.Close()
+		if err != nil {
+			log.Printf("Connection Close Error: %v\n", err.Error())
+		}
+	}
+}
+
+func (cp *ConnectionPool) CloseAll() {
+	cp.Closed = true
+	for {
+		connectionInterface := cp.Pool.Get()
+		if connectionInterface == nil {
+			return // Coonection pool is finished
+		}
+		if conn, ok := connectionInterface.(*Connection); ok {
+			if conn != nil && conn.Conn != nil {
+				err := conn.Conn.Close()
+				if err != nil {
+					log.Printf("Connection Close Error: %v\n", err.Error())
+				}
+			}
+		}
+	}
 }
