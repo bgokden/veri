@@ -185,8 +185,10 @@ func (n *Node) SendJoinRequest(id string) error {
 	// this connection should be closed time to time
 	// It is observed that it can cause a split brain due to two nodes
 	// sync to each other and never break connection
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	client := pb.NewVeriServiceClient(conn.Conn)
-	resp, err := client.Join(context.Background(), request)
+	resp, err := client.Join(clientCtx, request)
 	if err != nil {
 		// log.Printf("(Call Join 2 %v => %v) There is an error %v", n.Port, id, err)
 		return err
@@ -246,7 +248,9 @@ func (n *Node) SendAddPeerRequest(id string, peerInfo *pb.Peer) error {
 	}
 	defer n.ConnectionCache.Put(conn)
 	client := pb.NewVeriServiceClient(conn.Conn)
-	_, err := client.AddPeer(context.Background(), request)
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err := client.AddPeer(clientCtx, request)
 	if err != nil {
 		// log.Printf("(Call Add Peer 2 %v => %v) There is an error %v", n.Port, id, err)
 		return err
@@ -266,7 +270,9 @@ func (n *Node) SendPingRequest(id string) error {
 	}
 	defer n.ConnectionCache.Put(conn)
 	client := pb.NewVeriServiceClient(conn.Conn)
-	_, err := client.Ping(context.Background(), request)
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err := client.Ping(clientCtx, request)
 	if err != nil {
 		return err
 	}
