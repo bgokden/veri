@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/bgokden/veri/veriservice"
 	"github.com/goburrow/cache"
 	goburrow "github.com/goburrow/cache"
 	"google.golang.org/grpc"
@@ -89,7 +88,6 @@ type ConnectionPool struct {
 
 type Connection struct {
 	Address string
-	Client  pb.VeriServiceClient
 	Conn    *grpc.ClientConn
 	Counter int
 }
@@ -108,20 +106,6 @@ func (cp *ConnectionPool) NewConnection(address string) *Connection {
 		grpc.WithBlock(),
 		grpc.WithInsecure(),
 		grpc.WithTimeout(time.Duration(200)*time.Millisecond),
-		// grpc.WithKeepaliveParams(keepalive.ClientParameters{
-		// 	// After a duration of this time if the client doesn't see any activity it
-		// 	// pings the server to see if the transport is still alive.
-		// 	// If set below 10s, a minimum value of 10s will be used instead.
-		// 	Time: 10 * time.Second, // The current default value is infinity.
-		// 	// After having pinged for keepalive check, the client waits for a duration
-		// 	// of Timeout and if no activity is seen even after that the connection is
-		// 	// closed.
-		// 	Timeout: 20 * time.Second, // The current default value is 20 seconds.
-		// 	// If true, client sends keepalive pings even with no active RPCs. If false,
-		// 	// when there are no active RPCs, Time and Timeout will be ignored and no
-		// 	// keepalive pings will be sent.
-		// 	PermitWithoutStream: true, // false by default.
-		// })
 	)
 	if err != nil {
 		// This happens too frequently when scaling down
@@ -129,10 +113,10 @@ func (cp *ConnectionPool) NewConnection(address string) *Connection {
 		return nil
 	}
 	// log.Printf("New connection to: %v\n", address)
-	client := pb.NewVeriServiceClient(conn)
+	// client := pb.NewVeriServiceClient(conn)
 	return &Connection{
 		Address: address,
-		Client:  client,
+		// Client:  client,
 		Conn:    conn,
 		Counter: 0,
 	}

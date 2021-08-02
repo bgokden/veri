@@ -46,7 +46,7 @@ func (dcs *DataSourceClient) StreamSearch(datum *pb.Datum, scoredDatumStream cha
 		return errors.New("Connection failure")
 	}
 	defer dcs.ConnectionCache.Put(conn)
-	client := conn.Client
+	client := pb.NewVeriServiceClient(conn.Conn)
 	searchRequest := &pb.SearchRequest{
 		Datum:  []*pb.Datum{datum},
 		Config: config,
@@ -73,7 +73,7 @@ func (dcs *DataSourceClient) Insert(datum *pb.Datum, config *pb.InsertConfig) er
 		return errors.New("Connection failure")
 	}
 	defer dcs.ConnectionCache.Put(conn)
-	client := conn.Client
+	client := pb.NewVeriServiceClient(conn.Conn)
 	request := &pb.InsertionRequest{
 		Config:   config,
 		Datum:    datum,
@@ -90,7 +90,7 @@ func (dcs *DataSourceClient) GetDataInfo() *pb.DataInfo {
 		return nil
 	}
 	defer dcs.ConnectionCache.Put(conn)
-	client := conn.Client
+	client := pb.NewVeriServiceClient(conn.Conn)
 	request := &pb.GetDataRequest{
 		Name: dcs.Name,
 	}
