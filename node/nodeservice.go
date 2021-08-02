@@ -161,37 +161,6 @@ func (n *Node) Listen() error {
 	}
 
 	grpcServer := grpc.NewServer()
-	// grpcServer := grpc.NewServer(grpc.KeepaliveParams(keepalive.ServerParameters{
-	// 	// MaxConnectionIdle is a duration for the amount of time after which an
-	// 	// idle connection would be closed by sending a GoAway. Idleness duration is
-	// 	// defined since the most recent time the number of outstanding RPCs became
-	// 	// zero or the connection establishment.
-	// 	MaxConnectionIdle: 1 * time.Minute, // The current default value is infinity.
-	// 	// MaxConnectionAge is a duration for the maximum amount of time a
-	// 	// connection may exist before it will be closed by sending a GoAway. A
-	// 	// random jitter of +/-10% will be added to MaxConnectionAge to spread out
-	// 	// connection storms.
-	// 	MaxConnectionAge: 2 * time.Minute, // The current default value is infinity.
-	// 	// MaxConnectionAgeGrace is an additive period after MaxConnectionAge after
-	// 	// which the connection will be forcibly closed.
-	// 	MaxConnectionAgeGrace: 1 * time.Minute, // The current default value is infinity.
-	// 	// After a duration of this time if the server doesn't see any activity it
-	// 	// pings the client to see if the transport is still alive.
-	// 	// If set below 1s, a minimum value of 1s will be used instead.
-	// 	Time: 10 * time.Second, // The current default value is 2 hours.
-	// 	// After having pinged for keepalive check, the server waits for a duration
-	// 	// of Timeout and if no activity is seen even after that the connection is
-	// 	// closed.
-	// 	Timeout: 20 * time.Second, // The current default value is 20 seconds.
-	// }), grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-	// 	// MinTime is the minimum amount of time a client should wait before sending
-	// 	// a keepalive ping.
-	// 	MinTime: 3 * time.Second, // The current default value is 5 minutes.
-	// 	// If true, server allows keepalive pings even when there are no active
-	// 	// streams(RPCs). If false, and client sends ping when there are no active
-	// 	// streams, server will send GOAWAY and close the connection.
-	// 	PermitWithoutStream: true, // false by default.
-	// }))
 
 	pb.RegisterVeriServiceServer(grpcServer, n)
 	reflection.Register(grpcServer)
@@ -208,16 +177,18 @@ func (n *Node) SendJoinRequest(id string) error {
 	request := &pb.JoinRequest{
 		Peer: peerInfo,
 	}
-	conn := n.ConnectionCache.Get(id)
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	conn := n.ConnectionCache.Get(clientCtx, id)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer n.ConnectionCache.Close(conn)
+	defer conn.Close()
 	// this connection should be closed time to time
 	// It is observed that it can cause a split brain due to two nodes
 	// sync to each other and never break connection
-	client := conn.Client
-	resp, err := client.Join(context.Background(), request)
+	client := pb.NewVeriServiceClient(conn)
+	resp, err := client.Join(clientCtx, request)
 	if err != nil {
 		// log.Printf("(Call Join 2 %v => %v) There is an error %v", n.Port, id, err)
 		return err
@@ -249,15 +220,15 @@ func (n *Node) CreateDataIfNotExists(ctx context.Context, in *pb.DataConfig) (*p
 	return aData.GetDataInfo(), nil
 }
 
-func (n *Node) getClient(address string) (pb.VeriServiceClient, *grpc.ClientConn, error) {
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(time.Duration(200)*time.Millisecond))
-	if err != nil {
-		// log.Printf("fail to dial: %v\n", err)
-		return nil, nil, err
-	}
-	client := pb.NewVeriServiceClient(conn)
-	return client, conn, nil
-}
+// func (n *Node) getClient(address string) (pb.VeriServiceClient, *grpc.ClientConn, error) {
+// 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithTimeout(time.Duration(200)*time.Millisecond))
+// 	if err != nil {
+// 		// log.Printf("fail to dial: %v\n", err)
+// 		return nil, nil, err
+// 	}
+// 	client := pb.NewVeriServiceClient(conn)
+// 	return client, conn, nil
+// }
 
 func (n *Node) AddPeer(ctx context.Context, in *pb.AddPeerRequest) (*pb.AddPeerResponse, error) {
 	return &pb.AddPeerResponse{}, n.AddPeerElement(in.GetPeer())
@@ -271,13 +242,15 @@ func (n *Node) SendAddPeerRequest(id string, peerInfo *pb.Peer) error {
 	request := &pb.AddPeerRequest{
 		Peer: peerInfo,
 	}
-	conn := n.ConnectionCache.Get(id)
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	conn := n.ConnectionCache.Get(clientCtx, id)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer n.ConnectionCache.Put(conn)
-	client := conn.Client
-	_, err := client.AddPeer(context.Background(), request)
+	defer conn.Close()
+	client := pb.NewVeriServiceClient(conn)
+	_, err := client.AddPeer(clientCtx, request)
 	if err != nil {
 		// log.Printf("(Call Add Peer 2 %v => %v) There is an error %v", n.Port, id, err)
 		return err
@@ -291,13 +264,15 @@ func (n *Node) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingResponse, 
 
 func (n *Node) SendPingRequest(id string) error {
 	request := &pb.PingRequest{}
-	conn := n.ConnectionCache.Get(id)
+	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	conn := n.ConnectionCache.Get(clientCtx, id)
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer n.ConnectionCache.Put(conn)
-	client := conn.Client
-	_, err := client.Ping(context.Background(), request)
+	defer conn.Close()
+	client := pb.NewVeriServiceClient(conn)
+	_, err := client.Ping(clientCtx, request)
 	if err != nil {
 		return err
 	}
