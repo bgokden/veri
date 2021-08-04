@@ -124,8 +124,8 @@ func (cp *ConnectionPool) Get() *Connection {
 	c := cp.GetWithRetry(0)
 	if c != nil {
 		atomic.AddInt64(&c.Counter, 1)
-		if atomic.LoadInt64(&c.Counter) < 10 {
-			cp.Put(c) // if there are less than 10 concurrent users put it back
+		if atomic.LoadInt64(&c.Counter) <= 20 {
+			cp.Put(c) // if there are less than 20 concurrent users put it back
 		}
 	}
 	return c
