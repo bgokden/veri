@@ -193,7 +193,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 	// external
 	dt.RunOnRandomSources(5, func(source DataSource) error {
 		queryWaitGroup.Add(1)
-		log.Printf("Query Datasource: %v\n", source.GetID())
+		// log.Printf("Query Datasource: %v\n", source.GetID())
 		go source.StreamSearch(datum, scoredDatumStream, &queryWaitGroup, config)
 		return nil
 	})
@@ -209,7 +209,7 @@ func (dt *Data) AggregatedSearch(datum *pb.Datum, scoredDatumStreamOutput chan<-
 		case scoredDatum := <-scoredDatumStream:
 			temp.Insert(scoredDatum)
 		case <-waitChannel:
-			log.Printf("AggregatedSearch: all data finished")
+			// log.Printf("AggregatedSearch: all data finished")
 			close(scoredDatumStream)
 			for scoredDatum := range scoredDatumStream {
 				temp.Insert(scoredDatum)
