@@ -331,8 +331,6 @@ func (dt *Data) SearchAnnoy(datum *pb.Datum, config *pb.SearchConfig) *Collector
 					if counter >= c.N {
 						break
 					}
-				} else {
-					log.Printf("Datum E is nil. %v d: %v\n", result[i], distances[i])
 				}
 			}
 		}
