@@ -177,17 +177,25 @@ func (n *Node) SendJoinRequest(id string) error {
 	request := &pb.JoinRequest{
 		Peer: peerInfo,
 	}
-	conn := n.ConnectionCache.Get(id)
+	// This is a speacial case that doesn't use connection pool
+	conn, err := grpc.Dial(id,
+		grpc.WithBlock(),
+		grpc.WithInsecure(),
+		grpc.WithTimeout(time.Duration(1000)*time.Millisecond),
+	)
+	if err != nil {
+		return err
+	}
 	if conn == nil {
 		return errors.New("Connection failure")
 	}
-	defer n.ConnectionCache.Put(conn)
+	defer conn.Close()
 	// this connection should be closed time to time
 	// It is observed that it can cause a split brain due to two nodes
 	// sync to each other and never break connection
 	clientCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client := pb.NewVeriServiceClient(conn.Conn)
+	client := pb.NewVeriServiceClient(conn)
 	resp, err := client.Join(clientCtx, request)
 	if err != nil {
 		// log.Printf("(Call Join 2 %v => %v) There is an error %v", n.Port, id, err)
