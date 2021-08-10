@@ -140,7 +140,15 @@ func (cp *ConnectionPool) GetWithRetry(count int) *Connection {
 	}
 	if conn, ok := connectionInterface.(*Connection); ok {
 		if conn != nil && conn.Conn != nil {
-			return conn
+			if conn.Conn.GetState() != connectivity.Shutdown {
+				return conn
+			} else {
+				err := conn.Conn.Close()
+				if err != nil {
+					log.Printf("Connection Close Error (expected to be already closed): %v\n", err.Error())
+				}
+
+			}
 		}
 		count++
 		return cp.GetWithRetry(count)
