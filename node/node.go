@@ -110,14 +110,16 @@ func (n *Node) AddPeerElement(peer *pb.Peer) error {
 		idOfPeer := GetIdOfPeer(peer)
 		if oldPeerInterface, ok := n.PeerList.Get(idOfPeer); ok {
 			if oldPeer, ok2 := oldPeerInterface.(*pb.Peer); ok2 {
-				if oldPeer.Timestamp > peer.Timestamp {
+				if oldPeer.Timestamp >= peer.Timestamp {
 					// New one is older than current peer info
 					return nil
 				}
 			}
 		}
-		n.PeerList.Set(idOfPeer, peer, cache.DefaultExpiration)
-		n.PeerList.IncrementExpiration(idOfPeer, 10*time.Minute)
+		if IsRecent(peer.GetTimestamp()) {
+			n.PeerList.Set(idOfPeer, peer, cache.DefaultExpiration)
+			n.PeerList.IncrementExpiration(idOfPeer, 10*time.Minute)
+		}
 	}
 	return nil
 }
@@ -216,20 +218,20 @@ func (n *Node) GetDifferentAddressOf(peer *pb.Peer) string {
 func (n *Node) SyncWithPeers() {
 	// nodeId := GetIdOfPeer(n.GetNodeInfo())
 	// log.Printf("(0) Node: %v\n", nodeId)
-	peerListPred := n.PeerList.Items()
-	deleteIDList := []string{}
-	for _, item := range peerListPred {
-		peer := item.Object.(*pb.Peer)
-		// Delete by timeout
-		if !IsRecent(peer.Timestamp) {
-			id := GetIdOfPeer(peer)
-			deleteIDList = append(deleteIDList, id)
-		}
-	}
-	for _, id := range deleteIDList {
-		log.Printf("Deleting Peer id: %v\n", id)
-		n.PeerList.Delete(id)
-	}
+// 	peerListPred := n.PeerList.Items()
+// 	deleteIDList := []string{}
+// 	for _, item := range peerListPred {
+// 		peer := item.Object.(*pb.Peer)
+// 		// Delete by timeout
+// 		if !IsRecent(peer.Timestamp) {
+// 			id := GetIdOfPeer(peer)
+// 			deleteIDList = append(deleteIDList, id)
+// 		}
+// 	}
+// 	for _, id := range deleteIDList {
+// 		log.Printf("Deleting Peer id: %v\n", id)
+// 		n.PeerList.Delete(id)
+// 	}
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
