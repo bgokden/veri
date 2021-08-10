@@ -219,9 +219,10 @@ func (n *Node) SyncWithPeers() {
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
-		if !n.CheckPeer(peer) { // remove old peer
-			continue
-		}
+		// Delete by timeout
+		// if !n.CheckPeer(peer) { // remove old peer
+		// 	continue
+		// }
 		idOfPeer := n.GetDifferentAddressOf(peer)
 		if idOfPeer == "" {
 			continue
