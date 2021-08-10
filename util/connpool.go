@@ -101,7 +101,6 @@ func (cp *ConnectionPool) NewConnection(address string) *Connection {
 		return nil
 	}
 	conn, err := grpc.Dial(address,
-		grpc.WithBlock(),
 		grpc.WithInsecure(),
 		grpc.WithTimeout(time.Duration(200)*time.Millisecond),
 	)
@@ -141,7 +140,7 @@ func (cp *ConnectionPool) GetWithRetry(count int) *Connection {
 	}
 	if conn, ok := connectionInterface.(*Connection); ok {
 		if conn != nil && conn.Conn != nil {
-			if conn.Conn.GetState() == connectivity.Ready {
+			if conn.Conn.GetState() == connectivity.Ready || conn.Conn.GetState() == connectivity.Connecting {
 				return conn
 			} else {
 				err := conn.Conn.Close()
