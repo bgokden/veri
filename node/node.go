@@ -218,20 +218,20 @@ func (n *Node) GetDifferentAddressOf(peer *pb.Peer) string {
 func (n *Node) SyncWithPeers() {
 	// nodeId := GetIdOfPeer(n.GetNodeInfo())
 	// log.Printf("(0) Node: %v\n", nodeId)
-// 	peerListPred := n.PeerList.Items()
-// 	deleteIDList := []string{}
-// 	for _, item := range peerListPred {
-// 		peer := item.Object.(*pb.Peer)
-// 		// Delete by timeout
-// 		if !IsRecent(peer.Timestamp) {
-// 			id := GetIdOfPeer(peer)
-// 			deleteIDList = append(deleteIDList, id)
-// 		}
-// 	}
-// 	for _, id := range deleteIDList {
-// 		log.Printf("Deleting Peer id: %v\n", id)
-// 		n.PeerList.Delete(id)
-// 	}
+	// 	peerListPred := n.PeerList.Items()
+	// 	deleteIDList := []string{}
+	// 	for _, item := range peerListPred {
+	// 		peer := item.Object.(*pb.Peer)
+	// 		// Delete by timeout
+	// 		if !IsRecent(peer.Timestamp) {
+	// 			id := GetIdOfPeer(peer)
+	// 			deleteIDList = append(deleteIDList, id)
+	// 		}
+	// 	}
+	// 	for _, id := range deleteIDList {
+	// 		log.Printf("Deleting Peer id: %v\n", id)
+	// 		n.PeerList.Delete(id)
+	// 	}
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
@@ -262,7 +262,7 @@ func (n *Node) SyncWithPeers() {
 		}
 	}
 	state.Ready = true
-	fmt.Println(n.Info())
+	// fmt.Println(n.Info())
 }
 
 func Find(slice []string, val string) bool {
@@ -320,6 +320,7 @@ func (n *Node) StopPeriodicTask() {
 }
 
 func (n *Node) Periodic() error {
+	fmt.Println(n.Info())
 	go n.JoinToPeers()
 	go n.SyncWithPeers()
 	go n.Dataset.ReloadRuns()
@@ -338,8 +339,9 @@ func (n *Node) Info() string {
 	var sb strings.Builder
 	nodeId := GetIdOfPeer(n.GetNodeInfo())
 	sb.WriteString("-------------------------------------------------\n")
+	gonumroutines := runtime.NumGoroutine()
 	goMaxProcsHint := max(MINGOMAXPROCS, runtime.GOMAXPROCS(-1))
-	sb.WriteString(fmt.Sprintf("-- Node ID: %v GOMAXPROCS: %v\n", nodeId, runtime.GOMAXPROCS(goMaxProcsHint)))
+	sb.WriteString(fmt.Sprintf("-- Node ID: %v NUMGOROUTINES: %v GOMAXPROCS: %v\n", nodeId, gonumroutines, runtime.GOMAXPROCS(goMaxProcsHint)))
 	sb.WriteString("DataList:\n")
 	for _, name := range n.Dataset.List() {
 		dt, err := n.Dataset.GetNoCreate(name)
@@ -368,7 +370,7 @@ func (n *Node) Info() string {
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
 		idOfPeer := GetIdOfPeer(peer)
-		sb.WriteString(fmt.Sprintf("Peer: %v\n", idOfPeer))
+		sb.WriteString(fmt.Sprintf("Peer: %v time-diff: %v\n", idOfPeer, getCurrentTime()-peer.Timestamp))
 		sb.WriteString(fmt.Sprintf("DataList of Peer %v:\n", idOfPeer))
 		for _, dataConfigFromPeer := range peer.DataList {
 			sb.WriteString(fmt.Sprintf("* Name %v Version: %v dataConfigFromPeer: %v\n", dataConfigFromPeer.Name, dataConfigFromPeer.Version, dataConfigFromPeer))
