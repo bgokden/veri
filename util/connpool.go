@@ -140,12 +140,12 @@ func (cp *ConnectionPool) GetWithRetry(count int) *Connection {
 	}
 	if conn, ok := connectionInterface.(*Connection); ok {
 		if conn != nil && conn.Conn != nil {
-			if conn.Conn.GetState() == connectivity.Ready || conn.Conn.GetState() == connectivity.Connecting {
+			if conn.Conn.GetState() != connectivity.Shutdown {
 				return conn
 			} else {
 				err := conn.Conn.Close()
 				if err != nil {
-					log.Printf("Connection Close Error: %v\n", err.Error())
+					log.Printf("Connection Close Error (expected to be already closed): %v\n", err.Error())
 				}
 
 			}
