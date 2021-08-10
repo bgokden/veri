@@ -17,7 +17,7 @@ import (
 	data "github.com/bgokden/veri/data"
 )
 
-const MINGOMAXPROCS = 32
+const MINGOMAXPROCS = 128
 
 func GetIdOfPeer(p *pb.Peer) string {
 	return SerializeStringArray(p.GetAddressList())
@@ -262,6 +262,7 @@ func (n *Node) SyncWithPeers() {
 		}
 	}
 	state.Ready = true
+	log.Printf("Synced with peers")
 	// fmt.Println(n.Info())
 }
 

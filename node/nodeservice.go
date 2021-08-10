@@ -179,7 +179,6 @@ func (n *Node) SendJoinRequest(id string) error {
 	}
 	// This is a speacial case that doesn't use connection pool
 	conn, err := grpc.Dial(id,
-		grpc.WithBlock(),
 		grpc.WithInsecure(),
 		grpc.WithTimeout(time.Duration(1000)*time.Millisecond),
 	)
@@ -187,6 +186,7 @@ func (n *Node) SendJoinRequest(id string) error {
 		return err
 	}
 	if conn == nil {
+		log.Printf("Failed Join request to %v", id)
 		return errors.New("Connection failure")
 	}
 	defer conn.Close()
