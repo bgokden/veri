@@ -185,7 +185,7 @@ func (cp *ConnectionPool) Close(conn *Connection) {
 
 func (cp *ConnectionPool) CloseAll() {
 	cp.Closed = true
-	for {
+	for i := 0; i < 1000; i++ { // Maximum 1000 connections will be closed
 		connectionInterface := cp.Pool.Get()
 		if connectionInterface == nil {
 			return // Coonection pool is finished
@@ -197,6 +197,8 @@ func (cp *ConnectionPool) CloseAll() {
 					log.Printf("Connection Close Error: %v\n", err.Error())
 				}
 			}
+		} else {
+			return
 		}
 	}
 }
