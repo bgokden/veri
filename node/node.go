@@ -216,6 +216,20 @@ func (n *Node) GetDifferentAddressOf(peer *pb.Peer) string {
 func (n *Node) SyncWithPeers() {
 	// nodeId := GetIdOfPeer(n.GetNodeInfo())
 	// log.Printf("(0) Node: %v\n", nodeId)
+	peerListPred := n.PeerList.Items()
+	deleteIDList := []string{}
+	for _, item := range peerListPred {
+		peer := item.Object.(*pb.Peer)
+		// Delete by timeout
+		if !IsRecent(peer.Timestamp) {
+			id := GetIdOfPeer(peer)
+			deleteIDList = append(deleteIDList, id)
+		}
+	}
+	for _, id := range deleteIDList {
+		log.Printf("Deleting Peer id: %v\n", id)
+		n.PeerList.Delete(id)
+	}
 	peerList := n.PeerList.Items()
 	for _, item := range peerList {
 		peer := item.Object.(*pb.Peer)
