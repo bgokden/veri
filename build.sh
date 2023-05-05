@@ -19,7 +19,7 @@ if [ "$1" = "local" ]; then
   unset GOOS
   unset GOARCH
 else
-  docker run --rm -it -v "$GOPATH":/go -w /go/src/github.com/magneticio/verikubistcli dockercore/golang-cross:1.16.5 sh -c '
+  docker run --rm -it -v "$GOPATH":/go -w /go/src/github.com/bgokden/veri dockercore/golang-cross:1.16.5 sh -c '
   for GOOS in darwin linux windows; do
     for GOARCH in 386 amd64; do
       echo "Building $GOOS-$GOARCH"

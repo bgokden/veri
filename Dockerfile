@@ -1,7 +1,7 @@
 # build stage
 # FROM golang:1.16.5-alpine AS build-env
 #FROM golang:1.16.0-alpine3.12 AS build-env
-FROM golang:1.16.5-buster AS build-env
+FROM golang:1.20.4-buster AS build-env
 RUN apt-get update && apt-get install -y git bash curl build-essential
 
 WORKDIR /src/veri
