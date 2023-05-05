@@ -44,7 +44,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 25%
+      maxUnavailable: 10%
       maxSurge: 1
   selector:
     matchLabels:
@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: veri
-          image: berkgokden/veri:v0.0.100
+          image: berkgokden/veri:v0.0.103
           args: ["serve", "--services=veriservice:10000"]
           imagePullPolicy: IfNotPresent
           ports:
@@ -94,11 +94,11 @@ spec:
                   fieldPath: status.podIP
           resources:
             requests:
-              memory: "64Mi"
-              cpu: "250m"
+              memory: "128Mi"
+              cpu: "512m"
             limits:
               memory: "512Mi"
-              cpu: "500m"
+              cpu: "1000m"
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
