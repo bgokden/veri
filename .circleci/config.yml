@@ -16,7 +16,7 @@ jobs:
       - run: ./semver_version.sh -l go -f "./semver/version.go" -o none
       - run: sudo apt-get update && sudo apt-get install -y git bash curl build-essential
       - run: ./build.sh local
-      - run: go get -u github.com/tcnksm/ghr
+      - run: go install github.com/tcnksm/ghr
       - run: mkdir -p ./artifacts
       - run: cp ./bin/* ./artifacts
       - run: git config user.email "${GITHUB_EMAIL}"
