@@ -189,10 +189,19 @@ func (dts *Dataset) LoadIndex() error {
 
 func (dts *Dataset) ReloadRuns() error {
 	itemList := dts.DataList.Items()
-	for _, itemInterface := range itemList {
+	removeList := make([]string, 0, len(itemList))
+	for key, itemInterface := range itemList {
 		if item, ok := itemInterface.Object.(*Data); ok {
-			go item.Run()
+			if item.CheckIfActive() {
+				go item.Run()
+			} else {
+				item.Close()
+				removeList = append(removeList, key)
+			}
 		}
+	}
+	for _, key := range removeList {
+		dts.DataList.Delete(key)
 	}
 	return nil
 }
