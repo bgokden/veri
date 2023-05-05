@@ -113,6 +113,7 @@ func (dt *Data) Close() error {
 		}
 	}
 	// return dt.DB.Close()
+	dt.DeletePath()
 	return nil
 }
 
@@ -121,6 +122,23 @@ func (dt *Data) DeletePath() error {
 	// dt.DB.Close()
 	os.RemoveAll(dt.DBPath)
 	return nil
+}
+
+// Check if dataset is active
+func (dt *Data) CheckIfActive() bool {
+	if dt.N > 0 {
+		return true
+	}
+	if dt.Sources != nil && len(dt.Sources.Items()) > 0 {
+		sourceList := dt.Sources.Items()
+		for _, sourceItem := range sourceList { // Assumption is that random map runs are random enough
+			source := sourceItem.Object.(DataSource)
+			if source.GetDataInfo().N > 0 {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // Run runs statistical calculation regularly

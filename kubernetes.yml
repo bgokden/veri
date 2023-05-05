@@ -44,7 +44,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 10%
+      maxUnavailable: 5%
       maxSurge: 1
   selector:
     matchLabels:
@@ -56,7 +56,7 @@ spec:
     spec:
       containers:
         - name: veri
-          image: berkgokden/veri:v0.0.103
+          image: berkgokden/veri:v0.0.104
           args: ["serve", "--services=veriservice:10000"]
           imagePullPolicy: IfNotPresent
           ports:
